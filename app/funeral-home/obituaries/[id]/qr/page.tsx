@@ -39,7 +39,7 @@ export default function QrPage() {
     )
   }
 
-  const publicUrl = `https://enekrolog.pl${obit.publicUrl}`
+  const publicUrl = `https://ememories.pl${obit.publicUrl}`
 
   function copyUrl() {
     navigator.clipboard.writeText(publicUrl).catch(() => {})

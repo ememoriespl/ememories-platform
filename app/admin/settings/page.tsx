@@ -11,7 +11,7 @@ import { toast } from "sonner"
 export default function AdminSettingsPage() {
   return (
     <>
-      <Topbar title="Ustawienia" subtitle="Konfiguracja platformy eNekrolog" />
+      <Topbar title="Ustawienia" subtitle="Konfiguracja platformy eMemories" />
 
       <div className="p-6 space-y-6 max-w-2xl">
         <Card>
@@ -22,15 +22,15 @@ export default function AdminSettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Nazwa platformy</Label>
-              <Input defaultValue="eNekrolog" />
+              <Input defaultValue="eMemories" />
             </div>
             <div className="space-y-2">
               <Label>E-mail kontaktowy</Label>
-              <Input type="email" defaultValue="admin@enekrolog.pl" />
+              <Input type="email" defaultValue="admin@ememories.pl" />
             </div>
             <div className="space-y-2">
               <Label>Domena publiczna</Label>
-              <Input defaultValue="enekrolog.pl" />
+              <Input defaultValue="ememories.pl" />
             </div>
             <Button onClick={() => toast.success("Ustawienia zapisane")} size="sm">
               Zapisz zmiany

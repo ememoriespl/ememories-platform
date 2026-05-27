@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "eNekrolog — Platforma Cyfrowych Nekrologów",
+  title: "eMemories — Platforma Cyfrowych Nekrologów",
   description: "Profesjonalna platforma do tworzenia cyfrowych nekrologów z kodami QR dla zakładów pogrzebowych.",
 }
 

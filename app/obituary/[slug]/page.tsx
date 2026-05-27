@@ -7,7 +7,7 @@ export default function PublicObituaryPage() {
       <header className="border-b bg-background px-6 py-4">
         <div className="flex items-center gap-2 max-w-xl mx-auto">
           <Flower2 className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm font-semibold">eNekrolog</span>
+          <span className="text-sm font-semibold">eMemories</span>
         </div>
       </header>
 
@@ -47,7 +47,7 @@ export default function PublicObituaryPage() {
 
           <p className="text-center text-xs text-muted-foreground mt-6">
             Cyfrowy nekrolog wygenerowany przez{" "}
-            <span className="font-medium">eNekrolog.pl</span>
+            <span className="font-medium">eMemories.pl</span>
           </p>
         </div>
       </main>

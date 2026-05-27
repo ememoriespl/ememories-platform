@@ -106,7 +106,7 @@ export default function FhUsagePage() {
                 { label: "Pakiet QR", value: "50 kodów" },
                 { label: "Typ konta", value: "Zakład pogrzebowy" },
                 { label: "Status konta", value: "Aktywne" },
-                { label: "Kontakt do admina", value: "admin@enekrolog.pl" },
+                { label: "Kontakt do admina", value: "admin@ememories.pl" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between py-2.5 text-sm">
                   <span className="text-muted-foreground">{item.label}</span>

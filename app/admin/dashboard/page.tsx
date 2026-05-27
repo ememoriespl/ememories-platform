@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
 
   return (
     <>
-      <Topbar title="Dashboard" subtitle="Przegląd platformy eNekrolog" />
+      <Topbar title="Dashboard" subtitle="Przegląd platformy eMemories" />
 
       <div className="p-6 space-y-6">
         {/* Stats */}

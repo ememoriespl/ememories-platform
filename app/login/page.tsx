@@ -12,7 +12,7 @@ import { toast } from "sonner"
 type Role = "admin" | "funeral-home"
 
 const DEMO_CREDENTIALS: Record<Role, { email: string; password: string }> = {
-  admin: { email: "admin@enekrolog.pl", password: "admin123" },
+  admin: { email: "admin@ememories.pl", password: "admin123" },
   "funeral-home": { email: "kontakt@ostatniadroga.pl", password: "demo123" },
 }
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Flower2 className="h-5 w-5" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight">eNekrolog</h1>
+          <h1 className="text-xl font-semibold tracking-tight">eMemories</h1>
           <p className="text-sm text-muted-foreground">Platforma cyfrowych nekrologów</p>
         </div>
 
@@ -134,7 +134,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          © 2026 eNekrolog.pl — wszelkie prawa zastrzeżone
+          © 2026 eMemories.pl — wszelkie prawa zastrzeżone
         </p>
       </div>
     </div>

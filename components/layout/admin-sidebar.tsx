@@ -32,7 +32,7 @@ export function AdminSidebar() {
           <Flower2 className="h-4 w-4 text-primary-foreground" />
         </div>
         <div>
-          <p className="text-sm font-semibold leading-none">eNekrolog</p>
+          <p className="text-sm font-semibold leading-none">eMemories</p>
           <p className="text-xs text-muted-foreground mt-0.5">Panel Admina</p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function AdminSidebar() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">Administrator</p>
-            <p className="truncate text-xs text-muted-foreground">admin@enekrolog.pl</p>
+            <p className="truncate text-xs text-muted-foreground">admin@ememories.pl</p>
           </div>
         </div>
       </div>

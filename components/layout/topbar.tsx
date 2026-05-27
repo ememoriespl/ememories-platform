@@ -57,7 +57,7 @@ export function Topbar({ title, subtitle }: TopbarProps) {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel className="font-normal">
               <p className="font-medium text-sm">Administrator</p>
-              <p className="text-xs text-muted-foreground">admin@enekrolog.pl</p>
+              <p className="text-xs text-muted-foreground">admin@ememories.pl</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>

@@ -32,7 +32,7 @@ export function FhSidebar() {
           <Flower2 className="h-4 w-4 text-primary-foreground" />
         </div>
         <div>
-          <p className="text-sm font-semibold leading-none">eNekrolog</p>
+          <p className="text-sm font-semibold leading-none">eMemories</p>
           <p className="text-xs text-muted-foreground mt-0.5">Panel Zakładu</p>
         </div>
       </div>
