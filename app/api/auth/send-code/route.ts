@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 import { createOtpToken } from "@/lib/session"
 import { cookies } from "next/headers"
+import { mockFuneralHomes } from "@/lib/mock-data"
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+function isAllowedEmail(email: string): boolean {
+  if (email.endsWith("@ememories.pl")) return true
+  return mockFuneralHomes.some((fh) => fh.email.toLowerCase() === email)
 }
 
 export async function POST(req: NextRequest) {
@@ -12,6 +18,12 @@ export async function POST(req: NextRequest) {
 
   if (!email || typeof email !== "string" || !email.includes("@")) {
     return NextResponse.json({ error: "Nieprawidłowy email" }, { status: 400 })
+  }
+
+  const normalized = email.toLowerCase()
+
+  if (!isAllowedEmail(normalized)) {
+    return NextResponse.json({ error: "Brak dostępu. Skontaktuj się z administratorem." }, { status: 403 })
   }
 
   const code = generateCode()
