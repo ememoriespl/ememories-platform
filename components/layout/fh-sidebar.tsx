@@ -48,13 +48,13 @@ export function FhSidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-[1rem] font-medium transition-colors",
                     active
-                      ? "bg-accent text-accent-foreground font-medium"
+                      ? "bg-foreground/[0.08] text-foreground font-semibold"
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   )}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon className="h-5 w-5 shrink-0" />
                   {item.label}
                 </Link>
               </li>
