@@ -45,7 +45,7 @@ import {
   MoreHorizontal,
   Pencil,
   UserX,
-  KeyRound,
+  UserCheck,
   Trash2,
   CheckCircle2,
   PauseCircle,
@@ -74,10 +74,15 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<FuneralHome[]>(mockFuneralHomes)
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<Set<string>>(new Set())
+
   const [createOpen, setCreateOpen] = useState(false)
-  const [deactivateTarget, setDeactivateTarget] = useState<FuneralHome | null>(null)
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [newClient, setNewClient] = useState({ name: "", email: "", qrLimit: "50" })
+
+  const [editTarget, setEditTarget] = useState<FuneralHome | null>(null)
+  const [editForm, setEditForm] = useState({ name: "", email: "", qrLimit: "50" })
+
+  const [deleteTarget, setDeleteTarget] = useState<FuneralHome | null>(null)
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
   const filtered = clients.filter(
     (c) =>
@@ -161,18 +166,43 @@ export default function ClientsPage() {
     toast.success("Klient został utworzony")
   }
 
-  function handleDeactivate(id: string) {
-    setClients((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, status: "inactive" as FuneralHomeStatus } : c
-      )
-    )
-    setDeactivateTarget(null)
-    toast.success("Klient został dezaktywowany")
+  function openEdit(client: FuneralHome) {
+    setEditTarget(client)
+    setEditForm({ name: client.name, email: client.email, qrLimit: String(client.qrLimit) })
   }
 
-  function handleResetPassword(email: string) {
-    toast.success(`Link do resetowania hasła wysłany do: ${email}`)
+  function handleEdit() {
+    if (!editTarget || !editForm.name || !editForm.email) return
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id === editTarget.id
+          ? { ...c, name: editForm.name, email: editForm.email, qrLimit: parseInt(editForm.qrLimit) || c.qrLimit }
+          : c
+      )
+    )
+    setEditTarget(null)
+    toast.success("Dane klienta zostały zaktualizowane")
+  }
+
+  function handleToggleStatus(client: FuneralHome) {
+    if (client.status === "inactive") {
+      setClients((prev) =>
+        prev.map((c) => (c.id === client.id ? { ...c, status: "active" as FuneralHomeStatus } : c))
+      )
+      toast.success(`${client.name} — klient aktywowany`)
+    } else {
+      setClients((prev) =>
+        prev.map((c) => (c.id === client.id ? { ...c, status: "inactive" as FuneralHomeStatus } : c))
+      )
+      toast.success(`${client.name} — klient dezaktywowany`)
+    }
+  }
+
+  function handleDelete() {
+    if (!deleteTarget) return
+    setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id))
+    setDeleteTarget(null)
+    toast.success("Klient został usunięty")
   }
 
   return (
@@ -278,6 +308,7 @@ export default function ClientsPage() {
                   {filtered.map((client) => {
                     const pct = Math.round((client.qrUsed / client.qrLimit) * 100)
                     const isSelected = selected.has(client.id)
+                    const isInactive = client.status === "inactive"
                     return (
                       <tr
                         key={client.id}
@@ -322,22 +353,30 @@ export default function ClientsPage() {
                               <MoreHorizontal className="h-4 w-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEdit(client)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edytuj
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleResetPassword(client.email)}
-                              >
-                                <KeyRound className="mr-2 h-4 w-4" />
-                                Resetuj hasło
-                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleToggleStatus(client)}>
+                                {isInactive ? (
+                                  <>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Aktywuj
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserX className="mr-2 h-4 w-4" />
+                                    Dezaktywuj
+                                  </>
+                                )}
+                              </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => setDeactivateTarget(client)}
+                                variant="destructive"
+                                onClick={() => setDeleteTarget(client)}
                               >
-                                <UserX className="mr-2 h-4 w-4" />
-                                Dezaktywuj
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Usuń
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -378,9 +417,7 @@ export default function ClientsPage() {
               <Input
                 placeholder="np. Dom Pogrzebowy Wieczność"
                 value={newClient.name}
-                onChange={(e) =>
-                  setNewClient((p) => ({ ...p, name: e.target.value }))
-                }
+                onChange={(e) => setNewClient((p) => ({ ...p, name: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -389,9 +426,7 @@ export default function ClientsPage() {
                 type="email"
                 placeholder="biuro@zakład.pl"
                 value={newClient.email}
-                onChange={(e) =>
-                  setNewClient((p) => ({ ...p, email: e.target.value }))
-                }
+                onChange={(e) => setNewClient((p) => ({ ...p, email: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -401,43 +436,78 @@ export default function ClientsPage() {
                 min="1"
                 placeholder="50"
                 value={newClient.qrLimit}
-                onChange={(e) =>
-                  setNewClient((p) => ({ ...p, qrLimit: e.target.value }))
-                }
+                onChange={(e) => setNewClient((p) => ({ ...p, qrLimit: e.target.value }))}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              Anuluj
-            </Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Anuluj</Button>
             <Button onClick={handleCreate}>Utwórz klienta</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Deactivate confirmation dialog */}
-      <AlertDialog
-        open={!!deactivateTarget}
-        onOpenChange={(o) => !o && setDeactivateTarget(null)}
-      >
+      {/* Edit client dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edytuj klienta</DialogTitle>
+            <DialogDescription>
+              Zmień dane zakładu pogrzebowego.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nazwa zakładu</Label>
+              <Input
+                placeholder="np. Dom Pogrzebowy Wieczność"
+                value={editForm.name}
+                onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Adres e-mail</Label>
+              <Input
+                type="email"
+                placeholder="biuro@zakład.pl"
+                value={editForm.email}
+                onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Limit kodów QR</Label>
+              <Input
+                type="number"
+                min="1"
+                value={editForm.qrLimit}
+                onChange={(e) => setEditForm((p) => ({ ...p, qrLimit: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTarget(null)}>Anuluj</Button>
+            <Button onClick={handleEdit}>Zapisz zmiany</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Single delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Dezaktywuj klienta?</AlertDialogTitle>
+            <AlertDialogTitle>Usuń klienta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Klient {deactivateTarget?.name} straci dostęp do platformy. Dane
-              nekrologów zostaną zachowane.
+              Klient <strong>{deleteTarget?.name}</strong> oraz wszystkie jego dane
+              zostaną trwale usunięte. Tej operacji nie można cofnąć.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Anuluj</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
-                deactivateTarget && handleDeactivate(deactivateTarget.id)
-              }
+              onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Dezaktywuj
+              Usuń
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
