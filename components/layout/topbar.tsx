@@ -77,7 +77,7 @@ export function Topbar({ title, subtitle }: TopbarProps) {
               Ustawienia
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={handleLogout}>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Wyloguj się
             </DropdownMenuItem>
