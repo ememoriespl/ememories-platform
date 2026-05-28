@@ -61,18 +61,25 @@ const chartConfig = {
 const MAX_QR = 300
 
 export default function AdminDashboardPage() {
-  const [timeRange, setTimeRange] = React.useState("90d")
+  const [timeRange, setTimeRange] = React.useState("30d")
 
   const filteredData = mockChartData.filter((item) => {
     const date = new Date(item.day)
     const referenceDate = new Date()
-    let daysToSubtract = 90
-    if (timeRange === "30d") daysToSubtract = 30
-    else if (timeRange === "7d") daysToSubtract = 7
+    const daysMap: Record<string, number> = { "7d": 7, "14d": 14, "30d": 30, "45d": 45, "60d": 60 }
+    const daysToSubtract = daysMap[timeRange] ?? 30
     const startDate = new Date(referenceDate)
     startDate.setDate(startDate.getDate() - daysToSubtract)
     return date >= startDate
   })
+
+  const rangeLabel: Record<string, string> = {
+    "7d": "Ostatnie 7 dni",
+    "14d": "Ostatnie 14 dni",
+    "30d": "Ostatnie 30 dni",
+    "45d": "Ostatnie 45 dni",
+    "60d": "Ostatnie 60 dni",
+  }
 
   const qrPercent = Math.round((mockAdminMetrics.totalQrUsed / MAX_QR) * 100)
 
@@ -86,7 +93,7 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
-                <Users className="h-8 w-8 shrink-0 text-foreground" />
+                <Users className="h-12 w-12 shrink-0 text-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Aktywni klienci</p>
                   <p className="text-2xl font-semibold leading-none mt-0.5">{mockAdminMetrics.activeClients}</p>
@@ -104,7 +111,7 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
-                <BookOpen className="h-8 w-8 shrink-0 text-foreground" />
+                <BookOpen className="h-12 w-12 shrink-0 text-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Nekrologi</p>
                   <p className="text-2xl font-semibold leading-none mt-0.5">{mockAdminMetrics.totalObituaries}</p>
@@ -122,7 +129,7 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
-                <QrCode className="h-8 w-8 shrink-0 text-foreground" />
+                <QrCode className="h-12 w-12 shrink-0 text-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Zużycie nekrologów</p>
                   <p className="text-2xl font-semibold leading-none mt-0.5">{qrPercent}%</p>
@@ -148,15 +155,17 @@ export default function AdminDashboardPage() {
               </div>
               <Select value={timeRange} onValueChange={(v) => v && setTimeRange(v)}>
                 <SelectTrigger
-                  className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+                  className="w-[160px] rounded-lg sm:ml-auto"
                   aria-label="Wybierz zakres"
                 >
-                  <SelectValue placeholder="Ostatnie 3 miesiące" />
+                  <SelectValue>{rangeLabel[timeRange]}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="90d" className="rounded-lg">Ostatnie 3 miesiące</SelectItem>
-                  <SelectItem value="30d" className="rounded-lg">Ostatnie 30 dni</SelectItem>
                   <SelectItem value="7d" className="rounded-lg">Ostatnie 7 dni</SelectItem>
+                  <SelectItem value="14d" className="rounded-lg">Ostatnie 14 dni</SelectItem>
+                  <SelectItem value="30d" className="rounded-lg">Ostatnie 30 dni</SelectItem>
+                  <SelectItem value="45d" className="rounded-lg">Ostatnie 45 dni</SelectItem>
+                  <SelectItem value="60d" className="rounded-lg">Ostatnie 60 dni</SelectItem>
                 </SelectContent>
               </Select>
             </CardHeader>
