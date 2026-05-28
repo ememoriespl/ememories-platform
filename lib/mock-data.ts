@@ -233,7 +233,7 @@ export const mockChartData: ChartDataPoint[] = Array.from({ length: 90 }, (_, i)
   const date = new Date()
   date.setDate(date.getDate() - (89 - i))
   return {
-    day: date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
+    day: date.toISOString().split('T')[0],
     obituaries: Math.floor(Math.random() * 8) + 1,
     clients: Math.floor(Math.random() * 5) + 1,
   }
