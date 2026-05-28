@@ -12,7 +12,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -60,6 +62,14 @@ const chartConfig = {
 
 const MAX_QR = 300
 
+const timeRangeItems = [
+  { label: "Ostatnie 7 dni", value: "7d" },
+  { label: "Ostatnie 14 dni", value: "14d" },
+  { label: "Ostatnie 30 dni", value: "30d" },
+  { label: "Ostatnie 45 dni", value: "45d" },
+  { label: "Ostatnie 60 dni", value: "60d" },
+]
+
 export default function AdminDashboardPage() {
   const [timeRange, setTimeRange] = React.useState("30d")
 
@@ -72,14 +82,6 @@ export default function AdminDashboardPage() {
     startDate.setDate(startDate.getDate() - daysToSubtract)
     return date >= startDate
   })
-
-  const rangeLabel: Record<string, string> = {
-    "7d": "Ostatnie 7 dni",
-    "14d": "Ostatnie 14 dni",
-    "30d": "Ostatnie 30 dni",
-    "45d": "Ostatnie 45 dni",
-    "60d": "Ostatnie 60 dni",
-  }
 
   const qrPercent = Math.round((mockAdminMetrics.totalQrUsed / MAX_QR) * 100)
 
@@ -153,19 +155,19 @@ export default function AdminDashboardPage() {
                 <CardTitle>Aktywność platformy</CardTitle>
                 <CardDescription>Nekrologi i klienci w wybranym okresie</CardDescription>
               </div>
-              <Select value={timeRange} onValueChange={(v) => v && setTimeRange(v)}>
-                <SelectTrigger
-                  className="w-[160px] rounded-lg sm:ml-auto"
-                  aria-label="Wybierz zakres"
-                >
-                  <SelectValue>{rangeLabel[timeRange]}</SelectValue>
+              <Select items={timeRangeItems} value={timeRange} onValueChange={(v) => v && setTimeRange(v)}>
+                <SelectTrigger className="w-[160px] sm:ml-auto" aria-label="Wybierz zakres">
+                  <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl" alignItemWithTrigger={false} sideOffset={4}>
-                  <SelectItem value="7d" className="rounded-lg">Ostatnie 7 dni</SelectItem>
-                  <SelectItem value="14d" className="rounded-lg">Ostatnie 14 dni</SelectItem>
-                  <SelectItem value="30d" className="rounded-lg">Ostatnie 30 dni</SelectItem>
-                  <SelectItem value="45d" className="rounded-lg">Ostatnie 45 dni</SelectItem>
-                  <SelectItem value="60d" className="rounded-lg">Ostatnie 60 dni</SelectItem>
+                <SelectContent alignItemWithTrigger={false} sideOffset={4}>
+                  <SelectGroup>
+                    <SelectLabel>Zakres czasu</SelectLabel>
+                    {timeRangeItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </CardHeader>
