@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Flower2, Mail, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(t)
+  }, [])
 
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault()
@@ -59,8 +65,12 @@ export default function LoginPage() {
     <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div
-          className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 slide-in-from-bottom-3 duration-500"
-          style={{ animationFillMode: "both" }}
+          className="flex flex-col items-center gap-2 text-center"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(16px)",
+            transition: "opacity 0.5s ease, transform 0.5s ease",
+          }}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Flower2 className="h-5 w-5" />
@@ -70,15 +80,18 @@ export default function LoginPage() {
         </div>
 
         <div
-          className="rounded-xl border bg-card shadow-sm p-6 space-y-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-150"
-          style={{ animationFillMode: "both" }}
+          className="rounded-xl border bg-card shadow-sm p-6 space-y-5"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(24px)",
+            transition: "opacity 0.6s ease 0.15s, transform 0.6s ease 0.15s",
+          }}
         >
           {step === "email" ? (
             <form
               key="email"
               onSubmit={handleSendCode}
-              className="space-y-4 animate-in fade-in-0 slide-in-from-right-3 duration-300"
-              style={{ animationFillMode: "both" }}
+              className="space-y-4"
             >
               <div className="space-y-1.5">
                 <Label htmlFor="email">Adres e-mail</Label>
@@ -102,8 +115,7 @@ export default function LoginPage() {
             <form
               key="code"
               onSubmit={handleVerifyCode}
-              className="space-y-4 animate-in fade-in-0 slide-in-from-right-3 duration-300"
-              style={{ animationFillMode: "both" }}
+              className="space-y-4"
             >
               <div className="space-y-1 text-center">
                 <p className="text-sm font-medium">Kod wysłany na</p>
@@ -142,8 +154,11 @@ export default function LoginPage() {
         </div>
 
         <p
-          className="text-center text-xs text-muted-foreground animate-in fade-in-0 duration-700 delay-300"
-          style={{ animationFillMode: "both" }}
+          className="text-center text-xs text-muted-foreground"
+          style={{
+            opacity: visible ? 1 : 0,
+            transition: "opacity 0.7s ease 0.3s",
+          }}
         >
           © 2026 eMemories.pl — wszelkie prawa zastrzeżone
         </p>
