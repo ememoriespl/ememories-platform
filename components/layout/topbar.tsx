@@ -40,15 +40,12 @@ export function Topbar({ title, subtitle }: TopbarProps) {
           <DropdownMenuTrigger
             className="flex h-8 items-center gap-2 rounded-lg px-2 hover:bg-muted transition-colors outline-none"
           >
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-xs">AD</AvatarFallback>
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">AD</AvatarFallback>
             </Avatar>
-            <div className="hidden md:flex flex-col items-start">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium leading-none">Administrator</span>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Admin</Badge>
-              </div>
-              <span className="text-[11px] text-muted-foreground leading-none mt-0.5">admin@ememories.pl</span>
+            <div className="hidden md:flex flex-col items-start gap-0.5">
+              <span className="text-[13px] font-medium leading-none">admin@ememories.pl</span>
+              <Badge variant="secondary" className="text-[12px] px-1.5 py-0 h-4">Admin</Badge>
             </div>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>

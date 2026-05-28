@@ -27,14 +27,11 @@ export function AdminSidebar() {
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b">
+      <div className="flex h-[72px] items-center gap-2.5 px-6 border-b">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <Flower2 className="h-4 w-4 text-primary-foreground" />
         </div>
-        <div>
-          <p className="text-sm font-semibold leading-none">eMemories</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Panel Admina</p>
-        </div>
+        <p className="text-sm font-semibold leading-none">eMemories</p>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">

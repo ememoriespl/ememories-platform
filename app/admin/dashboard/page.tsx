@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Topbar } from "@/components/layout/topbar"
 import {
   Card,
@@ -14,7 +15,6 @@ import {
   Users,
   BookOpen,
   QrCode,
-  CheckCircle,
   TrendingUp,
   Activity,
 } from "lucide-react"
@@ -29,7 +29,6 @@ import {
   mockAdminMetrics,
   mockChartData,
   mockActivityLog,
-  mockObituaries,
 } from "@/lib/mock-data"
 
 const activityTypeLabel: Record<string, string> = {
@@ -50,49 +49,54 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pl-PL", {
     day: "2-digit",
     month: "2-digit",
-    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   })
 }
 
-const obituariesChartConfig = {
+const chartConfig = {
   obituaries: {
     label: "Nekrologi",
     color: "var(--chart-1)",
   },
-} satisfies ChartConfig
-
-const clientsChartConfig = {
   clients: {
     label: "Klienci",
     color: "var(--chart-2)",
   },
 } satisfies ChartConfig
 
+type ActiveKey = "obituaries" | "clients"
+
+const MAX_QR = 300
+
 export default function AdminDashboardPage() {
-  const recentObituaries = mockObituaries.slice(0, 5)
+  const [activeChart, setActiveChart] = useState<ActiveKey>("obituaries")
+
   const firstDay = mockChartData[0]?.day
   const lastDay = mockChartData[mockChartData.length - 1]?.day
+
+  const totalObituaries = mockChartData.reduce((s, d) => s + d.obituaries, 0)
+  const totalClients = mockChartData.reduce((s, d) => s + d.clients, 0)
+  const qrPercent = Math.round((mockAdminMetrics.totalQrUsed / MAX_QR) * 100)
 
   return (
     <>
       <Topbar title="Dashboard" subtitle="Przegląd platformy eMemories" />
 
       <div className="p-6 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {/* Stats — 3 kafelki */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardDescription>Zakłady pogrzebowe</CardDescription>
+                <CardDescription>Aktywni klienci</CardDescription>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-2xl">{mockAdminMetrics.totalFuneralHomes}</CardTitle>
+              <CardTitle className="text-2xl">{mockAdminMetrics.activeClients}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 text-emerald-500" />
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
                 <span className="text-emerald-600 font-medium">+1</span> w tym miesiącu
               </p>
             </CardContent>
@@ -101,14 +105,14 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardDescription>Wszystkie nekrologi</CardDescription>
+                <CardDescription>Nekrologi</CardDescription>
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </div>
               <CardTitle className="text-2xl">{mockAdminMetrics.totalObituaries}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 text-emerald-500" />
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
                 <span className="text-emerald-600 font-medium">+23</span> w tym miesiącu
               </p>
             </CardContent>
@@ -117,49 +121,53 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardDescription>Kody QR użyte</CardDescription>
+                <CardDescription>Zużycie nekrologów</CardDescription>
                 <QrCode className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-2xl">{mockAdminMetrics.totalQrUsed}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 text-emerald-500" />
-                <span className="text-emerald-600 font-medium">+22</span> w tym miesiącu
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardDescription>Aktywni klienci</CardDescription>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <CardTitle className="text-2xl">{mockAdminMetrics.activeClients}</CardTitle>
+              <CardTitle className="text-2xl">{qrPercent}%</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
-                z {mockAdminMetrics.totalFuneralHomes} łącznie
+                {mockAdminMetrics.totalQrUsed} z {MAX_QR} łącznie
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Nekrologi</CardTitle>
-              <CardDescription>Liczba utworzonych nekrologów dziennie</CardDescription>
+        {/* Chart + Activity */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          {/* Interactive Area Chart */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex flex-col gap-0 border-b p-0">
+              <div className="flex">
+                {(["obituaries", "clients"] as ActiveKey[]).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveChart(key)}
+                    className={`flex flex-1 flex-col items-start gap-1 border-r px-6 py-4 text-left transition-colors last:border-r-0 hover:bg-muted/30 ${
+                      activeChart === key ? "bg-muted/20" : ""
+                    }`}
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {chartConfig[key].label}
+                    </span>
+                    <span className="text-xl font-semibold leading-none">
+                      {key === "obituaries" ? totalObituaries : totalClients}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">ostatnie 30 dni</span>
+                  </button>
+                ))}
+              </div>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={obituariesChartConfig}>
-                <AreaChart
-                  accessibilityLayer
-                  data={mockChartData}
-                  margin={{ left: 12, right: 12 }}
-                >
+            <CardContent className="px-2 pt-4 sm:px-6">
+              <ChartContainer config={chartConfig} className="h-[220px] w-full">
+                <AreaChart data={mockChartData} margin={{ left: 12, right: 12 }}>
+                  <defs>
+                    <linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={`var(--color-${activeChart})`} stopOpacity={0.4} />
+                      <stop offset="95%" stopColor={`var(--color-${activeChart})`} stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid vertical={false} />
                   <XAxis
                     dataKey="day"
@@ -173,88 +181,30 @@ export default function AdminDashboardPage() {
                     content={<ChartTooltipContent indicator="line" />}
                   />
                   <Area
-                    dataKey="obituaries"
+                    dataKey={activeChart}
                     type="natural"
-                    fill="var(--color-obituaries)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-obituaries)"
+                    fill="url(#fillActive)"
+                    stroke={`var(--color-${activeChart})`}
+                    strokeWidth={2}
                   />
                 </AreaChart>
               </ChartContainer>
             </CardContent>
-            <CardFooter>
-              <div className="flex w-full items-start gap-2 text-sm">
-                <div className="grid gap-2">
-                  <div className="flex items-center gap-2 leading-none font-medium">
-                    Ostatnie 30 dni <TrendingUp className="h-4 w-4" />
-                  </div>
-                  <div className="flex items-center gap-2 leading-none text-muted-foreground">
-                    {firstDay} – {lastDay}
-                  </div>
-                </div>
-              </div>
+            <CardFooter className="flex items-center gap-2 text-sm text-muted-foreground">
+              <TrendingUp className="h-4 w-4" />
+              {firstDay} – {lastDay}
             </CardFooter>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Klienci</CardTitle>
-              <CardDescription>Nowi klienci dziennie</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={clientsChartConfig}>
-                <AreaChart
-                  accessibilityLayer
-                  data={mockChartData}
-                  margin={{ left: 12, right: 12 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="day"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    interval={6}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="line" />}
-                  />
-                  <Area
-                    dataKey="clients"
-                    type="natural"
-                    fill="var(--color-clients)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-clients)"
-                  />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-            <CardFooter>
-              <div className="flex w-full items-start gap-2 text-sm">
-                <div className="grid gap-2">
-                  <div className="flex items-center gap-2 leading-none font-medium">
-                    Ostatnie 30 dni <TrendingUp className="h-4 w-4" />
-                  </div>
-                  <div className="flex items-center gap-2 leading-none text-muted-foreground">
-                    {firstDay} – {lastDay}
-                  </div>
-                </div>
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
-
-        {/* Bottom tables */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
+          {/* Activity log */}
+          <Card className="lg:col-span-1 flex flex-col">
+            <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-base">Ostatnia aktywność</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 flex-1 overflow-y-auto">
               <div className="divide-y">
                 {mockActivityLog.map((item) => (
                   <div key={item.id} className="flex items-start gap-3 px-4 py-3">
@@ -268,51 +218,6 @@ export default function AdminDashboardPage() {
                       </Badge>
                       <span className="text-[10px] text-muted-foreground">
                         {formatDate(item.timestamp)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-base">Ostatnio dodane nekrologi</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {recentObituaries.map((obit) => (
-                  <div key={obit.id} className="flex items-center gap-3 px-4 py-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                      {obit.firstName[0]}{obit.lastName[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{obit.firstName} {obit.lastName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{obit.funeralHomeName}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <Badge
-                        variant={
-                          obit.status === "published"
-                            ? "default"
-                            : obit.status === "draft"
-                            ? "outline"
-                            : "secondary"
-                        }
-                        className="text-[10px] px-1.5 py-0"
-                      >
-                        {obit.status === "published"
-                          ? "Opublikowany"
-                          : obit.status === "draft"
-                          ? "Szkic"
-                          : "Archiwalny"}
-                      </Badge>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(obit.createdAt).toLocaleDateString("pl-PL")}
                       </span>
                     </div>
                   </div>
