@@ -95,7 +95,12 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
-                <Users className="h-12 w-12 shrink-0 text-foreground" />
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px]"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--chart-2) 10%, transparent)" }}
+                >
+                  <Users className="h-9 w-9" style={{ color: "var(--chart-2)" }} />
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Aktywni klienci</p>
                   <p className="text-2xl font-semibold leading-none mt-0.5">{mockAdminMetrics.activeClients}</p>
@@ -113,7 +118,12 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
-                <BookOpen className="h-12 w-12 shrink-0 text-foreground" />
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px]"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--chart-1) 10%, transparent)" }}
+                >
+                  <BookOpen className="h-9 w-9" style={{ color: "var(--chart-1)" }} />
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Nekrologi</p>
                   <p className="text-2xl font-semibold leading-none mt-0.5">{mockAdminMetrics.totalObituaries}</p>
@@ -131,7 +141,9 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
-                <QrCode className="h-12 w-12 shrink-0 text-foreground" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-foreground/5">
+                  <QrCode className="h-9 w-9 text-foreground" />
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Zużycie nekrologów</p>
                   <p className="text-2xl font-semibold leading-none mt-0.5">{qrPercent}%</p>
