@@ -145,7 +145,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Chart + Activity */}
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3 items-stretch">
           {/* Interactive Area Chart */}
           <Card className="lg:col-span-2 pt-0">
             <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
               <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
-                <AreaChart data={filteredData}>
+                <AreaChart data={filteredData} margin={{ top: 20, left: 0, right: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="fillObituaries" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--color-obituaries)" stopOpacity={0.8} />
