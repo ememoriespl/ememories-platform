@@ -96,10 +96,10 @@ export default function AdminDashboardPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
                 <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px]"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
                   style={{ backgroundColor: "color-mix(in oklch, var(--chart-2) 10%, transparent)" }}
                 >
-                  <Users className="h-9 w-9" style={{ color: "var(--chart-2)" }} />
+                  <Users className="h-6 w-6" style={{ color: "var(--chart-2)" }} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Aktywni klienci</p>
@@ -119,10 +119,10 @@ export default function AdminDashboardPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
                 <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px]"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
                   style={{ backgroundColor: "color-mix(in oklch, var(--chart-1) 10%, transparent)" }}
                 >
-                  <BookOpen className="h-9 w-9" style={{ color: "var(--chart-1)" }} />
+                  <BookOpen className="h-6 w-6" style={{ color: "var(--chart-1)" }} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Nekrologi</p>
@@ -141,7 +141,7 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-foreground/5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] bg-foreground/5">
                   <QrCode className="h-9 w-9 text-foreground" />
                 </div>
                 <div>
