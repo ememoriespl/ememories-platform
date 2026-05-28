@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
                 >
                   <SelectValue>{rangeLabel[timeRange]}</SelectValue>
                 </SelectTrigger>
-                <SelectContent className="rounded-xl">
+                <SelectContent className="rounded-xl" alignItemWithTrigger={false} sideOffset={4}>
                   <SelectItem value="7d" className="rounded-lg">Ostatnie 7 dni</SelectItem>
                   <SelectItem value="14d" className="rounded-lg">Ostatnie 14 dni</SelectItem>
                   <SelectItem value="30d" className="rounded-lg">Ostatnie 30 dni</SelectItem>
