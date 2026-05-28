@@ -51,7 +51,7 @@ export interface AdminMetrics {
 }
 
 export interface ChartDataPoint {
-  month: string
+  day: string
   obituaries: number
-  qrUsed: number
+  clients: number
 }

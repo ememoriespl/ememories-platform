@@ -4,12 +4,12 @@ import { Topbar } from "@/components/layout/topbar"
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
   Users,
   BookOpen,
@@ -18,17 +18,13 @@ import {
   TrendingUp,
   Activity,
 } from "lucide-react"
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  BarChart,
-  Bar,
-} from "recharts"
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
 import {
   mockAdminMetrics,
   mockChartData,
@@ -60,8 +56,24 @@ function formatDate(iso: string) {
   })
 }
 
+const obituariesChartConfig = {
+  obituaries: {
+    label: "Nekrologi",
+    color: "var(--chart-1)",
+  },
+} satisfies ChartConfig
+
+const clientsChartConfig = {
+  clients: {
+    label: "Klienci",
+    color: "var(--chart-2)",
+  },
+} satisfies ChartConfig
+
 export default function AdminDashboardPage() {
   const recentObituaries = mockObituaries.slice(0, 5)
+  const firstDay = mockChartData[0]?.day
+  const lastDay = mockChartData[mockChartData.length - 1]?.day
 
   return (
     <>
@@ -138,65 +150,103 @@ export default function AdminDashboardPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Nekrologi — ostatnie 5 miesięcy</CardTitle>
-              <CardDescription>Liczba utworzonych nekrologów miesięcznie</CardDescription>
+              <CardTitle>Nekrologi</CardTitle>
+              <CardDescription>Liczba utworzonych nekrologów dziennie</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={mockChartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
+              <ChartContainer config={obituariesChartConfig}>
+                <AreaChart
+                  accessibilityLayer
+                  data={mockChartData}
+                  margin={{ left: 12, right: 12 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="day"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    interval={6}
                   />
-                  <Line
-                    type="monotone"
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent indicator="line" />}
+                  />
+                  <Area
                     dataKey="obituaries"
-                    stroke="hsl(var(--foreground))"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: "hsl(var(--foreground))" }}
-                    name="Nekrologi"
+                    type="natural"
+                    fill="var(--color-obituaries)"
+                    fillOpacity={0.4}
+                    stroke="var(--color-obituaries)"
                   />
-                </LineChart>
-              </ResponsiveContainer>
+                </AreaChart>
+              </ChartContainer>
             </CardContent>
+            <CardFooter>
+              <div className="flex w-full items-start gap-2 text-sm">
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2 leading-none font-medium">
+                    Ostatnie 30 dni <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="flex items-center gap-2 leading-none text-muted-foreground">
+                    {firstDay} – {lastDay}
+                  </div>
+                </div>
+              </div>
+            </CardFooter>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Użycie QR — ostatnie 5 miesięcy</CardTitle>
-              <CardDescription>Liczba wygenerowanych kodów QR miesięcznie</CardDescription>
+              <CardTitle>Klienci</CardTitle>
+              <CardDescription>Nowi klienci dziennie</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={mockChartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
+              <ChartContainer config={clientsChartConfig}>
+                <AreaChart
+                  accessibilityLayer
+                  data={mockChartData}
+                  margin={{ left: 12, right: 12 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="day"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    interval={6}
                   />
-                  <Bar dataKey="qrUsed" fill="hsl(var(--foreground))" radius={[4, 4, 0, 0]} name="Kody QR" />
-                </BarChart>
-              </ResponsiveContainer>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent indicator="line" />}
+                  />
+                  <Area
+                    dataKey="clients"
+                    type="natural"
+                    fill="var(--color-clients)"
+                    fillOpacity={0.4}
+                    stroke="var(--color-clients)"
+                  />
+                </AreaChart>
+              </ChartContainer>
             </CardContent>
+            <CardFooter>
+              <div className="flex w-full items-start gap-2 text-sm">
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2 leading-none font-medium">
+                    Ostatnie 30 dni <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="flex items-center gap-2 leading-none text-muted-foreground">
+                    {firstDay} – {lastDay}
+                  </div>
+                </div>
+              </div>
+            </CardFooter>
           </Card>
         </div>
 
         {/* Bottom tables */}
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* Activity log */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -226,7 +276,6 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Recent obituaries */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">

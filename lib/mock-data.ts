@@ -229,13 +229,15 @@ export const mockAdminMetrics: AdminMetrics = {
   activeClients: 3,
 }
 
-export const mockChartData: ChartDataPoint[] = [
-  { month: 'Sty', obituaries: 8, qrUsed: 8 },
-  { month: 'Lut', obituaries: 12, qrUsed: 12 },
-  { month: 'Mar', obituaries: 15, qrUsed: 14 },
-  { month: 'Kwi', obituaries: 19, qrUsed: 18 },
-  { month: 'Maj', obituaries: 23, qrUsed: 22 },
-]
+export const mockChartData: ChartDataPoint[] = Array.from({ length: 30 }, (_, i) => {
+  const date = new Date()
+  date.setDate(date.getDate() - (29 - i))
+  return {
+    day: date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
+    obituaries: Math.floor(Math.random() * 8) + 1,
+    clients: Math.floor(Math.random() * 3),
+  }
+})
 
 export const mockFuneralHomeMetrics = {
   totalObituaries: 6,

@@ -1,9 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Bell, Search, ChevronDown, LogOut, User, Settings } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { ChevronDown, LogOut, User, Settings } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,30 +27,15 @@ export function Topbar({ title, subtitle }: TopbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6">
+    <header className="sticky top-0 z-10 flex h-[72px] items-center gap-4 border-b bg-background px-6">
       <div className="flex-1 min-w-0">
-        <h1 className="text-sm font-semibold leading-none">{title}</h1>
+        <h1 className="text-[20px] font-semibold leading-none">{title}</h1>
         {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+          <p className="text-[16px] text-muted-foreground mt-1">{subtitle}</p>
         )}
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            className="h-8 w-56 pl-8 text-sm bg-muted/50 border-0 focus-visible:ring-1"
-            placeholder="Szukaj..."
-          />
-        </div>
-
-        <Button variant="ghost" size="icon" className="relative h-8 w-8">
-          <Bell className="h-4 w-4" />
-          <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
-            2
-          </Badge>
-        </Button>
-
         <DropdownMenu>
           <DropdownMenuTrigger
             className="flex h-8 items-center gap-2 rounded-lg px-2 hover:bg-muted transition-colors outline-none"
@@ -60,6 +43,13 @@ export function Topbar({ title, subtitle }: TopbarProps) {
             <Avatar className="h-6 w-6">
               <AvatarFallback className="text-xs">AD</AvatarFallback>
             </Avatar>
+            <div className="hidden md:flex flex-col items-start">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium leading-none">Administrator</span>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Admin</Badge>
+              </div>
+              <span className="text-[11px] text-muted-foreground leading-none mt-0.5">admin@ememories.pl</span>
+            </div>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
