@@ -141,8 +141,11 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] bg-foreground/5">
-                  <QrCode className="h-9 w-9 text-foreground" />
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--foreground) 10%, transparent)" }}
+                >
+                  <QrCode className="h-6 w-6 text-foreground" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Zużycie nekrologów</p>
