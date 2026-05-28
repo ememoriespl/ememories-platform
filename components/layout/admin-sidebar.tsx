@@ -31,7 +31,7 @@ export function AdminSidebar() {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <Flower2 className="h-4 w-4 text-primary-foreground" />
         </div>
-        <p className="text-sm font-semibold leading-none">eMemories</p>
+        <p className="text-[18px] font-semibold leading-none">eMemories</p>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">

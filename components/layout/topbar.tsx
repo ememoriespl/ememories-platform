@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ChevronDown, LogOut, User, Settings } from "lucide-react"
+import { MoreHorizontal, LogOut, User, Settings } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,17 +29,15 @@ export function Topbar({ title, subtitle }: TopbarProps) {
   return (
     <header className="sticky top-0 z-10 flex h-[72px] items-center gap-4 border-b bg-background px-6">
       <div className="flex-1 min-w-0">
-        <h1 className="text-[20px] font-semibold leading-none">{title}</h1>
+        <h1 className="text-[18px] font-semibold leading-none">{title}</h1>
         {subtitle && (
-          <p className="text-[16px] text-muted-foreground mt-1">{subtitle}</p>
+          <p className="text-[14px] text-muted-foreground mt-1">{subtitle}</p>
         )}
       </div>
 
       <div className="flex items-center gap-2">
         <DropdownMenu>
-          <DropdownMenuTrigger
-            className="flex h-8 items-center gap-2 rounded-lg px-2 hover:bg-muted transition-colors outline-none"
-          >
+          <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="text-xs bg-primary/10 text-primary">AD</AvatarFallback>
             </Avatar>
@@ -47,7 +45,9 @@ export function Topbar({ title, subtitle }: TopbarProps) {
               <span className="text-[13px] font-medium leading-none">admin@ememories.pl</span>
               <Badge variant="secondary" className="text-[12px] px-1.5 py-0 h-4">Admin</Badge>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-md border hover:bg-muted transition-colors">
+              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel className="font-normal">

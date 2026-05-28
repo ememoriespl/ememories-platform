@@ -1,16 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Topbar } from "@/components/layout/topbar"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import {
   Users,
   BookOpen,
@@ -38,13 +36,6 @@ const activityTypeLabel: Record<string, string> = {
   qr_generated: "QR wygenerowany",
 }
 
-const activityTypeBadge: Record<string, "default" | "secondary" | "outline"> = {
-  obituary_created: "secondary",
-  obituary_published: "default",
-  client_created: "outline",
-  qr_generated: "secondary",
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pl-PL", {
     day: "2-digit",
@@ -66,17 +57,24 @@ const chartConfig = {
 } satisfies ChartConfig
 
 type ActiveKey = "obituaries" | "clients"
+type TimeRange = "7" | "30" | "90"
 
 const MAX_QR = 300
 
 export default function AdminDashboardPage() {
   const [activeChart, setActiveChart] = useState<ActiveKey>("obituaries")
+  const [timeRange, setTimeRange] = useState<TimeRange>("30")
 
-  const firstDay = mockChartData[0]?.day
-  const lastDay = mockChartData[mockChartData.length - 1]?.day
+  const filteredData = useMemo(() => {
+    const days = parseInt(timeRange)
+    return mockChartData.slice(-days)
+  }, [timeRange])
 
-  const totalObituaries = mockChartData.reduce((s, d) => s + d.obituaries, 0)
-  const totalClients = mockChartData.reduce((s, d) => s + d.clients, 0)
+  const firstDay = filteredData[0]?.day
+  const lastDay = filteredData[filteredData.length - 1]?.day
+
+  const totalObituaries = filteredData.reduce((s, d) => s + d.obituaries, 0)
+  const totalClients = filteredData.reduce((s, d) => s + d.clients, 0)
   const qrPercent = Math.round((mockAdminMetrics.totalQrUsed / MAX_QR) * 100)
 
   return (
@@ -87,44 +85,56 @@ export default function AdminDashboardPage() {
         {/* Stats — 3 kafelki */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardDescription>Aktywni klienci</CardDescription>
-                <Users className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+                  <Users className="h-8 w-8 text-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Aktywni klienci</p>
+                  <p className="text-2xl font-semibold leading-none mt-0.5">{mockAdminMetrics.activeClients}</p>
+                </div>
               </div>
-              <CardTitle className="text-2xl">{mockAdminMetrics.activeClients}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <TrendingUp className="h-4 w-4 text-emerald-500" />
-                <span className="text-emerald-600 font-medium">+1</span> w tym miesiącu
+                <span className="text-emerald-500 font-medium">+1</span> w tym miesiącu
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardDescription>Nekrologi</CardDescription>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+                  <BookOpen className="h-8 w-8 text-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Nekrologi</p>
+                  <p className="text-2xl font-semibold leading-none mt-0.5">{mockAdminMetrics.totalObituaries}</p>
+                </div>
               </div>
-              <CardTitle className="text-2xl">{mockAdminMetrics.totalObituaries}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <TrendingUp className="h-4 w-4 text-emerald-500" />
-                <span className="text-emerald-600 font-medium">+23</span> w tym miesiącu
+                <span className="text-emerald-500 font-medium">+23</span> w tym miesiącu
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardDescription>Zużycie nekrologów</CardDescription>
-                <QrCode className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+                  <QrCode className="h-8 w-8 text-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Zużycie nekrologów</p>
+                  <p className="text-2xl font-semibold leading-none mt-0.5">{qrPercent}%</p>
+                </div>
               </div>
-              <CardTitle className="text-2xl">{qrPercent}%</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
@@ -148,20 +158,39 @@ export default function AdminDashboardPage() {
                       activeChart === key ? "bg-muted/20" : ""
                     }`}
                   >
-                    <span className="text-xs text-muted-foreground">
-                      {chartConfig[key].label}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{chartConfig[key].label}</span>
                     <span className="text-xl font-semibold leading-none">
                       {key === "obituaries" ? totalObituaries : totalClients}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">ostatnie 30 dni</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      ostatnie {timeRange} dni
+                    </span>
                   </button>
                 ))}
+                {/* Time range selector */}
+                <div className="flex items-center gap-1 px-4">
+                  {(["7", "30", "90"] as TimeRange[]).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setTimeRange(r)}
+                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                        timeRange === r
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {r}d
+                    </button>
+                  ))}
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="px-2 pt-4 sm:px-6">
+            <CardContent className="px-2 pt-6 sm:px-6">
               <ChartContainer config={chartConfig} className="h-[220px] w-full">
-                <AreaChart data={mockChartData} margin={{ left: 12, right: 12 }}>
+                <AreaChart
+                  data={filteredData}
+                  margin={{ top: 10, left: 16, right: 16, bottom: 0 }}
+                >
                   <defs>
                     <linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={`var(--color-${activeChart})`} stopOpacity={0.4} />
@@ -174,7 +203,8 @@ export default function AdminDashboardPage() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    interval={6}
+                    interval={timeRange === "7" ? 0 : timeRange === "30" ? 6 : 14}
+                    padding={{ left: 8, right: 8 }}
                   />
                   <ChartTooltip
                     cursor={false}
@@ -207,19 +237,11 @@ export default function AdminDashboardPage() {
             <CardContent className="p-0 flex-1 overflow-y-auto">
               <div className="divide-y">
                 {mockActivityLog.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 px-4 py-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.description}</p>
-                      <p className="text-xs text-muted-foreground">{item.funeralHomeName}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <Badge variant={activityTypeBadge[item.type]} className="text-[10px] px-1.5 py-0">
-                        {activityTypeLabel[item.type]}
-                      </Badge>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatDate(item.timestamp)}
-                      </span>
-                    </div>
+                  <div key={item.id} className="flex items-start justify-between gap-3 px-4 py-3">
+                    <p className="text-sm font-medium truncate">{item.description}</p>
+                    <span className="text-[13px] text-muted-foreground shrink-0">
+                      {formatDate(item.timestamp)}
+                    </span>
                   </div>
                 ))}
               </div>

@@ -229,13 +229,13 @@ export const mockAdminMetrics: AdminMetrics = {
   activeClients: 3,
 }
 
-export const mockChartData: ChartDataPoint[] = Array.from({ length: 30 }, (_, i) => {
+export const mockChartData: ChartDataPoint[] = Array.from({ length: 90 }, (_, i) => {
   const date = new Date()
-  date.setDate(date.getDate() - (29 - i))
+  date.setDate(date.getDate() - (89 - i))
   return {
     day: date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
     obituaries: Math.floor(Math.random() * 8) + 1,
-    clients: Math.floor(Math.random() * 3),
+    clients: Math.floor(Math.random() * 5) + 1,
   }
 })
 
