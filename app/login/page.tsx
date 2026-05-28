@@ -58,17 +58,28 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-2 text-center">
+        <div
+          className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 slide-in-from-bottom-3 duration-500"
+          style={{ animationFillMode: "both" }}
+        >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Flower2 className="h-5 w-5" />
           </div>
           <h1 className="text-xl font-semibold tracking-tight">eMemories</h1>
-          <p className="text-sm text-muted-foreground">Platforma cyfrowych wspomnień</p>
+          <p className="text-sm text-muted-foreground">Platforma do tworzenia eNekrologów</p>
         </div>
 
-        <div className="rounded-xl border bg-card shadow-sm p-6 space-y-5">
+        <div
+          className="rounded-xl border bg-card shadow-sm p-6 space-y-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-150"
+          style={{ animationFillMode: "both" }}
+        >
           {step === "email" ? (
-            <form onSubmit={handleSendCode} className="space-y-4">
+            <form
+              key="email"
+              onSubmit={handleSendCode}
+              className="space-y-4 animate-in fade-in-0 slide-in-from-right-3 duration-300"
+              style={{ animationFillMode: "both" }}
+            >
               <div className="space-y-1.5">
                 <Label htmlFor="email">Adres e-mail</Label>
                 <Input
@@ -88,7 +99,12 @@ export default function LoginPage() {
               </Button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyCode} className="space-y-4">
+            <form
+              key="code"
+              onSubmit={handleVerifyCode}
+              className="space-y-4 animate-in fade-in-0 slide-in-from-right-3 duration-300"
+              style={{ animationFillMode: "both" }}
+            >
               <div className="space-y-1 text-center">
                 <p className="text-sm font-medium">Kod wysłany na</p>
                 <p className="text-sm text-muted-foreground">{email}</p>
@@ -125,7 +141,10 @@ export default function LoginPage() {
           )}
         </div>
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p
+          className="text-center text-xs text-muted-foreground animate-in fade-in-0 duration-700 delay-300"
+          style={{ animationFillMode: "both" }}
+        >
           © 2026 eMemories.pl — wszelkie prawa zastrzeżone
         </p>
       </div>
