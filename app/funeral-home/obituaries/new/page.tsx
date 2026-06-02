@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, ChevronLeft, ChevronRight, Upload, Send, X } from "lucide-react"
+import { CheckCircle, ChevronLeft, ChevronRight, Upload, Send, X, Eye } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
