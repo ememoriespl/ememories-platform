@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Topbar } from "@/components/layout/topbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -69,6 +70,7 @@ interface DbObituary {
 }
 
 export default function ObituariesPage() {
+  const router = useRouter()
   const [obituaries, setObituaries] = useState<DbObituary[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -230,7 +232,7 @@ export default function ObituariesPage() {
                               <MoreHorizontal className="h-4 w-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(`/funeral-home/obituaries/${obit.id}/edit`)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edytuj
                               </DropdownMenuItem>
