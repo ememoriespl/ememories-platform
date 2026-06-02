@@ -34,13 +34,28 @@ interface FhData {
   obituaries: { total: number; published: number; draft: number }
 }
 
+interface RecentObituary {
+  id: string
+  first_name: string
+  last_name: string
+  birth_date: string | null
+  death_date: string | null
+  status: string
+  views: number
+}
+
 export default function FhDashboardPage() {
   const [fh, setFh] = useState<FhData | null>(null)
+  const [recent, setRecent] = useState<RecentObituary[]>([])
 
   useEffect(() => {
     fetch("/api/funeral-home/me")
       .then((r) => r.json())
       .then(setFh)
+      .catch(() => {})
+    fetch("/api/obituaries")
+      .then((r) => r.json())
+      .then((d) => setRecent(Array.isArray(d) ? d.slice(0, 5) : []))
       .catch(() => {})
   }, [])
 
@@ -109,10 +124,40 @@ export default function FhDashboardPage() {
                 <Button variant="outline" size="sm">Zobacz wszystkie</Button>
               </Link>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                Brak nekrologów. <Link href="/funeral-home/obituaries/new" className="text-primary underline">Dodaj pierwszy</Link>.
-              </p>
+            <CardContent className="p-0">
+              {recent.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  Brak nekrologów. <Link href="/funeral-home/obituaries/new" className="text-primary underline">Dodaj pierwszy</Link>.
+                </p>
+              ) : (
+                <div className="divide-y">
+                  {recent.map((obit) => (
+                    <div key={obit.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                        {obit.first_name[0]}{obit.last_name[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{obit.first_name} {obit.last_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {obit.birth_date ? new Date(obit.birth_date).toLocaleDateString("pl-PL") : "?"}{" · "}
+                          zm. {obit.death_date ? new Date(obit.death_date).toLocaleDateString("pl-PL") : "?"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {obit.status === "published" && (
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Eye className="h-3 w-3" />
+                            {obit.views}
+                          </span>
+                        )}
+                        <Badge variant={statusVariant[obit.status] as "default" | "secondary" | "outline"}>
+                          {statusLabel[obit.status]}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
