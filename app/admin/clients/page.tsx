@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Topbar } from "@/components/layout/topbar"
 import {
   Card,
@@ -51,7 +51,6 @@ import {
   PauseCircle,
   X,
 } from "lucide-react"
-import { mockFuneralHomes } from "@/lib/mock-data"
 import { FuneralHome, FuneralHomeStatus } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -70,19 +69,66 @@ const statusVariant: Record<
   suspended: "destructive",
 }
 
+type DbClient = {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  address: string | null
+  status: FuneralHomeStatus
+  qr_limit: number
+  qr_used: number
+  created_at: string
+  last_login_at: string | null
+}
+
+function dbToClient(r: DbClient): FuneralHome {
+  return {
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    phone: r.phone ?? "",
+    address: r.address ?? "",
+    status: r.status,
+    qrLimit: r.qr_limit,
+    qrUsed: r.qr_used,
+    createdAt: r.created_at.split("T")[0],
+    lastLoginAt: r.last_login_at ?? "",
+  }
+}
+
 export default function ClientsPage() {
-  const [clients, setClients] = useState<FuneralHome[]>(mockFuneralHomes)
+  const [clients, setClients] = useState<FuneralHome[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const [createOpen, setCreateOpen] = useState(false)
   const [newClient, setNewClient] = useState({ name: "", email: "", qrLimit: "50" })
+  const [creating, setCreating] = useState(false)
 
   const [editTarget, setEditTarget] = useState<FuneralHome | null>(null)
   const [editForm, setEditForm] = useState({ name: "", email: "", qrLimit: "50" })
+  const [saving, setSaving] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<FuneralHome | null>(null)
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+
+  const fetchClients = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/clients")
+      if (!res.ok) throw new Error("Błąd pobierania danych")
+      const data: DbClient[] = await res.json()
+      setClients(data.map(dbToClient))
+    } catch {
+      toast.error("Nie udało się pobrać listy klientów")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchClients() }, [fetchClients])
 
   const filtered = clients.filter(
     (c) =>
@@ -119,51 +165,81 @@ export default function ClientsPage() {
     })
   }
 
-  function clearSelection() {
-    setSelected(new Set())
+  function clearSelection() { setSelected(new Set()) }
+
+  async function patchClient(id: string, patch: Record<string, unknown>) {
+    const res = await fetch(`/api/clients/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    })
+    if (!res.ok) throw new Error("Błąd aktualizacji")
+    return (await res.json()) as DbClient
   }
 
-  function handleBulkActivate() {
-    setClients((prev) =>
-      prev.map((c) => (selected.has(c.id) ? { ...c, status: "active" as FuneralHomeStatus } : c))
-    )
-    toast.success(`Aktywowano ${selectedCount} klientów`)
-    clearSelection()
+  async function handleBulkActivate() {
+    try {
+      await Promise.all([...selected].map((id) => patchClient(id, { status: "active" })))
+      setClients((prev) =>
+        prev.map((c) => (selected.has(c.id) ? { ...c, status: "active" as FuneralHomeStatus } : c))
+      )
+      toast.success(`Aktywowano ${selectedCount} klientów`)
+      clearSelection()
+    } catch { toast.error("Błąd podczas aktywacji") }
   }
 
-  function handleBulkSuspend() {
-    setClients((prev) =>
-      prev.map((c) => (selected.has(c.id) ? { ...c, status: "suspended" as FuneralHomeStatus } : c))
-    )
-    toast.success(`Zawieszono ${selectedCount} klientów`)
-    clearSelection()
+  async function handleBulkSuspend() {
+    try {
+      await Promise.all([...selected].map((id) => patchClient(id, { status: "suspended" })))
+      setClients((prev) =>
+        prev.map((c) => (selected.has(c.id) ? { ...c, status: "suspended" as FuneralHomeStatus } : c))
+      )
+      toast.success(`Zawieszono ${selectedCount} klientów`)
+      clearSelection()
+    } catch { toast.error("Błąd podczas zawieszania") }
   }
 
-  function handleBulkDelete() {
-    setClients((prev) => prev.filter((c) => !selected.has(c.id)))
-    setBulkDeleteOpen(false)
-    toast.success(`Usunięto ${selectedCount} klientów`)
-    clearSelection()
+  async function handleBulkDelete() {
+    try {
+      await Promise.all(
+        [...selected].map((id) =>
+          fetch(`/api/clients/${id}`, { method: "DELETE" })
+        )
+      )
+      setClients((prev) => prev.filter((c) => !selected.has(c.id)))
+      setBulkDeleteOpen(false)
+      toast.success(`Usunięto ${selectedCount} klientów`)
+      clearSelection()
+    } catch { toast.error("Błąd podczas usuwania") }
   }
 
-  function handleCreate() {
+  async function handleCreate() {
     if (!newClient.name || !newClient.email) return
-    const client: FuneralHome = {
-      id: String(Date.now()),
-      name: newClient.name,
-      email: newClient.email,
-      phone: "",
-      address: "",
-      status: "active",
-      qrLimit: parseInt(newClient.qrLimit) || 50,
-      qrUsed: 0,
-      createdAt: new Date().toISOString().split("T")[0],
-      lastLoginAt: "",
+    setCreating(true)
+    try {
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newClient.name,
+          email: newClient.email,
+          qr_limit: parseInt(newClient.qrLimit) || 50,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error ?? "Błąd tworzenia klienta")
+      }
+      const created: DbClient = await res.json()
+      setClients((prev) => [dbToClient(created), ...prev])
+      setNewClient({ name: "", email: "", qrLimit: "50" })
+      setCreateOpen(false)
+      toast.success("Klient został utworzony")
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Błąd tworzenia klienta")
+    } finally {
+      setCreating(false)
     }
-    setClients((prev) => [client, ...prev])
-    setNewClient({ name: "", email: "", qrLimit: "50" })
-    setCreateOpen(false)
-    toast.success("Klient został utworzony")
   }
 
   function openEdit(client: FuneralHome) {
@@ -171,38 +247,46 @@ export default function ClientsPage() {
     setEditForm({ name: client.name, email: client.email, qrLimit: String(client.qrLimit) })
   }
 
-  function handleEdit() {
+  async function handleEdit() {
     if (!editTarget || !editForm.name || !editForm.email) return
-    setClients((prev) =>
-      prev.map((c) =>
-        c.id === editTarget.id
-          ? { ...c, name: editForm.name, email: editForm.email, qrLimit: parseInt(editForm.qrLimit) || c.qrLimit }
-          : c
+    setSaving(true)
+    try {
+      const updated = await patchClient(editTarget.id, {
+        name: editForm.name,
+        email: editForm.email,
+        qr_limit: parseInt(editForm.qrLimit) || editTarget.qrLimit,
+      })
+      setClients((prev) =>
+        prev.map((c) => (c.id === editTarget.id ? dbToClient(updated) : c))
       )
-    )
-    setEditTarget(null)
-    toast.success("Dane klienta zostały zaktualizowane")
+      setEditTarget(null)
+      toast.success("Dane klienta zostały zaktualizowane")
+    } catch { toast.error("Błąd podczas zapisywania") } finally { setSaving(false) }
   }
 
-  function handleToggleStatus(client: FuneralHome) {
-    if (client.status === "inactive") {
+  async function handleToggleStatus(client: FuneralHome) {
+    const newStatus: FuneralHomeStatus = client.status === "inactive" ? "active" : "inactive"
+    try {
+      await patchClient(client.id, { status: newStatus })
       setClients((prev) =>
-        prev.map((c) => (c.id === client.id ? { ...c, status: "active" as FuneralHomeStatus } : c))
+        prev.map((c) => (c.id === client.id ? { ...c, status: newStatus } : c))
       )
-      toast.success(`${client.name} — klient aktywowany`)
-    } else {
-      setClients((prev) =>
-        prev.map((c) => (c.id === client.id ? { ...c, status: "inactive" as FuneralHomeStatus } : c))
+      toast.success(
+        newStatus === "active"
+          ? `${client.name} — klient aktywowany`
+          : `${client.name} — klient dezaktywowany`
       )
-      toast.success(`${client.name} — klient dezaktywowany`)
-    }
+    } catch { toast.error("Błąd zmiany statusu") }
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deleteTarget) return
-    setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id))
-    setDeleteTarget(null)
-    toast.success("Klient został usunięty")
+    try {
+      await fetch(`/api/clients/${deleteTarget.id}`, { method: "DELETE" })
+      setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id))
+      setDeleteTarget(null)
+      toast.success("Klient został usunięty")
+    } catch { toast.error("Błąd podczas usuwania") }
   }
 
   return (
@@ -240,21 +324,11 @@ export default function ClientsPage() {
                   <span className="text-sm text-muted-foreground">
                     Zaznaczono: <strong>{selectedCount}</strong>
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 h-8"
-                    onClick={handleBulkActivate}
-                  >
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={handleBulkActivate}>
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Aktywuj
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 h-8"
-                    onClick={handleBulkSuspend}
-                  >
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={handleBulkSuspend}>
                     <PauseCircle className="h-3.5 w-3.5" />
                     Zawieś
                   </Button>
@@ -267,12 +341,7 @@ export default function ClientsPage() {
                     <Trash2 className="h-3.5 w-3.5" />
                     Usuń
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={clearSelection}
-                  >
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearSelection}>
                     <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -288,16 +357,14 @@ export default function ClientsPage() {
                       <input
                         type="checkbox"
                         checked={allSelected}
-                        ref={(el) => {
-                          if (el) el.indeterminate = someSelected && !allSelected
-                        }}
+                        ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected }}
                         onChange={toggleAll}
                         className="h-4 w-4 rounded border-input accent-foreground cursor-pointer"
                       />
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nazwa</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">E-mail</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Limit QR</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nekrologi</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Użycie</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Utworzony</th>
@@ -305,8 +372,14 @@ export default function ClientsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filtered.map((client) => {
-                    const pct = Math.round((client.qrUsed / client.qrLimit) * 100)
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                        Ładowanie...
+                      </td>
+                    </tr>
+                  ) : filtered.map((client) => {
+                    const pct = client.qrLimit > 0 ? Math.round((client.qrUsed / client.qrLimit) * 100) : 0
                     const isSelected = selected.has(client.id)
                     const isInactive = client.status === "inactive"
                     return (
@@ -360,21 +433,12 @@ export default function ClientsPage() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleToggleStatus(client)}>
                                 {isInactive ? (
-                                  <>
-                                    <UserCheck className="mr-2 h-4 w-4" />
-                                    Aktywuj
-                                  </>
+                                  <><UserCheck className="mr-2 h-4 w-4" />Aktywuj</>
                                 ) : (
-                                  <>
-                                    <UserX className="mr-2 h-4 w-4" />
-                                    Dezaktywuj
-                                  </>
+                                  <><UserX className="mr-2 h-4 w-4" />Dezaktywuj</>
                                 )}
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onClick={() => setDeleteTarget(client)}
-                              >
+                              <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(client)}>
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Usuń
                               </DropdownMenuItem>
@@ -384,12 +448,9 @@ export default function ClientsPage() {
                       </tr>
                     )
                   })}
-                  {filtered.length === 0 && (
+                  {!loading && filtered.length === 0 && (
                     <tr>
-                      <td
-                        colSpan={8}
-                        className="px-4 py-12 text-center text-muted-foreground"
-                      >
+                      <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                         Nie znaleziono klientów
                       </td>
                     </tr>
@@ -430,7 +491,7 @@ export default function ClientsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Limit kodów QR</Label>
+              <Label>Ilość nekrologów</Label>
               <Input
                 type="number"
                 min="1"
@@ -441,8 +502,10 @@ export default function ClientsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Anuluj</Button>
-            <Button onClick={handleCreate}>Utwórz klienta</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>Anuluj</Button>
+            <Button onClick={handleCreate} disabled={creating}>
+              {creating ? "Tworzenie..." : "Utwórz klienta"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -452,9 +515,7 @@ export default function ClientsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edytuj klienta</DialogTitle>
-            <DialogDescription>
-              Zmień dane zakładu pogrzebowego.
-            </DialogDescription>
+            <DialogDescription>Zmień dane zakładu pogrzebowego.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -475,7 +536,7 @@ export default function ClientsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Limit kodów QR</Label>
+              <Label>Ilość nekrologów</Label>
               <Input
                 type="number"
                 min="1"
@@ -485,8 +546,10 @@ export default function ClientsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditTarget(null)}>Anuluj</Button>
-            <Button onClick={handleEdit}>Zapisz zmiany</Button>
+            <Button variant="outline" onClick={() => setEditTarget(null)} disabled={saving}>Anuluj</Button>
+            <Button onClick={handleEdit} disabled={saving}>
+              {saving ? "Zapisywanie..." : "Zapisz zmiany"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -513,7 +576,7 @@ export default function ClientsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk delete confirmation dialog */}
+      {/* Bulk delete confirmation */}
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
