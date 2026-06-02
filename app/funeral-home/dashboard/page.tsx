@@ -31,6 +31,7 @@ interface FhData {
   name: string
   qr_limit: number
   qr_used: number
+  obituaries: { total: number; published: number; draft: number }
 }
 
 export default function FhDashboardPage() {
@@ -47,6 +48,9 @@ export default function FhDashboardPage() {
   const qrLimit = fh?.qr_limit ?? 1
   const qrRemaining = qrLimit - qrUsed
   const pct = Math.round((qrUsed / qrLimit) * 100)
+  const total = fh?.obituaries?.total ?? 0
+  const published = fh?.obituaries?.published ?? 0
+  const draft = fh?.obituaries?.draft ?? 0
 
   return (
     <>
@@ -60,10 +64,10 @@ export default function FhDashboardPage() {
                 <CardDescription>Nekrologi</CardDescription>
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-2xl">—</CardTitle>
+              <CardTitle className="text-2xl">{fh ? total : "—"}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">wkrótce</p>
+              <p className="text-xs text-muted-foreground">łącznie</p>
             </CardContent>
           </Card>
 
@@ -73,7 +77,7 @@ export default function FhDashboardPage() {
                 <CardDescription>Opublikowane</CardDescription>
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-2xl">—</CardTitle>
+              <CardTitle className="text-2xl">{fh ? published : "—"}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">widoczne publicznie</p>
@@ -86,7 +90,7 @@ export default function FhDashboardPage() {
                 <CardDescription>Szkice</CardDescription>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-2xl">—</CardTitle>
+              <CardTitle className="text-2xl">{fh ? draft : "—"}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">czekają na publikację</p>

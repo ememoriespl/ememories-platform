@@ -16,7 +16,17 @@ export async function GET() {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  const { data: obituaries } = await supabase
+    .from("obituaries")
+    .select("status")
+    .eq("funeral_home_id", data.id)
+
+  const total = obituaries?.length ?? 0
+  const published = obituaries?.filter((o) => o.status === "published").length ?? 0
+  const draft = obituaries?.filter((o) => o.status === "draft").length ?? 0
+
+  return NextResponse.json({ ...data, obituaries: { total, published, draft } })
 }
 
 export async function PATCH(req: Request) {
