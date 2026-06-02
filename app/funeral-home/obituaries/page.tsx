@@ -35,6 +35,7 @@ import {
   Plus,
   Search,
   Eye,
+  QrCode,
   MoreHorizontal,
   Pencil,
   Archive,
@@ -155,15 +156,15 @@ export default function ObituariesPage() {
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Zmarły/a</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data śmierci</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">QR</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Wyświetlenia</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Dodany</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Link / QR</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Akcje</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {loading ? (
-                    <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Ładowanie...</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Ładowanie...</td></tr>
                   ) : filtered.map((obit) => (
                     <tr key={obit.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
@@ -174,7 +175,7 @@ export default function ObituariesPage() {
                           <div>
                             <p className="font-medium">{obit.first_name} {obit.last_name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(obit.birth_date).getFullYear()} — {new Date(obit.death_date).getFullYear()}
+                              {obit.birth_date ? new Date(obit.birth_date).getFullYear() : "?"} — {obit.death_date ? new Date(obit.death_date).getFullYear() : "?"}
                             </p>
                           </div>
                         </div>
@@ -185,7 +186,7 @@ export default function ObituariesPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(obit.death_date).toLocaleDateString("pl-PL")}
+                        {obit.death_date ? new Date(obit.death_date).toLocaleDateString("pl-PL") : "—"}
                       </td>
                       <td className="px-4 py-3">
                         {obit.status !== "draft" ? (
@@ -199,6 +200,28 @@ export default function ObituariesPage() {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(obit.created_at).toLocaleDateString("pl-PL")}
+                      </td>
+                      <td className="px-4 py-3">
+                        {obit.status === "published" ? (
+                          <div className="flex items-center gap-1">
+                            <a
+                              href={`https://ememoriespl.vercel.app/obituary/${obit.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Button>
+                            </a>
+                            <Link href={`/funeral-home/obituaries/${obit.id}/qr`}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <QrCode className="h-3.5 w-3.5" />
+                              </Button>
+                            </Link>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -238,7 +261,7 @@ export default function ObituariesPage() {
                   ))}
                   {!loading && filtered.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-12 text-center">
+                      <td colSpan={7} className="px-4 py-12 text-center">
                         <p className="text-muted-foreground">Nie znaleziono nekrologów</p>
                         <Link href="/funeral-home/obituaries/new">
                           <Button size="sm" className="mt-3 gap-2">

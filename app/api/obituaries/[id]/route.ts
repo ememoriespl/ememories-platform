@@ -12,6 +12,28 @@ async function getFuneralHomeId(email: string) {
   return data?.id ?? null
 }
 
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession()
+  if (!session || session.role !== "funeral-home") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { id } = await params
+  const funeralHomeId = await getFuneralHomeId(session.email)
+  if (!funeralHomeId) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  const supabase = createServerClient()
+  const { data, error } = await supabase
+    .from("obituaries")
+    .select("*")
+    .eq("id", id)
+    .eq("funeral_home_id", funeralHomeId)
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
+}
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session || session.role !== "funeral-home") {
@@ -31,7 +53,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const supabase = createServerClient()
 
-  // Check if we're publishing for first time (to increment qr_used)
   if (body.status === "published") {
     const { data: existing } = await supabase
       .from("obituaries")

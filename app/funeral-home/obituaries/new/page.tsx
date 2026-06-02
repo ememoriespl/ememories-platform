@@ -217,6 +217,7 @@ export default function NewObituaryPage() {
                   <Input
                     type="date"
                     value={data.birthDate}
+                    max={data.deathDate || new Date().toISOString().split("T")[0]}
                     onChange={(e) => update("birthDate", e.target.value)}
                   />
                 </div>
@@ -225,6 +226,8 @@ export default function NewObituaryPage() {
                   <Input
                     type="date"
                     value={data.deathDate}
+                    min={data.birthDate || undefined}
+                    max={new Date().toISOString().split("T")[0]}
                     onChange={(e) => update("deathDate", e.target.value)}
                   />
                 </div>
