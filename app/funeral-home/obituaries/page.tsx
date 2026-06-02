@@ -41,7 +41,6 @@ import {
   Archive,
   ExternalLink,
 } from "lucide-react"
-import { funeralHomeObituaries } from "@/lib/mock-data"
 import { Obituary, ObituaryStatus } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -58,7 +57,7 @@ const statusVariant: Record<ObituaryStatus, "default" | "secondary" | "outline">
 }
 
 export default function ObituariesPage() {
-  const [obituaries, setObituaries] = useState<Obituary[]>(funeralHomeObituaries)
+  const [obituaries, setObituaries] = useState<Obituary[]>([])
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [archiveTarget, setArchiveTarget] = useState<Obituary | null>(null)
