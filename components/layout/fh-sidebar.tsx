@@ -2,32 +2,31 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  LayoutDashboard,
-  BookOpen,
-  QrCode,
-  BarChart2,
-  FileText,
-  Settings,
-  Flower2,
-} from "lucide-react"
+import { LayoutDashboard, BookOpen, Settings, Flower2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/funeral-home/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/funeral-home/obituaries", label: "Nekrologi", icon: BookOpen },
-  { href: "/funeral-home/qr", label: "Kody QR", icon: QrCode },
-  { href: "/funeral-home/usage", label: "Użycie i limity", icon: BarChart2 },
-  { href: "/funeral-home/templates", label: "Szablony", icon: FileText },
   { href: "/funeral-home/settings", label: "Ustawienia", icon: Settings },
 ]
 
-export function FhSidebar() {
+interface FhSidebarProps {
+  funeralHome: { name: string; email: string } | null
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
+}
+
+export function FhSidebar({ funeralHome }: FhSidebarProps) {
   const pathname = usePathname()
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b">
+      <div className="flex h-[72px] items-center gap-2.5 px-6 border-b">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <Flower2 className="h-4 w-4 text-primary-foreground" />
         </div>
@@ -63,17 +62,19 @@ export function FhSidebar() {
         </ul>
       </nav>
 
-      <div className="border-t px-3 py-3">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-            DPL
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">Dom Pogrzebowy</p>
-            <p className="truncate text-xs text-muted-foreground">Ostatnia Droga</p>
+      {funeralHome && (
+        <div className="border-t px-3 py-3">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+              {getInitials(funeralHome.name)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium leading-none">{funeralHome.name}</p>
+              <p className="truncate text-xs text-muted-foreground mt-0.5">{funeralHome.email}</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </aside>
   )
 }

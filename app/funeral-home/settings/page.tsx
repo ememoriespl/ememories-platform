@@ -1,14 +1,56 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Topbar } from "@/components/layout/topbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 
+interface FhData {
+  name: string
+  email: string
+  phone: string | null
+  address: string | null
+  qr_limit: number
+  qr_used: number
+}
+
 export default function FhSettingsPage() {
+  const [data, setData] = useState<FhData | null>(null)
+  const [phone, setPhone] = useState("")
+  const [address, setAddress] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/funeral-home/me")
+      .then((r) => r.json())
+      .then((d: FhData) => {
+        setData(d)
+        setPhone(d.phone ?? "")
+        setAddress(d.address ?? "")
+      })
+      .catch(() => toast.error("Nie udało się pobrać danych"))
+  }, [])
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const res = await fetch("/api/funeral-home/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, address }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success("Dane zapisane")
+    } catch {
+      toast.error("Błąd podczas zapisywania")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <>
       <Topbar title="Ustawienia" subtitle="Ustawienia Twojego zakładu pogrzebowego" />
@@ -17,76 +59,52 @@ export default function FhSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Dane zakładu</CardTitle>
-            <CardDescription>Informacje wyświetlane w systemie</CardDescription>
+            <CardDescription>Nazwa i e-mail są zarządzane przez administratora</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Nazwa zakładu</Label>
-              <Input defaultValue="Dom Pogrzebowy Ostatnia Droga" />
+              <Label className="text-muted-foreground">Nazwa zakładu</Label>
+              <Input value={data?.name ?? ""} disabled className="bg-muted/50 cursor-not-allowed" />
             </div>
             <div className="space-y-2">
-              <Label>Adres e-mail</Label>
-              <Input type="email" defaultValue="kontakt@ostatniadroga.pl" />
+              <Label className="text-muted-foreground">Adres e-mail</Label>
+              <Input value={data?.email ?? ""} disabled className="bg-muted/50 cursor-not-allowed" />
             </div>
             <div className="space-y-2">
               <Label>Telefon</Label>
-              <Input defaultValue="+48 12 987 65 43" />
+              <Input
+                placeholder="+48 000 000 000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Adres</Label>
-              <Input defaultValue="ul. Długa 45, 30-001 Kraków" />
+              <Input
+                placeholder="ul. Przykładowa 1, 00-001 Miasto"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
             </div>
-            <Button onClick={() => toast.success("Dane zapisane")} size="sm">
-              Zapisz zmiany
+            <Button onClick={handleSave} disabled={saving || !data} size="sm">
+              {saving ? "Zapisywanie..." : "Zapisz zmiany"}
             </Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Zmiana hasła</CardTitle>
+            <CardTitle className="text-base">Limit nekrologów</CardTitle>
+            <CardDescription>Przydzielony przez administratora</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Aktualne hasło</Label>
-              <Input type="password" placeholder="••••••••" />
-            </div>
-            <div className="space-y-2">
-              <Label>Nowe hasło</Label>
-              <Input type="password" placeholder="••••••••" />
-            </div>
-            <div className="space-y-2">
-              <Label>Potwierdź nowe hasło</Label>
-              <Input type="password" placeholder="••••••••" />
-            </div>
-            <Button onClick={() => toast.success("Hasło zmienione")} size="sm">
-              Zmień hasło
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Powiadomienia</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              "E-mail po opublikowaniu nekrologu",
-              "E-mail gdy QR zostanie zeskanowany 100 razy",
-              "Powiadomienie o zbliżającym się limicie QR",
-            ].map((item) => (
-              <div key={item} className="flex items-center justify-between py-1">
-                <p className="text-sm">{item}</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => toast.success("Ustawienie zaktualizowane")}
-                >
-                  Włączone
-                </Button>
-              </div>
-            ))}
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Wykorzystano{" "}
+              <span className="font-semibold text-foreground">{data?.qr_used ?? 0}</span>
+              {" "}/{" "}
+              <span className="font-semibold text-foreground">{data?.qr_limit ?? 0}</span>
+              {" "}nekrologów
+            </p>
           </CardContent>
         </Card>
       </div>
