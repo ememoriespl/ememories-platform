@@ -44,6 +44,10 @@ export async function POST(req: Request) {
   const body = await req.json()
   const { first_name, last_name, birth_date, death_date, obituary_text, ceremony_info, location, status } = body
 
+  if (!first_name || !last_name) {
+    return NextResponse.json({ error: "Imię i nazwisko są wymagane" }, { status: 400 })
+  }
+
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from("obituaries")
@@ -51,8 +55,8 @@ export async function POST(req: Request) {
       funeral_home_id: funeralHomeId,
       first_name,
       last_name,
-      birth_date,
-      death_date,
+      birth_date: birth_date || null,
+      death_date: death_date || null,
       obituary_text: obituary_text ?? "",
       ceremony_info: ceremony_info ?? "",
       location: location ?? "",

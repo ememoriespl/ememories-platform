@@ -97,6 +97,10 @@ export default function NewObituaryPage() {
   }
 
   async function handleSaveDraft() {
+    if (!data.firstName || !data.lastName) {
+      toast.error("Wypełnij imię i nazwisko przed zapisaniem szkicu")
+      return
+    }
     try {
       const res = await fetch("/api/obituaries", {
         method: "POST",
