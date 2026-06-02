@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, ChevronLeft, ChevronRight, Upload, Eye, Send } from "lucide-react"
+import { CheckCircle, ChevronLeft, ChevronRight, Upload, Send, X } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -31,6 +31,7 @@ interface FormData {
   ceremonyInfo: string
   location: string
   photo: string | null
+  photoBw: boolean
 }
 
 const empty: FormData = {
@@ -42,6 +43,7 @@ const empty: FormData = {
   ceremonyInfo: "",
   location: "",
   photo: null,
+  photoBw: false,
 }
 
 function StepIndicator({ current }: { current: number }) {
@@ -85,9 +87,26 @@ export default function NewObituaryPage() {
   const [step, setStep] = useState(1)
   const [data, setData] = useState<FormData>(empty)
   const [publishing, setPublishing] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
-  function update(field: keyof FormData, value: string) {
+  function update(field: keyof FormData, value: string | boolean) {
     setData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  async function handlePhotoUpload(file: File) {
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/obituaries/upload", { method: "POST", body: fd })
+      if (!res.ok) throw new Error()
+      const { url } = await res.json()
+      update("photo", url)
+    } catch {
+      toast.error("Błąd podczas wgrywania zdjęcia")
+    } finally {
+      setUploading(false)
+    }
   }
 
   function canProceed() {
@@ -108,11 +127,13 @@ export default function NewObituaryPage() {
         body: JSON.stringify({
           first_name: data.firstName,
           last_name: data.lastName,
-          birth_date: data.birthDate,
-          death_date: data.deathDate,
+          birth_date: data.birthDate || null,
+          death_date: data.deathDate || null,
           obituary_text: data.obituaryText,
           ceremony_info: data.ceremonyInfo,
           location: data.location,
+          photo_url: data.photo,
+          photo_bw: data.photoBw,
           status: "draft",
         }),
       })
@@ -133,11 +154,13 @@ export default function NewObituaryPage() {
         body: JSON.stringify({
           first_name: data.firstName,
           last_name: data.lastName,
-          birth_date: data.birthDate,
-          death_date: data.deathDate,
+          birth_date: data.birthDate || null,
+          death_date: data.deathDate || null,
           obituary_text: data.obituaryText,
           ceremony_info: data.ceremonyInfo,
           location: data.location,
+          photo_url: data.photo,
+          photo_bw: data.photoBw,
           status: "published",
         }),
       })
@@ -255,39 +278,83 @@ export default function NewObituaryPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Zdjęcie portretowe</CardTitle>
-              <CardDescription>Zdjęcie jest opcjonalne. Zostanie wyświetlone w nekrologu.</CardDescription>
+              <CardDescription>Opcjonalne. Zostanie wyświetlone w nekrologu.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-border p-12 text-center">
-                {data.photo ? (
-                  <div className="space-y-3">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted text-2xl font-semibold mx-auto">
-                      {data.firstName?.[0]}{data.lastName?.[0]}
+              {data.photo ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-6">
+                    <div className="relative shrink-0">
+                      <img
+                        src={data.photo}
+                        alt="Zdjęcie"
+                        className="h-32 w-32 rounded-full object-cover"
+                        style={data.photoBw ? { filter: "grayscale(100%)" } : {}}
+                      />
                     </div>
-                    <p className="text-sm text-muted-foreground">Zdjęcie dodane (demo)</p>
-                    <Button variant="outline" size="sm" onClick={() => update("photo", "")}>
-                      Usuń zdjęcie
-                    </Button>
+                    <div className="space-y-3 flex-1">
+                      <p className="text-sm font-medium">Styl zdjęcia</p>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => update("photoBw", false)}
+                          className={cn(
+                            "flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-xs font-medium transition-colors",
+                            !data.photoBw ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                          )}
+                        >
+                          <img src={data.photo} alt="" className="h-12 w-12 rounded object-cover" />
+                          Kolorowe
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => update("photoBw", true)}
+                          className={cn(
+                            "flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-xs font-medium transition-colors",
+                            data.photoBw ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                          )}
+                        >
+                          <img src={data.photo} alt="" className="h-12 w-12 rounded object-cover grayscale" />
+                          Czarno-białe
+                        </button>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => { update("photo", ""); update("photoBw", false) }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        Usuń zdjęcie
+                      </Button>
+                    </div>
                   </div>
-                ) : (
-                  <>
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                      <Upload className="h-7 w-7 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Przeciągnij zdjęcie lub kliknij, aby wybrać</p>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG do 10 MB</p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => update("photo", "uploaded")}
-                    >
-                      Wybierz plik (demo)
-                    </Button>
-                  </>
-                )}
-              </div>
+                </div>
+              ) : (
+                <label className={cn(
+                  "flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-border p-12 text-center cursor-pointer transition-colors hover:bg-muted/30",
+                  uploading && "opacity-60 pointer-events-none"
+                )}>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handlePhotoUpload(file)
+                    }}
+                  />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                    <Upload className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {uploading ? "Wgrywanie..." : "Przeciągnij zdjęcie lub kliknij, aby wybrać"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP do 10 MB</p>
+                  </div>
+                </label>
+              )}
               <p className="text-xs text-center text-muted-foreground">
                 Jeśli pominiesz ten krok, nekrolog zostanie wyświetlony z inicjałami
               </p>

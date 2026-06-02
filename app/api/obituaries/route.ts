@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   if (!funeralHomeId) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const body = await req.json()
-  const { first_name, last_name, birth_date, death_date, obituary_text, ceremony_info, location, status } = body
+  const { first_name, last_name, birth_date, death_date, obituary_text, ceremony_info, location, photo_url, photo_bw, status } = body
 
   if (!first_name || !last_name) {
     return NextResponse.json({ error: "Imię i nazwisko są wymagane" }, { status: 400 })
@@ -60,6 +60,8 @@ export async function POST(req: Request) {
       obituary_text: obituary_text ?? "",
       ceremony_info: ceremony_info ?? "",
       location: location ?? "",
+      photo_url: photo_url ?? null,
+      photo_bw: photo_bw ?? false,
       status: status ?? "draft",
       published_at: status === "published" ? new Date().toISOString() : null,
     })
