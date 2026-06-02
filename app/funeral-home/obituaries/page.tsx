@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Topbar } from "@/components/layout/topbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -35,13 +35,12 @@ import {
   Plus,
   Search,
   Eye,
-  QrCode,
   MoreHorizontal,
   Pencil,
   Archive,
   ExternalLink,
 } from "lucide-react"
-import { Obituary, ObituaryStatus } from "@/lib/types"
+import { ObituaryStatus } from "@/lib/types"
 import { toast } from "sonner"
 
 const statusLabel: Record<ObituaryStatus, string> = {
@@ -56,25 +55,55 @@ const statusVariant: Record<ObituaryStatus, "default" | "secondary" | "outline">
   archived: "secondary",
 }
 
+interface DbObituary {
+  id: string
+  first_name: string
+  last_name: string
+  birth_date: string
+  death_date: string
+  status: ObituaryStatus
+  views: number
+  created_at: string
+  published_at: string | null
+}
+
 export default function ObituariesPage() {
-  const [obituaries, setObituaries] = useState<Obituary[]>([])
+  const [obituaries, setObituaries] = useState<DbObituary[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [archiveTarget, setArchiveTarget] = useState<Obituary | null>(null)
+  const [archiveTarget, setArchiveTarget] = useState<DbObituary | null>(null)
+
+  useEffect(() => {
+    fetch("/api/obituaries")
+      .then((r) => r.json())
+      .then((d) => setObituaries(Array.isArray(d) ? d : []))
+      .catch(() => toast.error("Błąd pobierania nekrologów"))
+      .finally(() => setLoading(false))
+  }, [])
 
   const filtered = obituaries.filter((o) => {
     const matchSearch =
-      `${o.firstName} ${o.lastName}`.toLowerCase().includes(search.toLowerCase())
+      `${o.first_name} ${o.last_name}`.toLowerCase().includes(search.toLowerCase())
     const matchStatus = statusFilter === "all" || o.status === statusFilter
     return matchSearch && matchStatus
   })
 
-  function handleArchive(id: string) {
-    setObituaries((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "archived" as ObituaryStatus } : o))
-    )
-    setArchiveTarget(null)
-    toast.success("Nekrolog zarchiwizowany")
+  async function handleArchive(id: string) {
+    try {
+      await fetch(`/api/obituaries/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "archived" }),
+      })
+      setObituaries((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, status: "archived" as ObituaryStatus } : o))
+      )
+      setArchiveTarget(null)
+      toast.success("Nekrolog zarchiwizowany")
+    } catch {
+      toast.error("Błąd podczas archiwizacji")
+    }
   }
 
   return (
@@ -133,17 +162,19 @@ export default function ObituariesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filtered.map((obit) => (
+                  {loading ? (
+                    <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Ładowanie...</td></tr>
+                  ) : filtered.map((obit) => (
                     <tr key={obit.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                            {obit.firstName[0]}{obit.lastName[0]}
+                            {obit.first_name[0]}{obit.last_name[0]}
                           </div>
                           <div>
-                            <p className="font-medium">{obit.firstName} {obit.lastName}</p>
+                            <p className="font-medium">{obit.first_name} {obit.last_name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(obit.birthDate).getFullYear()} — {new Date(obit.deathDate).getFullYear()}
+                              {new Date(obit.birth_date).getFullYear()} — {new Date(obit.death_date).getFullYear()}
                             </p>
                           </div>
                         </div>
@@ -154,16 +185,7 @@ export default function ObituariesPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(obit.deathDate).toLocaleDateString("pl-PL")}
-                      </td>
-                      <td className="px-4 py-3">
-                        {obit.qrCode ? (
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {obit.qrCode}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
+                        {new Date(obit.death_date).toLocaleDateString("pl-PL")}
                       </td>
                       <td className="px-4 py-3">
                         {obit.status !== "draft" ? (
@@ -176,44 +198,23 @@ export default function ObituariesPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(obit.createdAt).toLocaleDateString("pl-PL")}
+                        {new Date(obit.created_at).toLocaleDateString("pl-PL")}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Link href={`/funeral-home/obituaries/${obit.id}/preview`}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                          {obit.status === "published" && (
-                            <Link href={`/funeral-home/obituaries/${obit.id}/qr`}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <QrCode className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                          )}
                           <DropdownMenu>
                             <DropdownMenuTrigger className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted transition-colors outline-none">
                               <MoreHorizontal className="h-4 w-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>
-                                <Link
-                                  href={`/funeral-home/obituaries/${obit.id}/preview`}
-                                  className="flex items-center gap-2 w-full"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                  Podgląd
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edytuj
                               </DropdownMenuItem>
-                              {obit.publicUrl && (
+                              {false && (
                                 <DropdownMenuItem>
                                   <Link
-                                    href={obit.publicUrl}
+                                    href="#"
                                     target="_blank"
                                     className="flex items-center gap-2 w-full"
                                   >
@@ -235,9 +236,9 @@ export default function ObituariesPage() {
                       </td>
                     </tr>
                   ))}
-                  {filtered.length === 0 && (
+                  {!loading && filtered.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center">
+                      <td colSpan={6} className="px-4 py-12 text-center">
                         <p className="text-muted-foreground">Nie znaleziono nekrologów</p>
                         <Link href="/funeral-home/obituaries/new">
                           <Button size="sm" className="mt-3 gap-2">

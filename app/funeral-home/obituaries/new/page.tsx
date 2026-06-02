@@ -96,16 +96,54 @@ export default function NewObituaryPage() {
     return true
   }
 
-  function handleSaveDraft() {
-    toast.success("Szkic został zapisany automatycznie")
+  async function handleSaveDraft() {
+    try {
+      const res = await fetch("/api/obituaries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          birth_date: data.birthDate,
+          death_date: data.deathDate,
+          obituary_text: data.obituaryText,
+          ceremony_info: data.ceremonyInfo,
+          location: data.location,
+          status: "draft",
+        }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success("Szkic zapisany")
+      router.push("/funeral-home/obituaries")
+    } catch {
+      toast.error("Błąd podczas zapisywania szkicu")
+    }
   }
 
-  function handlePublish() {
+  async function handlePublish() {
     setPublishing(true)
-    setTimeout(() => {
-      toast.success("Nekrolog opublikowany! Kod QR został wygenerowany.")
+    try {
+      const res = await fetch("/api/obituaries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          birth_date: data.birthDate,
+          death_date: data.deathDate,
+          obituary_text: data.obituaryText,
+          ceremony_info: data.ceremonyInfo,
+          location: data.location,
+          status: "published",
+        }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success("Nekrolog opublikowany!")
       router.push("/funeral-home/obituaries")
-    }, 1200)
+    } catch {
+      toast.error("Błąd podczas publikowania")
+      setPublishing(false)
+    }
   }
 
   return (
