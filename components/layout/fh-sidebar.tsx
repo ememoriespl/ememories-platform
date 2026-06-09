@@ -11,17 +11,7 @@ const navItems = [
   { href: "/funeral-home/settings", label: "Ustawienia", icon: Settings },
 ]
 
-interface FhSidebarProps {
-  funeralHome: { name: string; email: string } | null
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase()
-}
-
-export function FhSidebar({ funeralHome }: FhSidebarProps) {
+export function FhSidebar() {
   const pathname = usePathname()
 
   return (
@@ -30,10 +20,7 @@ export function FhSidebar({ funeralHome }: FhSidebarProps) {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <Flower2 className="h-4 w-4 text-primary-foreground" />
         </div>
-        <div>
-          <p className="text-sm font-semibold leading-none">eMemories</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Panel Zakładu</p>
-        </div>
+        <p className="text-sm font-semibold leading-none">eMemories</p>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -62,19 +49,6 @@ export function FhSidebar({ funeralHome }: FhSidebarProps) {
         </ul>
       </nav>
 
-      {funeralHome && (
-        <div className="border-t px-3 py-3">
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
-              {getInitials(funeralHome.name)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium leading-none">{funeralHome.name}</p>
-              <p className="truncate text-xs text-muted-foreground mt-0.5">{funeralHome.email}</p>
-            </div>
-          </div>
-        </div>
-      )}
     </aside>
   )
 }
