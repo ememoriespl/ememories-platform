@@ -330,7 +330,7 @@ export default function ClientsPage() {
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
-            <SelectTrigger className="h-9 w-40">
+            <SelectTrigger className="!h-9 w-40">
               <span>{{ all: "Wszystkie", active: "Aktywny", inactive: "Nieaktywny", suspended: "Zawieszony" }[statusFilter] ?? "Wszystkie"}</span>
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>

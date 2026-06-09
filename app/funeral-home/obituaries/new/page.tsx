@@ -139,7 +139,7 @@ export default function NewObituaryPage() {
       })
       if (!res.ok) throw new Error()
       toast.success("Szkic zapisany")
-      router.push("/funeral-home/obituaries")
+      router.push("/funeral-home/dashboard")
     } catch {
       toast.error("Błąd podczas zapisywania szkicu")
     }
@@ -166,7 +166,7 @@ export default function NewObituaryPage() {
       })
       if (!res.ok) throw new Error()
       toast.success("Nekrolog opublikowany!")
-      router.push("/funeral-home/obituaries")
+      router.push("/funeral-home/dashboard")
     } catch {
       toast.error("Błąd podczas publikowania")
       setPublishing(false)
@@ -449,7 +449,7 @@ export default function NewObituaryPage() {
         <div className="flex items-center justify-between pt-2">
           <Button
             variant="outline"
-            onClick={() => (step > 1 ? setStep(step - 1) : router.push("/funeral-home/obituaries"))}
+            onClick={() => (step > 1 ? setStep(step - 1) : router.push("/funeral-home/dashboard"))}
             className="gap-2"
           >
             <ChevronLeft className="h-4 w-4" />

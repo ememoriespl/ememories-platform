@@ -79,7 +79,7 @@ export default function AdminObituariesPage() {
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
-            <SelectTrigger className="h-9 w-40">
+            <SelectTrigger className="!h-9 w-40">
               <span>{{ all: "Wszystkie", published: "Opublikowane", draft: "Szkice", archived: "Archiwalne" }[statusFilter] ?? "Wszystkie"}</span>
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>
