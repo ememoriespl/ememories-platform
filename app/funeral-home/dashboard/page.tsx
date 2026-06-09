@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Search, Eye, QrCode, MoreHorizontal, Pencil, Archive, ExternalLink, Plus } from "lucide-react"
-import { Eye as PhEye, PencilSimpleLine, Gauge } from "@phosphor-icons/react"
+import { BookOpen, Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
 import { ObituaryStatus } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -123,7 +123,7 @@ export default function FhDashboardPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]" style={{ backgroundColor: "color-mix(in oklch, var(--chart-1) 10%, transparent)" }}>
-                  <Gauge className="h-6 w-6" weight="duotone" style={{ color: "var(--chart-1)" }} />
+                  <BookOpen className="h-6 w-6" weight="duotone" style={{ color: "var(--chart-1)" }} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Limit nekrologów</p>
