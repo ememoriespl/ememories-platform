@@ -6,8 +6,7 @@ import { LayoutDashboard, BookOpen, Settings, Flower2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/funeral-home/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/funeral-home/obituaries", label: "Nekrologi", icon: BookOpen },
+  { href: "/funeral-home/dashboard", label: "Nekrologi", icon: LayoutDashboard },
   { href: "/funeral-home/settings", label: "Ustawienia", icon: Settings },
 ]
 

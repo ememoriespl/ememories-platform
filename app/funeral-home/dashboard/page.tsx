@@ -114,7 +114,7 @@ export default function FhDashboardPage() {
 
   return (
     <>
-      <Topbar title="Dashboard" subtitle={fh?.name ?? ""} />
+      <Topbar title="Nekrologi" subtitle={fh?.name ?? ""} />
 
       <div className="p-6 space-y-6">
         {/* Stat cards */}
