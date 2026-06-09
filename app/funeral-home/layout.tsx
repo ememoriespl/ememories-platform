@@ -1,10 +1,31 @@
+import { redirect } from "next/navigation"
 import { FhSidebar } from "@/components/layout/fh-sidebar"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
+import { getSession } from "@/lib/session"
+import { createServerClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
 
 export default async function FuneralHomeLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession()
+  if (!session || session.role !== "funeral-home") {
+    redirect("/login")
+  }
+
   const cookieStore = await cookies()
   const isImpersonating = !!cookieStore.get("admin_return_session")
+
+  if (!isImpersonating) {
+    const supabase = createServerClient()
+    const { data: fh } = await supabase
+      .from("funeral_homes")
+      .select("status")
+      .eq("email", session.email)
+      .single()
+
+    if (fh && fh.status !== "active") {
+      redirect("/suspended")
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
