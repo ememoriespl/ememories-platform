@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 
 interface TopbarProps {
   title: string
@@ -49,7 +48,6 @@ export function Topbar({ title, subtitle }: TopbarProps) {
 
   const displayName = me?.funeralHome?.name ?? me?.email ?? "…"
   const initials = me ? getInitials(me.email, me.funeralHome?.name) : "…"
-  const roleLabel = me?.role === "admin" ? "Admin" : "Zakład"
 
   return (
     <header className="sticky top-0 z-10 flex h-[72px] items-center gap-4 border-b bg-background px-6">
@@ -69,8 +67,8 @@ export function Topbar({ title, subtitle }: TopbarProps) {
               </AvatarFallback>
             </Avatar>
             <div className="hidden md:flex flex-col items-start gap-0.5">
-              <span className="text-[13px] font-medium leading-none">{me?.email ?? "…"}</span>
-              <Badge variant="secondary" className="text-[12px] px-1.5 py-0 h-4">{roleLabel}</Badge>
+              <span className="text-[13px] font-medium leading-none">{displayName}</span>
+              <span className="text-[12px] text-muted-foreground leading-none">{me?.email ?? "…"}</span>
             </div>
             <div className="flex h-7 w-7 items-center justify-center rounded-md border hover:bg-muted transition-colors">
               <MoreHorizontal className="h-4 w-4 text-muted-foreground" />

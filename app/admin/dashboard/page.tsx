@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
                   />
                   <Area
                     dataKey="obituaries"
-                    type="natural"
+                    type="monotone"
                     fill="url(#fillObituaries)"
                     stroke="var(--color-obituaries)"
                   />

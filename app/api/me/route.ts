@@ -7,7 +7,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (session.role === "admin") {
-    return NextResponse.json({ email: session.email, role: "admin", funeralHome: null })
+    return NextResponse.json({ email: session.email, role: "admin", funeralHome: { name: "eMemories" } })
   }
 
   const supabase = createServerClient()
