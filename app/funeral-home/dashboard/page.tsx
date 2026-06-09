@@ -9,11 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import {
   BookOpen,
-  CheckCircle,
-  FileText,
   Plus,
   Eye,
 } from "lucide-react"
+import { Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
 
 const statusLabel: Record<string, string> = {
   draft: "Szkic",
@@ -72,14 +71,21 @@ export default function FhDashboardPage() {
       <Topbar title="Dashboard" subtitle={fh?.name ?? ""} />
 
       <div className="p-6 space-y-6">
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardDescription>Nekrologi</CardDescription>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-4">
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--chart-1) 10%, transparent)" }}
+                >
+                  <BookOpen className="h-6 w-6" style={{ color: "var(--chart-1)" }} />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Nekrologi</p>
+                  <p className="text-2xl font-semibold leading-none mt-0.5">{fh ? total : "—"}</p>
+                </div>
               </div>
-              <CardTitle className="text-2xl">{fh ? total : "—"}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">łącznie</p>
@@ -87,12 +93,19 @@ export default function FhDashboardPage() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardDescription>Opublikowane</CardDescription>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-4">
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--chart-2) 10%, transparent)" }}
+                >
+                  <PhEye className="h-6 w-6" weight="duotone" style={{ color: "var(--chart-2)" }} />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Opublikowane</p>
+                  <p className="text-2xl font-semibold leading-none mt-0.5">{fh ? published : "—"}</p>
+                </div>
               </div>
-              <CardTitle className="text-2xl">{fh ? published : "—"}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">widoczne publicznie</p>
@@ -100,12 +113,19 @@ export default function FhDashboardPage() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardDescription>Szkice</CardDescription>
-                <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-4">
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--foreground) 10%, transparent)" }}
+                >
+                  <PencilSimpleLine className="h-6 w-6 text-foreground" weight="duotone" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Szkice</p>
+                  <p className="text-2xl font-semibold leading-none mt-0.5">{fh ? draft : "—"}</p>
+                </div>
               </div>
-              <CardTitle className="text-2xl">{fh ? draft : "—"}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">czekają na publikację</p>
@@ -168,13 +188,13 @@ export default function FhDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <Link href="/funeral-home/obituaries/new" className="block">
-                  <Button className="w-full gap-2" size="sm">
+                  <Button className="w-full gap-2">
                     <Plus className="h-4 w-4" />
                     Nowy nekrolog
                   </Button>
                 </Link>
                 <Link href="/funeral-home/obituaries" className="block">
-                  <Button variant="outline" className="w-full gap-2" size="sm">
+                  <Button variant="outline" className="w-full gap-2">
                     <BookOpen className="h-4 w-4" />
                     Lista nekrologów
                   </Button>

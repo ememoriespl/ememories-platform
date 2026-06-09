@@ -21,10 +21,9 @@ import {
 import {
   Users,
   BookOpen,
-  QrCode,
-  TrendingUp,
   Activity,
 } from "lucide-react"
+import { Gauge } from "@phosphor-icons/react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import {
   ChartContainer,
@@ -140,10 +139,10 @@ export default function AdminDashboardPage() {
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
                   style={{ backgroundColor: "color-mix(in oklch, var(--foreground) 10%, transparent)" }}
                 >
-                  <QrCode className="h-6 w-6 text-foreground" />
+                  <Gauge className="h-6 w-6 text-foreground" weight="duotone" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Zużycie nekrologów</p>
+                  <p className="text-sm text-muted-foreground">Wykorzystane nekrologi</p>
                   <p className="text-2xl font-semibold leading-none mt-0.5">
                     {stats ? `${qrPercent}%` : "—"}
                   </p>
