@@ -31,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Search, Eye, QrCode, MoreHorizontal, Pencil, Archive, ExternalLink, Plus } from "lucide-react"
+import { Search, QrCode, MoreHorizontal, Pencil, Archive, ExternalLink, Plus } from "lucide-react"
 import { BookOpen, Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
 import { ObituaryStatus } from "@/lib/types"
 import { toast } from "sonner"
@@ -219,7 +219,7 @@ export default function FhDashboardPage() {
                       <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data śmierci</th>
                       <th className="px-4 py-3 text-left font-medium text-muted-foreground">Wyświetlenia</th>
                       <th className="px-4 py-3 text-left font-medium text-muted-foreground">Dodany</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Link / QR</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">eNekrolog</th>
                       <th className="px-4 py-3 text-right font-medium text-muted-foreground">Akcje</th>
                     </tr>
                   </thead>
@@ -247,33 +247,19 @@ export default function FhDashboardPage() {
                         <td className="px-4 py-3 text-muted-foreground">
                           {obit.death_date ? new Date(obit.death_date).toLocaleDateString("pl-PL") : "—"}
                         </td>
-                        <td className="px-4 py-3">
-                          {obit.status !== "draft" ? (
-                            <span className="flex items-center gap-1 text-sm">
-                              <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                              {obit.views}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
+                        <td className="px-4 py-3 text-sm">
+                          {obit.status !== "draft" ? obit.views : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {new Date(obit.created_at).toLocaleDateString("pl-PL")}
                         </td>
                         <td className="px-4 py-3">
                           {obit.status === "published" ? (
-                            <div className="flex items-center gap-1">
-                              <a href={`https://ememoriespl.vercel.app/obituary/${obit.id}`} target="_blank" rel="noopener noreferrer">
-                                <Button variant="ghost" size="icon" className="h-7 w-7">
-                                  <ExternalLink className="h-3.5 w-3.5" />
-                                </Button>
-                              </a>
-                              <Link href={`/funeral-home/obituaries/${obit.id}/qr`}>
-                                <Button variant="ghost" size="icon" className="h-7 w-7">
-                                  <QrCode className="h-3.5 w-3.5" />
-                                </Button>
-                              </Link>
-                            </div>
+                            <a href={`https://ememoriespl.vercel.app/obituary/${obit.id}`} target="_blank" rel="noopener noreferrer">
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Button>
+                            </a>
                           ) : (
                             <span className="text-muted-foreground text-xs">—</span>
                           )}

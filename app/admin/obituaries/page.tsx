@@ -12,7 +12,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Search, Eye, ExternalLink } from "lucide-react"
+import { Search, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
 
 type ObituaryStatus = "draft" | "published" | "archived"
@@ -107,7 +107,7 @@ export default function AdminObituariesPage() {
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data śmierci</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Wyświetlenia</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Dodany</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Link</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">eNekrolog</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -139,14 +139,9 @@ export default function AdminObituariesPage() {
                       <td className="px-4 py-3 text-muted-foreground">
                         {obit.death_date ? new Date(obit.death_date).toLocaleDateString("pl-PL") : "—"}
                       </td>
-                      <td className="px-4 py-3">
-                        {obit.status !== "draft" ? (
-                          <span className="flex items-center gap-1 text-sm">
-                            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                            {obit.views}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
+                      <td className="px-4 py-3 text-sm">
+                        {obit.status !== "draft" ? obit.views : (
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
