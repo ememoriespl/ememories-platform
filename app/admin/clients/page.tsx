@@ -466,10 +466,6 @@ export default function ClientsPage() {
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edytuj
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleImpersonate(client)}>
-                                <LogIn className="mr-2 h-4 w-4" />
-                                Zaloguj się
-                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleToggleStatus(client)}>
                                 {isInactive ? (

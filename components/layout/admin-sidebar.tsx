@@ -5,17 +5,17 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
-  QrCode,
-  BarChart2,
   FileText,
   Settings,
   Flower2,
+  BookOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/clients", label: "Klienci", icon: Users },
+  { href: "/admin/obituaries", label: "Nekrologi", icon: BookOpen },
 { href: "/admin/templates", label: "Szablony", icon: FileText },
   { href: "/admin/settings", label: "Ustawienia", icon: Settings },
 ]
