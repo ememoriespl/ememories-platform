@@ -88,7 +88,17 @@ export default async function PublicObituaryPage({ params }: Props) {
                       <p className="text-sm">{obit.ceremony_info}</p>
                     )}
                     {obit.location && (
-                      <p className="text-sm text-muted-foreground">{obit.location}</p>
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm text-muted-foreground">{obit.location}</p>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(obit.location)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors shrink-0"
+                        >
+                          Nawiguj
+                        </a>
+                      </div>
                     )}
                   </div>
                 </>
