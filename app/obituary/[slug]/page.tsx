@@ -46,7 +46,7 @@ export default async function PublicObituaryPage({ params }: Props) {
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center p-6">
+      <main className="flex-1 flex justify-center p-6">
         <div className="w-full max-w-xl">
           <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
             <div className="bg-muted/30 px-8 pt-8 pb-6 text-center space-y-3">
@@ -72,7 +72,7 @@ export default async function PublicObituaryPage({ params }: Props) {
 
             <div className="px-8 py-6 space-y-5">
               {obit.obituary_text && (
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-center">
                   {obit.obituary_text}
                 </p>
               )}
@@ -100,6 +100,7 @@ export default async function PublicObituaryPage({ params }: Props) {
                       )}
                       {navButtons.length > 0 && (
                         <div className="space-y-2">
+                          <Separator />
                           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                             Nawiguj do…
                           </p>
