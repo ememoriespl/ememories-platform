@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const supabase = createServerClient()
 
   const [{ data: fhRows }, { data: obituaryRows }] = await Promise.all([
-    supabase.from("funeral_homes").select("id, status, qr_limit, qr_used"),
+    supabase.from("funeral_homes").select("id, status, qr_limit, qr_used, created_at"),
     supabase.from("obituaries").select("id, status, created_at, funeral_home_id"),
   ])
 
@@ -23,30 +23,24 @@ export async function GET(req: Request) {
   const totalQrUsed = fhRows?.reduce((s, f) => s + (f.qr_used ?? 0), 0) ?? 0
   const totalQrLimit = fhRows?.reduce((s, f) => s + (f.qr_limit ?? 0), 0) ?? 0
 
-  // Build daily chart: obituaries created per day for last `days` days
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - days)
-
-  const dayCounts: Record<string, number> = {}
+  // Build daily chart for last `days` days
+  const dayCounts: Record<string, { obituaries: number; clients: number }> = {}
   for (let i = 0; i < days; i++) {
     const d = new Date()
     d.setDate(d.getDate() - (days - 1 - i))
-    dayCounts[d.toISOString().split("T")[0]] = 0
+    dayCounts[d.toISOString().split("T")[0]] = { obituaries: 0, clients: 0 }
   }
   for (const o of obituaryRows ?? []) {
     const day = o.created_at?.split("T")[0]
-    if (day && day in dayCounts) dayCounts[day]++
+    if (day && day in dayCounts) dayCounts[day].obituaries++
+  }
+  for (const f of fhRows ?? []) {
+    const day = f.created_at?.split("T")[0]
+    if (day && day in dayCounts) dayCounts[day].clients++
   }
 
-  const chartData = Object.entries(dayCounts).map(([day, obituaries]) => ({ day, obituaries }))
+  const chartData = Object.entries(dayCounts).map(([day, counts]) => ({ day, ...counts }))
 
-  // Recent activity: last 20 obituaries
-  const recentActivity = (obituaryRows ?? [])
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 20)
-
-  // Enrich with FH name
-  const fhMap = Object.fromEntries((fhRows ?? []).map((f) => [f.id, f]))
   const { data: obitsWithNames } = await supabase
     .from("obituaries")
     .select("id, first_name, last_name, status, created_at, funeral_home_id, funeral_homes(name)")

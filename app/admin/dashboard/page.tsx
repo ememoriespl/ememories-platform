@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Activity } from "lucide-react"
 import { Users, BookOpen, Gauge } from "@phosphor-icons/react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import {
@@ -35,7 +34,7 @@ interface StatsData {
   totalObituaries: number
   totalQrUsed: number
   totalQrLimit: number
-  chartData: { day: string; obituaries: number }[]
+  chartData: { day: string; obituaries: number; clients: number }[]
   activityLog: { id: string; description: string; funeralHomeName: string; timestamp: string }[]
 }
 
@@ -52,6 +51,10 @@ const chartConfig = {
   obituaries: {
     label: "Nekrologi",
     color: "var(--chart-1)",
+  },
+  clients: {
+    label: "Klienci",
+    color: "var(--chart-2)",
   },
 } satisfies ChartConfig
 
@@ -184,6 +187,10 @@ export default function AdminDashboardPage() {
                       <stop offset="5%" stopColor="var(--color-obituaries)" stopOpacity={0.8} />
                       <stop offset="95%" stopColor="var(--color-obituaries)" stopOpacity={0.1} />
                     </linearGradient>
+                    <linearGradient id="fillClients" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-clients)" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="var(--color-clients)" stopOpacity={0.1} />
+                    </linearGradient>
                   </defs>
                   <CartesianGrid vertical={false} />
                   <XAxis
@@ -213,6 +220,12 @@ export default function AdminDashboardPage() {
                     fill="url(#fillObituaries)"
                     stroke="var(--color-obituaries)"
                   />
+                  <Area
+                    dataKey="clients"
+                    type="monotone"
+                    fill="url(#fillClients)"
+                    stroke="var(--color-clients)"
+                  />
                   <ChartLegend content={<ChartLegendContent />} />
                 </AreaChart>
               </ChartContainer>
@@ -221,10 +234,7 @@ export default function AdminDashboardPage() {
 
           <Card className="lg:col-span-1 flex flex-col">
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-base">Ostatnia aktywność</CardTitle>
-              </div>
+              <CardTitle className="text-base">Ostatnia aktywność</CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-y-auto">
               {!stats ? (

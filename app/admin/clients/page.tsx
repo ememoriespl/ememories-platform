@@ -61,6 +61,18 @@ import {
 import { FuneralHome, FuneralHomeStatus } from "@/lib/types"
 import { toast } from "sonner"
 
+function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return "—"
+  const digits = phone.replace(/\D/g, "")
+  if (digits.length === 11 && digits.startsWith("48")) {
+    return `+48 ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8, 11)}`
+  }
+  if (digits.length === 9) {
+    return `+48 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`
+  }
+  return phone
+}
+
 const statusLabel: Record<FuneralHomeStatus, string> = {
   active: "Aktywny",
   inactive: "Nieaktywny",
@@ -118,7 +130,7 @@ export default function ClientsPage() {
   const [creating, setCreating] = useState(false)
 
   const [editTarget, setEditTarget] = useState<FuneralHome | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", email: "", qrLimit: "50" })
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", address: "", qrLimit: "50" })
   const [saving, setSaving] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<FuneralHome | null>(null)
@@ -256,7 +268,7 @@ export default function ClientsPage() {
 
   function openEdit(client: FuneralHome) {
     setEditTarget(client)
-    setEditForm({ name: client.name, email: client.email, qrLimit: String(client.qrLimit) })
+    setEditForm({ name: client.name, email: client.email, phone: client.phone ?? "", address: client.address ?? "", qrLimit: String(client.qrLimit) })
   }
 
   async function handleEdit() {
@@ -266,6 +278,8 @@ export default function ClientsPage() {
       const updated = await patchClient(editTarget.id, {
         name: editForm.name,
         email: editForm.email,
+        phone: editForm.phone || null,
+        address: editForm.address || null,
         qr_limit: parseInt(editForm.qrLimit) || editTarget.qrLimit,
       })
       setClients((prev) =>
@@ -440,7 +454,7 @@ export default function ClientsPage() {
                             >
                               {client.name}
                             </button>
-                            <p className="text-xs text-muted-foreground">{client.phone || "—"}</p>
+                            <p className="text-xs text-muted-foreground">{client.address || "—"}</p>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{client.email}</td>
@@ -578,6 +592,22 @@ export default function ClientsPage() {
               />
             </div>
             <div className="space-y-2">
+              <Label>Telefon</Label>
+              <Input
+                placeholder="+48 000 000 000"
+                value={editForm.phone}
+                onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Adres</Label>
+              <Input
+                placeholder="ul. Przykładowa 1, 00-001 Miasto"
+                value={editForm.address}
+                onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Ilość nekrologów</Label>
               <Input
                 type="number"
@@ -657,7 +687,7 @@ export default function ClientsPage() {
             </div>
             <div className="flex justify-between py-2 border-b">
               <span className="text-muted-foreground">Telefon</span>
-              <span className="font-medium">{viewTarget?.phone || "—"}</span>
+              <span className="font-medium">{formatPhone(viewTarget?.phone)}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
               <span className="text-muted-foreground">Adres</span>
