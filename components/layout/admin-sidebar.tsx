@@ -16,9 +16,7 @@ import { cn } from "@/lib/utils"
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/clients", label: "Klienci", icon: Users },
-  { href: "/admin/qr-limits", label: "Limity QR", icon: QrCode },
-  { href: "/admin/usage", label: "Użycie", icon: BarChart2 },
-  { href: "/admin/templates", label: "Szablony", icon: FileText },
+{ href: "/admin/templates", label: "Szablony", icon: FileText },
   { href: "/admin/settings", label: "Ustawienia", icon: Settings },
 ]
 
