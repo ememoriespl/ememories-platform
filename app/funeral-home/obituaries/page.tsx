@@ -119,14 +119,14 @@ export default function ObituariesPage() {
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               className="pl-8 h-9"
-              placeholder="Szukaj po imieniu i nazwisku..."
+              placeholder="Szukaj..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
             <SelectTrigger className="h-9 w-40">
-              <SelectValue placeholder="Wszystkie" />
+              <span>{{ all: "Wszystkie", published: "Opublikowane", draft: "Szkice", archived: "Archiwalne" }[statusFilter] ?? "Wszystkie"}</span>
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>
               <SelectItem value="all">Wszystkie</SelectItem>
