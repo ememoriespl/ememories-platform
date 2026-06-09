@@ -50,6 +50,7 @@ import {
   CheckCircle2,
   PauseCircle,
   X,
+  LogIn,
 } from "lucide-react"
 import { FuneralHome, FuneralHomeStatus } from "@/lib/types"
 import { toast } from "sonner"
@@ -78,11 +79,12 @@ type DbClient = {
   status: FuneralHomeStatus
   qr_limit: number
   qr_used: number
+  obituary_count: number
   created_at: string
   last_login_at: string | null
 }
 
-function dbToClient(r: DbClient): FuneralHome {
+function dbToClient(r: DbClient): FuneralHome & { obituaryCount: number } {
   return {
     id: r.id,
     name: r.name,
@@ -92,13 +94,14 @@ function dbToClient(r: DbClient): FuneralHome {
     status: r.status,
     qrLimit: r.qr_limit,
     qrUsed: r.qr_used,
+    obituaryCount: r.obituary_count ?? 0,
     createdAt: r.created_at.split("T")[0],
     lastLoginAt: r.last_login_at ?? "",
   }
 }
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<FuneralHome[]>([])
+  const [clients, setClients] = useState<(FuneralHome & { obituaryCount: number })[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -279,6 +282,19 @@ export default function ClientsPage() {
     } catch { toast.error("Błąd zmiany statusu") }
   }
 
+  async function handleImpersonate(client: FuneralHome) {
+    try {
+      await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: client.email }),
+      })
+      window.location.href = "/funeral-home/dashboard"
+    } catch {
+      toast.error("Błąd podczas wchodzenia na konto")
+    }
+  }
+
   async function handleDelete() {
     if (!deleteTarget) return
     try {
@@ -379,7 +395,7 @@ export default function ClientsPage() {
                       </td>
                     </tr>
                   ) : filtered.map((client) => {
-                    const pct = client.qrLimit > 0 ? Math.round((client.qrUsed / client.qrLimit) * 100) : 0
+                    const pct = client.qrLimit > 0 ? Math.round((client.obituaryCount / client.qrLimit) * 100) : 0
                     const isSelected = selected.has(client.id)
                     const isInactive = client.status === "inactive"
                     return (
@@ -403,7 +419,7 @@ export default function ClientsPage() {
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{client.email}</td>
                         <td className="px-4 py-3">
-                          <span className="font-medium">{client.qrUsed}</span>
+                          <span className="font-medium">{client.obituaryCount}</span>
                           <span className="text-muted-foreground"> / {client.qrLimit}</span>
                         </td>
                         <td className="px-4 py-3 w-36">
@@ -429,6 +445,10 @@ export default function ClientsPage() {
                               <DropdownMenuItem onClick={() => openEdit(client)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edytuj
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleImpersonate(client)}>
+                                <LogIn className="mr-2 h-4 w-4" />
+                                Wejdź na konto
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleToggleStatus(client)}>

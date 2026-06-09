@@ -9,13 +9,24 @@ export async function GET() {
   }
 
   const supabase = createServerClient()
-  const { data, error } = await supabase
-    .from("funeral_homes")
-    .select("*")
-    .order("created_at", { ascending: false })
+  const [{ data, error }, { data: obituaryCounts }] = await Promise.all([
+    supabase.from("funeral_homes").select("*").order("created_at", { ascending: false }),
+    supabase.from("obituaries").select("funeral_home_id"),
+  ])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  const countMap: Record<string, number> = {}
+  for (const o of obituaryCounts ?? []) {
+    countMap[o.funeral_home_id] = (countMap[o.funeral_home_id] ?? 0) + 1
+  }
+
+  const enriched = (data ?? []).map((fh) => ({
+    ...fh,
+    obituary_count: countMap[fh.id] ?? 0,
+  }))
+
+  return NextResponse.json(enriched)
 }
 
 export async function POST(req: Request) {
