@@ -244,7 +244,9 @@ export default function FhDashboardPage() {
                               </div>
                             )}
                             <div>
-                              <p className="font-medium">{obit.first_name} {obit.last_name}</p>
+                              <button onClick={() => router.push(`/funeral-home/obituaries/${obit.id}/edit`)} className="font-medium hover:underline text-left">
+                                {obit.first_name} {obit.last_name}
+                              </button>
                               <p className="text-xs text-muted-foreground">
                                 {obit.birth_date ? new Date(obit.birth_date).getFullYear() : "?"} — {obit.death_date ? new Date(obit.death_date).getFullYear() : "?"}
                               </p>

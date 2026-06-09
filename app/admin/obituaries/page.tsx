@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Topbar } from "@/components/layout/topbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +45,7 @@ interface AdminObituary {
 }
 
 export default function AdminObituariesPage() {
+  const router = useRouter()
   const [obituaries, setObituaries] = useState<AdminObituary[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -131,7 +133,9 @@ export default function AdminObituariesPage() {
                             </div>
                           )}
                           <div>
-                            <p className="font-medium">{obit.first_name} {obit.last_name}</p>
+                            <button onClick={() => router.push(`/funeral-home/obituaries/${obit.id}/edit`)} className="font-medium hover:underline text-left">
+                              {obit.first_name} {obit.last_name}
+                            </button>
                             <p className="text-xs text-muted-foreground">
                               {obit.birth_date ? new Date(obit.birth_date).getFullYear() : "?"} — {obit.death_date ? new Date(obit.death_date).getFullYear() : "?"}
                             </p>
