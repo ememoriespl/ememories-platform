@@ -98,7 +98,7 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
       })
       if (!res.ok) throw new Error()
       toast.success(publish ? "Opublikowano!" : "Zapisano zmiany")
-      router.push("/funeral-home/obituaries")
+      router.push("/funeral-home/dashboard")
     } catch {
       toast.error("Błąd podczas zapisywania")
       setSaving(false)
@@ -120,7 +120,7 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
 
       <div className="p-6 max-w-2xl space-y-6">
         <div className="flex items-center gap-2">
-          <Link href="/funeral-home/obituaries">
+          <Link href="/funeral-home/dashboard">
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
               <ChevronLeft className="h-4 w-4" />
               Powrót
