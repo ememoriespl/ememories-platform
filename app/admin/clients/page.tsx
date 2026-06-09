@@ -14,6 +14,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -104,6 +110,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<(FuneralHome & { obituaryCount: number })[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -135,8 +142,9 @@ export default function ClientsPage() {
 
   const filtered = clients.filter(
     (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase())
+      (c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.email.toLowerCase().includes(search.toLowerCase())) &&
+      (statusFilter === "all" || c.status === statusFilter)
   )
 
   const allSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id))
@@ -310,21 +318,33 @@ export default function ClientsPage() {
       <Topbar title="Klienci" subtitle="Zarządzaj zakładami pogrzebowymi" />
 
       <div className="p-6 space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-48 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              className="pl-9"
-              placeholder="Szukaj klientów..."
+              className="pl-8 h-9"
+              placeholder="Szukaj..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-
-          <Button className="gap-2" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Nowy klient
-          </Button>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
+            <SelectTrigger className="h-9 w-40">
+              <span>{{ all: "Wszystkie", active: "Aktywny", inactive: "Nieaktywny", suspended: "Zawieszony" }[statusFilter] ?? "Wszystkie"}</span>
+            </SelectTrigger>
+            <SelectContent alignItemWithTrigger={false}>
+              <SelectItem value="all">Wszystkie</SelectItem>
+              <SelectItem value="active">Aktywny</SelectItem>
+              <SelectItem value="inactive">Nieaktywny</SelectItem>
+              <SelectItem value="suspended">Zawieszony</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="ml-auto">
+            <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Nowy klient
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -448,7 +468,7 @@ export default function ClientsPage() {
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleImpersonate(client)}>
                                 <LogIn className="mr-2 h-4 w-4" />
-                                Wejdź na konto
+                                Zaloguj się
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleToggleStatus(client)}>
