@@ -416,7 +416,6 @@ export default function ClientsPage() {
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nazwa</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">E-mail</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nekrologi</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Użycie</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">Utworzony</th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">Akcje</th>
@@ -461,12 +460,6 @@ export default function ClientsPage() {
                         <td className="px-4 py-3">
                           <span className="font-medium">{client.obituaryCount}</span>
                           <span className="text-muted-foreground"> / {client.qrLimit}</span>
-                        </td>
-                        <td className="px-4 py-3 w-36">
-                          <div className="space-y-1">
-                            <Progress value={pct} className="h-1.5" />
-                            <p className="text-[10px] text-muted-foreground">{pct}%</p>
-                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <Badge variant={statusVariant[client.status]}>
