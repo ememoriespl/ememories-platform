@@ -18,12 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Users,
-  BookOpen,
-  Activity,
-} from "lucide-react"
-import { Gauge } from "@phosphor-icons/react"
+import { Activity } from "lucide-react"
+import { Users, BookOpen, Gauge } from "@phosphor-icons/react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import {
   ChartContainer,
@@ -95,7 +91,7 @@ export default function AdminDashboardPage() {
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
                   style={{ backgroundColor: "color-mix(in oklch, var(--chart-2) 10%, transparent)" }}
                 >
-                  <Users className="h-6 w-6" style={{ color: "var(--chart-2)" }} />
+                  <Users className="h-6 w-6" weight="duotone" style={{ color: "var(--chart-2)" }} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Aktywni klienci</p>
@@ -117,7 +113,7 @@ export default function AdminDashboardPage() {
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
                   style={{ backgroundColor: "color-mix(in oklch, var(--chart-1) 10%, transparent)" }}
                 >
-                  <BookOpen className="h-6 w-6" style={{ color: "var(--chart-1)" }} />
+                  <BookOpen className="h-6 w-6" weight="duotone" style={{ color: "var(--chart-1)" }} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Nekrologi</p>

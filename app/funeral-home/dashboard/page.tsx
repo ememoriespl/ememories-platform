@@ -7,12 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import {
-  BookOpen,
-  Plus,
-  Eye,
-} from "lucide-react"
-import { Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
+import { Plus, Eye } from "lucide-react"
+import { BookOpen, Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
 
 const statusLabel: Record<string, string> = {
   draft: "Szkic",
@@ -79,7 +75,7 @@ export default function FhDashboardPage() {
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px]"
                   style={{ backgroundColor: "color-mix(in oklch, var(--chart-1) 10%, transparent)" }}
                 >
-                  <BookOpen className="h-6 w-6" style={{ color: "var(--chart-1)" }} />
+                  <BookOpen className="h-6 w-6" weight="duotone" style={{ color: "var(--chart-1)" }} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Nekrologi</p>
