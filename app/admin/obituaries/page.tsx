@@ -39,6 +39,8 @@ interface AdminObituary {
   views: number
   created_at: string
   funeral_homes: { name: string } | null
+  photo_url: string | null
+  photo_bw: boolean
 }
 
 export default function AdminObituariesPage() {
@@ -117,9 +119,17 @@ export default function AdminObituariesPage() {
                     <tr key={obit.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                            {obit.first_name[0]}{obit.last_name[0]}
-                          </div>
+                          {obit.photo_url ? (
+                            <img
+                              src={obit.photo_url}
+                              alt={`${obit.first_name} ${obit.last_name}`}
+                              className={`h-8 w-8 shrink-0 rounded-full object-cover ${obit.photo_bw ? "grayscale" : ""}`}
+                            />
+                          ) : (
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                              {obit.first_name[0]}{obit.last_name[0]}
+                            </div>
+                          )}
                           <div>
                             <p className="font-medium">{obit.first_name} {obit.last_name}</p>
                             <p className="text-xs text-muted-foreground">
