@@ -126,9 +126,9 @@ export default function ObituariesPage() {
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
             <SelectTrigger className="h-9 w-40">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Wszystkie" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent alignItemWithTrigger={false}>
               <SelectItem value="all">Wszystkie</SelectItem>
               <SelectItem value="published">Opublikowane</SelectItem>
               <SelectItem value="draft">Szkice</SelectItem>
