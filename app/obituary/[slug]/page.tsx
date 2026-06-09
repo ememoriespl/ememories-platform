@@ -77,32 +77,54 @@ export default async function PublicObituaryPage({ params }: Props) {
                 </p>
               )}
 
-              {(obit.ceremony_info || obit.location) && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                      Ceremonia pożegnalna
-                    </p>
-                    {obit.ceremony_info && (
-                      <p className="text-sm">{obit.ceremony_info}</p>
-                    )}
-                    {obit.location && (
-                      <div className="flex items-center gap-3">
+              {(obit.ceremony_info || obit.location) && (() => {
+                let navButtons: { label: string; address: string }[] = []
+                try {
+                  const parsed = JSON.parse(obit.location ?? "")
+                  if (parsed?.v === 2) {
+                    const labels: Record<string, string> = { funeralHome: "Dom pogrzebowy", church: "Msza Święta", cemetery: "Cmentarz" }
+                    navButtons = (["funeralHome", "church", "cemetery"] as const)
+                      .filter((k) => parsed[k]?.enabled && parsed[k]?.address)
+                      .map((k) => ({ label: labels[k], address: parsed[k].address }))
+                  }
+                } catch {}
+                return (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                        Ceremonia pożegnalna
+                      </p>
+                      {obit.ceremony_info && (
+                        <p className="text-sm">{obit.ceremony_info}</p>
+                      )}
+                      {navButtons.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Nawiguj do…
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {navButtons.map(({ label, address }) => (
+                              <a
+                                key={label}
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
+                              >
+                                {label}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {navButtons.length === 0 && obit.location && !obit.location.startsWith("{") && (
                         <p className="text-sm text-muted-foreground">{obit.location}</p>
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(obit.location)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors shrink-0"
-                        >
-                          Nawiguj
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           </div>
 
