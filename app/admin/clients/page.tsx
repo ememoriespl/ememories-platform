@@ -123,6 +123,7 @@ export default function ClientsPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<FuneralHome | null>(null)
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [viewTarget, setViewTarget] = useState<FuneralHome | null>(null)
 
   const fetchClients = useCallback(async () => {
     setLoading(true)
@@ -433,7 +434,12 @@ export default function ClientsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div>
-                            <p className="font-medium">{client.name}</p>
+                            <button
+                              onClick={() => setViewTarget(client)}
+                              className="font-medium hover:underline text-left"
+                            >
+                              {client.name}
+                            </button>
                             <p className="text-xs text-muted-foreground">{client.phone || "—"}</p>
                           </div>
                         </td>
@@ -633,6 +639,41 @@ export default function ClientsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* View client dialog */}
+      <Dialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{viewTarget?.name}</DialogTitle>
+            <DialogDescription>Dane zakładu pogrzebowego</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-muted-foreground">Nazwa</span>
+              <span className="font-medium">{viewTarget?.name}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-muted-foreground">E-mail</span>
+              <span className="font-medium">{viewTarget?.email}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-muted-foreground">Telefon</span>
+              <span className="font-medium">{viewTarget?.phone || "—"}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-muted-foreground">Adres</span>
+              <span className="font-medium text-right max-w-[60%]">{viewTarget?.address || "—"}</span>
+            </div>
+            <div className="flex justify-between py-2">
+              <span className="text-muted-foreground">Limit nekrologów</span>
+              <span className="font-medium">{viewTarget?.qrLimit}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewTarget(null)}>Zamknij</Button>
+            <Button onClick={() => { openEdit(viewTarget!); setViewTarget(null) }}>Edytuj</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
