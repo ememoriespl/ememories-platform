@@ -341,7 +341,7 @@ export default function ClientsPage() {
             </SelectContent>
           </Select>
           <div className="ml-auto">
-            <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+            <Button className="h-9 gap-2" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" />
               Nowy klient
             </Button>

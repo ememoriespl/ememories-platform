@@ -196,7 +196,7 @@ export default function FhDashboardPage() {
             </Select>
             <div className="ml-auto">
               <Link href="/funeral-home/obituaries/new">
-                <Button size="sm" className="gap-2">
+                <Button className="h-9 gap-2">
                   <Plus className="h-4 w-4" />
                   Nowy nekrolog
                 </Button>
