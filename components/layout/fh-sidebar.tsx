@@ -2,11 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, BookOpen, Settings, Flower2 } from "lucide-react"
+import { BookOpen, Settings, Flower2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/funeral-home/dashboard", label: "Nekrologi", icon: LayoutDashboard },
+  { href: "/funeral-home/dashboard", label: "Nekrologi", icon: BookOpen },
   { href: "/funeral-home/settings", label: "Ustawienia", icon: Settings },
 ]
 
