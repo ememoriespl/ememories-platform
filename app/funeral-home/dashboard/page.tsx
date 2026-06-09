@@ -85,7 +85,7 @@ export default function FhDashboardPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const qrUsed = fh?.qr_used ?? 0
+  const qrUsed = fh?.obituaries?.total ?? 0
   const qrLimit = fh?.qr_limit ?? 1
   const pct = Math.round((qrUsed / qrLimit) * 100)
   const published = fh?.obituaries?.published ?? 0
