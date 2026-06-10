@@ -240,7 +240,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
 
       {/* Tab content — two-column when on Dane tab */}
       <div className="flex">
-        <div className="flex-1 min-w-0 p-6 pb-24">
+        <div className={cn("min-w-0 p-6 pb-24", activeTab === "dane" ? "w-1/2" : "flex-1")}>
           <div className="max-w-2xl space-y-6">
         {activeTab === "dane" && (
           <>
@@ -519,7 +519,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
         {/* Right: A4 preview */}
         {activeTab === "dane" && (
           <>
-            <div ref={previewSpacerRef} className="hidden xl:block w-[660px] shrink-0" />
+            <div ref={previewSpacerRef} className="hidden xl:block w-1/2 shrink-0" />
             {panelRect && (
               <div
                 style={{
@@ -532,10 +532,10 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
-                  padding: "32px 32px 32px 8px",
+                  padding: 32,
                 }}
               >
-                <ObituaryPreview data={data} availableWidth={panelRect.width - 40} />
+                <ObituaryPreview data={data} availableWidth={panelRect.width - 64} />
               </div>
             )}
           </>
