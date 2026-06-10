@@ -54,7 +54,7 @@ export function ObituaryPreview({ data }: { data: PreviewData }) {
   const ceremonyDateFmt = data.ceremonyDate ? safeFormat(data.ceremonyDate, "d MMMM yyyy") : null
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex w-full flex-col gap-3">
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">
         Podgląd A4
       </p>
