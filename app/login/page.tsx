@@ -66,15 +66,17 @@ export default function LoginPage() {
     <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div
-          className="flex flex-col items-center gap-2 text-center"
+          className="flex flex-col items-center gap-3 text-center"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? "translateY(0)" : "translateY(16px)",
             transition: "opacity 0.5s ease, transform 0.5s ease",
           }}
         >
-          <FlowerTulip className="h-10 w-10 text-primary" weight="duotone" />
-          <h1 className="text-xl font-semibold tracking-tight">eMemories</h1>
+          <div className="flex items-center gap-2">
+            <FlowerTulip className="h-8 w-8 text-primary" weight="duotone" />
+            <h1 className="text-xl font-semibold tracking-tight">eMemories</h1>
+          </div>
           <p className="text-sm text-muted-foreground">Platforma do tworzenia eNekrologów</p>
         </div>
 
