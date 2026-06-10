@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { QrCode, Pencil } from "lucide-react"
+import { useTableState, SortHead } from "@/components/ui/data-table"
 import { mockFuneralHomes } from "@/lib/mock-data"
 import { FuneralHome } from "@/lib/types"
 import { toast } from "sonner"
@@ -25,6 +26,7 @@ export default function QrLimitsPage() {
   const [clients, setClients] = useState<FuneralHome[]>(mockFuneralHomes)
   const [editTarget, setEditTarget] = useState<FuneralHome | null>(null)
   const [newLimit, setNewLimit] = useState("")
+  const { sort, toggleSort, sortData } = useTableState()
 
   const totalLimit = clients.reduce((sum, c) => sum + c.qrLimit, 0)
   const totalUsed = clients.reduce((sum, c) => sum + c.qrUsed, 0)
@@ -91,17 +93,24 @@ export default function QrLimitsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Zakład</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Użyte</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Limit</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground w-48">Użycie</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Pozostałe</th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Edytuj</th>
+                    <SortHead col="name" sort={sort} onSort={toggleSort}>Zakład</SortHead>
+                    <SortHead col="status" sort={sort} onSort={toggleSort}>Status</SortHead>
+                    <SortHead col="used" sort={sort} onSort={toggleSort}>Użyte</SortHead>
+                    <SortHead col="limit" sort={sort} onSort={toggleSort}>Limit</SortHead>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground w-48">Użycie</th>
+                    <SortHead col="remaining" sort={sort} onSort={toggleSort}>Pozostałe</SortHead>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Edytuj</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {clients.map((client) => {
+                  {sortData(clients, (c, col) => {
+                    if (col === "name") return c.name
+                    if (col === "status") return c.status
+                    if (col === "used") return c.qrUsed
+                    if (col === "limit") return c.qrLimit
+                    if (col === "remaining") return c.qrLimit - c.qrUsed
+                    return ""
+                  }).map((client) => {
                     const pct = Math.round((client.qrUsed / client.qrLimit) * 100)
                     const remaining = client.qrLimit - client.qrUsed
                     const isWarning = pct >= 80
@@ -112,20 +121,8 @@ export default function QrLimitsPage() {
                           <p className="text-xs text-muted-foreground">{client.email}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge
-                            variant={
-                              client.status === "active"
-                                ? "default"
-                                : client.status === "suspended"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
-                            {client.status === "active"
-                              ? "Aktywny"
-                              : client.status === "inactive"
-                              ? "Nieaktywny"
-                              : "Zawieszony"}
+                          <Badge variant={client.status === "active" ? "success" : client.status === "suspended" ? "error" : "gray"}>
+                            {client.status === "active" ? "Aktywny" : client.status === "inactive" ? "Nieaktywny" : "Zawieszony"}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 font-medium">{client.qrUsed}</td>
@@ -145,7 +142,7 @@ export default function QrLimitsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant={remaining === 0 ? "destructive" : "outline"}>
+                          <Badge variant={remaining === 0 ? "error" : "outline"}>
                             {remaining} szt.
                           </Badge>
                         </td>

@@ -59,6 +59,7 @@ import {
   LogIn,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { FuneralHome, FuneralHomeStatus } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -123,6 +124,8 @@ export default function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
+  const { sort, toggleSort, sortData, paginate, page, setPage } = useTableState(10)
+
   const [createOpen, setCreateOpen] = useState(false)
   const [newClient, setNewClient] = useState({ name: "", email: "", phone: "", address: "", qrLimit: "50" })
   const [creating, setCreating] = useState(false)
@@ -157,6 +160,16 @@ export default function ClientsPage() {
         c.email.toLowerCase().includes(search.toLowerCase())) &&
       (statusFilter === "all" || c.status === statusFilter)
   )
+
+  const sorted = sortData(filtered, (c, col) => {
+    if (col === "name") return c.name
+    if (col === "email") return c.email
+    if (col === "obituaries") return c.obituaryCount
+    if (col === "status") return c.status
+    if (col === "created") return c.createdAt
+    return ""
+  })
+  const { items: paged, ...pagination } = paginate(sorted)
 
   const allSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id))
   const someSelected = filtered.some((c) => selected.has(c.id))
@@ -413,12 +426,12 @@ export default function ClientsPage() {
                         className="h-4 w-4 rounded border-input accent-foreground cursor-pointer"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nazwa</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">E-mail</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nekrologi</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Utworzony</th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Akcje</th>
+                    <SortHead col="name" sort={sort} onSort={toggleSort}>Nazwa</SortHead>
+                    <SortHead col="email" sort={sort} onSort={toggleSort}>E-mail</SortHead>
+                    <SortHead col="obituaries" sort={sort} onSort={toggleSort}>Nekrologi</SortHead>
+                    <SortHead col="status" sort={sort} onSort={toggleSort}>Status</SortHead>
+                    <SortHead col="created" sort={sort} onSort={toggleSort}>Utworzony</SortHead>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Akcje</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -434,7 +447,7 @@ export default function ClientsPage() {
                         <td className="px-4 py-3 text-right"><Skeleton className="h-7 w-7 ml-auto rounded-lg" /></td>
                       </tr>
                     ))
-                  ) : filtered.map((client) => {
+                  ) : paged.map((client) => {
                     const pct = client.qrLimit > 0 ? Math.round((client.obituaryCount / client.qrLimit) * 100) : 0
                     const isSelected = selected.has(client.id)
                     const isInactive = client.status === "inactive"
@@ -513,6 +526,7 @@ export default function ClientsPage() {
                 </tbody>
               </table>
             </div>
+            <TablePagination {...pagination} onPage={setPage} />
           </CardContent>
         </Card>
       </div>

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Search, QrCode, MoreHorizontal, Pencil, Archive, ExternalLink, Plus } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { BookOpen, Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
 import { ObituaryStatus } from "@/lib/types"
 import { toast } from "sonner"
@@ -78,6 +79,7 @@ export default function FhDashboardPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [archiveTarget, setArchiveTarget] = useState<DbObituary | null>(null)
+  const { sort, toggleSort, sortData, paginate, page, setPage } = useTableState(10)
 
   useEffect(() => {
     fetch("/api/funeral-home/me").then((r) => r.json()).then(setFh).catch(() => {})
@@ -99,6 +101,16 @@ export default function FhDashboardPage() {
     const matchStatus = statusFilter === "all" || o.status === statusFilter
     return matchSearch && matchStatus
   })
+
+  const sorted = sortData(filtered, (o, col) => {
+    if (col === "name") return `${o.first_name} ${o.last_name}`
+    if (col === "status") return o.status
+    if (col === "death_date") return o.death_date ?? ""
+    if (col === "views") return o.views
+    if (col === "created") return o.created_at
+    return ""
+  })
+  const { items: paged, ...pagination } = paginate(sorted)
 
   async function handleArchive(id: string) {
     try {
@@ -217,13 +229,13 @@ export default function FhDashboardPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/40">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Zmarły/a</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data śmierci</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Wyświetlenia</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Dodany</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">eNekrolog</th>
-                      <th className="px-4 py-3 text-right font-medium text-muted-foreground">Akcje</th>
+                      <SortHead col="name" sort={sort} onSort={toggleSort}>Zmarły/a</SortHead>
+                      <SortHead col="status" sort={sort} onSort={toggleSort}>Status</SortHead>
+                      <SortHead col="death_date" sort={sort} onSort={toggleSort}>Data śmierci</SortHead>
+                      <SortHead col="views" sort={sort} onSort={toggleSort}>Wyświetlenia</SortHead>
+                      <SortHead col="created" sort={sort} onSort={toggleSort}>Dodany</SortHead>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">eNekrolog</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Akcje</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -239,7 +251,7 @@ export default function FhDashboardPage() {
                           <td className="px-4 py-3"><Skeleton className="h-7 w-7 ml-auto rounded-lg" /></td>
                         </tr>
                       ))
-                    ) : filtered.map((obit) => (
+                    ) : paged.map((obit) => (
                       <tr key={obit.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
@@ -323,6 +335,7 @@ export default function FhDashboardPage() {
                   </tbody>
                 </table>
               </div>
+            <TablePagination {...pagination} onPage={setPage} />
             </CardContent>
           </Card>
         </div>

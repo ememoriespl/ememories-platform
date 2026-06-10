@@ -44,6 +44,8 @@ import {
 } from "lucide-react"
 import { ObituaryStatus } from "@/lib/types"
 import { toast } from "sonner"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 
 const statusLabel: Record<ObituaryStatus, string> = {
   draft: "Szkic",
@@ -76,6 +78,7 @@ export default function ObituariesPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [archiveTarget, setArchiveTarget] = useState<DbObituary | null>(null)
+  const { sort, toggleSort, sortData, paginate, page, setPage } = useTableState(10)
 
   useEffect(() => {
     fetch("/api/obituaries")
@@ -91,6 +94,16 @@ export default function ObituariesPage() {
     const matchStatus = statusFilter === "all" || o.status === statusFilter
     return matchSearch && matchStatus
   })
+
+  const sorted = sortData(filtered, (o, col) => {
+    if (col === "name") return `${o.first_name} ${o.last_name}`
+    if (col === "status") return o.status
+    if (col === "death_date") return o.death_date ?? ""
+    if (col === "views") return o.views ?? 0
+    if (col === "created") return o.created_at
+    return ""
+  })
+  const { items: paged, ...pagination } = paginate(sorted)
 
   async function handleArchive(id: string) {
     try {
@@ -121,10 +134,10 @@ export default function ObituariesPage() {
               className="pl-8 h-9"
               placeholder="Szukaj..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             />
           </div>
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v ?? "all"); setPage(1) }}>
             <SelectTrigger className="!h-9 w-40">
               <span>{{ all: "Wszystkie", published: "Opublikowane", draft: "Szkice", archived: "Archiwalne" }[statusFilter] ?? "Wszystkie"}</span>
             </SelectTrigger>
@@ -155,19 +168,29 @@ export default function ObituariesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Zmarły/a</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data śmierci</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Wyświetlenia</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Dodany</th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Link / QR</th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Akcje</th>
+                    <SortHead col="name" sort={sort} onSort={toggleSort}>Zmarły/a</SortHead>
+                    <SortHead col="status" sort={sort} onSort={toggleSort}>Status</SortHead>
+                    <SortHead col="death_date" sort={sort} onSort={toggleSort}>Data śmierci</SortHead>
+                    <SortHead col="views" sort={sort} onSort={toggleSort}>Wyświetlenia</SortHead>
+                    <SortHead col="created" sort={sort} onSort={toggleSort}>Dodany</SortHead>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">eNekrolog</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Akcje</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {loading ? (
-                    <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Ładowanie...</td></tr>
-                  ) : filtered.map((obit) => (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="border-b">
+                        <td className="px-4 py-3"><div className="flex items-center gap-3"><Skeleton className="h-8 w-8 rounded-full shrink-0" /><div className="space-y-1.5"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-20" /></div></div></td>
+                        <td className="px-4 py-3"><Skeleton className="h-5 w-24 rounded-full" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-7 w-7 rounded" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-7 w-7 ml-auto rounded-lg" /></td>
+                      </tr>
+                    ))
+                  ) : paged.map((obit) => (
                     <tr key={obit.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -277,6 +300,7 @@ export default function ObituariesPage() {
                 </tbody>
               </table>
             </div>
+            <TablePagination {...pagination} onPage={setPage} />
           </CardContent>
         </Card>
       </div>
