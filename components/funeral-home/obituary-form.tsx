@@ -532,10 +532,10 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
-                  padding: 32,
+                  padding: "32px 32px 32px 8px",
                 }}
               >
-                <ObituaryPreview data={data} availableWidth={panelRect.width - 64} />
+                <ObituaryPreview data={data} availableWidth={panelRect.width - 40} />
               </div>
             )}
           </>
