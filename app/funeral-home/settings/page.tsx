@@ -15,6 +15,7 @@ interface FhData {
   address: string | null
   qr_limit: number
   qr_used: number
+  obituaries: { total: number; published: number; draft: number }
 }
 
 export default function FhSettingsPage() {
@@ -100,7 +101,7 @@ export default function FhSettingsPage() {
           <CardContent>
             <p className="text-sm text-muted-foreground">
               Wykorzystano{" "}
-              <span className="font-semibold text-foreground">{data?.qr_used ?? 0}</span>
+              <span className="font-semibold text-foreground">{data?.obituaries?.total ?? 0}</span>
               {" "}/{" "}
               <span className="font-semibold text-foreground">{data?.qr_limit ?? 0}</span>
               {" "}nekrologów
