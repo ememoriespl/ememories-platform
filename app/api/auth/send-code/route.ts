@@ -60,13 +60,23 @@ export async function POST(req: NextRequest) {
     to: email,
     subject: "Twój kod logowania — eMemories",
     html: `
-      <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px">
-        <h2 style="margin:0 0 8px;font-size:20px">Kod logowania</h2>
+      <div style="font-family:sans-serif;max-width:420px;margin:0 auto;padding:32px 24px">
+        <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px">
+          <tr>
+            <td valign="middle" style="padding-right:10px">
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiB3aWR0aD0iMzYiIGhlaWdodD0iMzYiPjxwYXRoIGQ9Ik0xNjkuMjMsNjZ2MEE4MCw4MCwwLDAsMCwxMjgsMTM2LDgwLDgwLDAsMCwwLDg2Ljc3LDY2djBDMTAwLDM4LDEyOCwyNCwxMjgsMjRTMTU2LDM4LDE2OS4yMyw2NloiIGZpbGw9IiM2ZDI4ZDkiIG9wYWNpdHk9IjAuMjUiLz48cGF0aCBkPSJNMjA4LDQ4YTg3LjQ4LDg3LjQ4LDAsMCwwLTM1LjM2LDcuNDNjLTE1LjEtMjUuMzctMzkuOTItMzgtNDEuMDYtMzguNTlhOCw4LDAsMCwwLTcuMTYsMGMtMS4xNC41OC0yNiwxMy4yMi00MS4wNiwzOC41OUE4Ny40OCw4Ny40OCwwLDAsMCw0OCw0OGE4LDgsMCwwLDAtOCw4Vjk2YTg4LjExLDg4LjExLDAsMCwwLDgwLDg3LjYzdjM1LjQzTDgzLjU4LDIwMC44NGE4LDgsMCwxLDAtNy4xNiwxNC4zMmw0OCwyNGE4LDgsMCwwLDAsNy4xNiwwbDQ4LTI0YTgsOCwwLDAsMC03LjE2LTE0LjMyTDEzNiwyMTkuMDZWMTgzLjYzQTg4LjExLDg4LjExLDAsMCwwLDIxNiw5NlY1NkE4LDgsMCwwLDAsMjA4LDQ4Wk0xMjgsMzMuMjFjNi42NSw0LjA4LDIxLjA4LDE0LjE5LDMwLjY0LDMwQTg4LjQ2LDg4LjQ2LDAsMCwwLDEyOCw5OS4zNiw4OC40LDg4LjQsMCwwLDAsOTcuMzYsNjMuMTlDMTA2LjkzLDQ3LjQsMTIxLjM1LDM3LjI5LDEyOCwzMy4yMVpNNTYsOTZWNjQuNDRBNzIuMSw3Mi4xLDAsMCwxLDEyMCwxMzZ2MzEuNTZBNzIuMSw3Mi4xLDAsMCwxLDU2LDk2Wm0xNDQsMGE3Mi4xLDcyLjEsMCwwLDEtNjQsNzEuNTZWMTM2YTcyLjEsNzIuMSwwLDAsMSw2NC03MS41NloiIGZpbGw9IiM2ZDI4ZDkiLz48L3N2Zz4=" alt="eMemories" width="36" height="36" style="display:block"/>
+            </td>
+            <td valign="middle">
+              <span style="font-size:20px;font-weight:700;color:#111;font-family:sans-serif">eMemories</span>
+            </td>
+          </tr>
+        </table>
+        <h2 style="margin:0 0 8px;font-size:20px;color:#111">Kod logowania</h2>
         <p style="color:#666;margin:0 0 24px;font-size:14px">
           Użyj poniższego kodu, aby zalogować się do eMemories.<br>
           Kod jest ważny przez <strong>10 minut</strong>.
         </p>
-        <div style="background:#f4f4f5;border-radius:8px;padding:20px;text-align:center;letter-spacing:8px;font-size:32px;font-weight:700">
+        <div style="background:#f4f4f5;border-radius:8px;padding:20px;text-align:center;letter-spacing:8px;font-size:32px;font-weight:700;color:#111">
           ${code}
         </div>
         <p style="color:#999;font-size:12px;margin:16px 0 0">
