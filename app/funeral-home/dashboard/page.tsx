@@ -31,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Search, QrCode, MoreHorizontal, Pencil, Archive, ExternalLink, Plus, Globe } from "lucide-react"
+import { Search, QrCode, MoreHorizontal, Pencil, Archive, ExternalLink, Plus, Eye } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { BookOpen, Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
@@ -329,7 +329,7 @@ export default function FhDashboardPage() {
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => handlePublish(obit.id)}>
-                                    <Globe className="mr-2 h-4 w-4" />
+                                    <Eye className="mr-2 h-4 w-4" />
                                     Opublikuj
                                   </DropdownMenuItem>
                                 </>
