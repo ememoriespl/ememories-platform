@@ -25,7 +25,13 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     fetch("/api/admin/emails")
       .then((r) => r.json())
-      .then((d) => setAdminEmails(Array.isArray(d) ? d : []))
+      .then((d) => {
+        if (Array.isArray(d)) {
+          setAdminEmails(d)
+        } else {
+          toast.error(`Błąd API: ${d?.error ?? JSON.stringify(d)}`)
+        }
+      })
       .catch(() => toast.error("Błąd pobierania administratorów"))
       .finally(() => setEmailsLoading(false))
   }, [])
