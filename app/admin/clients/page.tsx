@@ -124,7 +124,7 @@ export default function ClientsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [newClient, setNewClient] = useState({ name: "", email: "", qrLimit: "50" })
+  const [newClient, setNewClient] = useState({ name: "", email: "", phone: "", address: "", qrLimit: "50" })
   const [creating, setCreating] = useState(false)
 
   const [editTarget, setEditTarget] = useState<FuneralHome | null>(null)
@@ -245,6 +245,8 @@ export default function ClientsPage() {
         body: JSON.stringify({
           name: newClient.name,
           email: newClient.email,
+          phone: newClient.phone || null,
+          address: newClient.address || null,
           qr_limit: parseInt(newClient.qrLimit) || 50,
         }),
       })
@@ -254,7 +256,7 @@ export default function ClientsPage() {
       }
       const created: DbClient = await res.json()
       setClients((prev) => [dbToClient(created), ...prev])
-      setNewClient({ name: "", email: "", qrLimit: "50" })
+      setNewClient({ name: "", email: "", phone: "", address: "", qrLimit: "50" })
       setCreateOpen(false)
       toast.success("Klient został utworzony")
     } catch (e: unknown) {
@@ -541,6 +543,22 @@ export default function ClientsPage() {
                 placeholder="biuro@zakład.pl"
                 value={newClient.email}
                 onChange={(e) => setNewClient((p) => ({ ...p, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Telefon</Label>
+              <Input
+                placeholder="+48 000 000 000"
+                value={newClient.phone}
+                onChange={(e) => setNewClient((p) => ({ ...p, phone: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Adres</Label>
+              <Input
+                placeholder="ul. Przykładowa 1, 00-001 Miasto"
+                value={newClient.address}
+                onChange={(e) => setNewClient((p) => ({ ...p, address: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
