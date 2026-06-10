@@ -18,7 +18,7 @@ export function ImpersonationBanner() {
         <ShieldAlert className="h-4 w-4 shrink-0" />
         <span>Przeglądasz panel jako klient (tryb podglądu administratora)</span>
       </div>
-      <Button size="sm" variant="outline" className="h-7 text-xs border-amber-300 text-amber-800 hover:bg-amber-100" onClick={handleReturn}>
+      <Button size="sm" color="secondary" className="h-7 text-xs border-amber-300 text-amber-800 hover:bg-amber-100" onClick={handleReturn}>
         Wróć do admina
       </Button>
     </div>

@@ -148,7 +148,7 @@ export default function QrLimitsPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <Button
-                            variant="ghost"
+                            color="tertiary"
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => {
@@ -192,7 +192,7 @@ export default function QrLimitsPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditTarget(null)}>
+            <Button color="secondary" onClick={() => setEditTarget(null)}>
               Anuluj
             </Button>
             <Button

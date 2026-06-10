@@ -368,7 +368,7 @@ export default function ClientsPage() {
             </SelectContent>
           </Select>
           <div className="ml-auto">
-            <Button className="h-9 gap-2" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" />
               Nowy klient
             </Button>
@@ -388,16 +388,16 @@ export default function ClientsPage() {
                   <span className="text-sm text-muted-foreground">
                     Zaznaczono: <strong>{selectedCount}</strong>
                   </span>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={handleBulkActivate}>
+                  <Button color="secondary" size="sm" className="gap-1.5 h-8" onClick={handleBulkActivate}>
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Aktywuj
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={handleBulkDeactivate}>
+                  <Button color="secondary" size="sm" className="gap-1.5 h-8" onClick={handleBulkDeactivate}>
                     <UserX className="h-3.5 w-3.5" />
                     Dezaktywuj
                   </Button>
                   <Button
-                    variant="outline"
+                    color="secondary"
                     size="sm"
                     className="gap-1.5 h-8 text-destructive border-destructive/30 hover:bg-destructive/10"
                     onClick={() => setBulkDeleteOpen(true)}
@@ -405,7 +405,7 @@ export default function ClientsPage() {
                     <Trash2 className="h-3.5 w-3.5" />
                     Usuń
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearSelection}>
+                  <Button color="tertiary" size="sm" className="h-8 w-8 p-0" onClick={clearSelection}>
                     <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -582,7 +582,7 @@ export default function ClientsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>Anuluj</Button>
+            <Button color="secondary" onClick={() => setCreateOpen(false)} disabled={creating}>Anuluj</Button>
             <Button onClick={handleCreate} disabled={creating}>
               {creating ? "Tworzenie..." : "Utwórz klienta"}
             </Button>
@@ -642,7 +642,7 @@ export default function ClientsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditTarget(null)} disabled={saving}>Anuluj</Button>
+            <Button color="secondary" onClick={() => setEditTarget(null)} disabled={saving}>Anuluj</Button>
             <Button onClick={handleEdit} disabled={saving}>
               {saving ? "Zapisywanie..." : "Zapisz zmiany"}
             </Button>
@@ -723,7 +723,7 @@ export default function ClientsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewTarget(null)}>Zamknij</Button>
+            <Button color="secondary" onClick={() => setViewTarget(null)}>Zamknij</Button>
             <Button onClick={() => { openEdit(viewTarget!); setViewTarget(null) }}>Edytuj</Button>
           </DialogFooter>
         </DialogContent>

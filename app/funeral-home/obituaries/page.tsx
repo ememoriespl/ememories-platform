@@ -150,7 +150,7 @@ export default function ObituariesPage() {
           </Select>
           <div className="ml-auto">
             <Link href="/funeral-home/obituaries/new">
-              <Button size="sm" className="gap-2">
+              <Button size="sm">
                 <Plus className="h-4 w-4" />
                 Nowy nekrolog
               </Button>
@@ -236,12 +236,12 @@ export default function ObituariesPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                             >
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Button color="tertiary" size="icon" className="h-7 w-7">
                                 <ExternalLink className="h-3.5 w-3.5" />
                               </Button>
                             </a>
                             <Link href={`/funeral-home/obituaries/${obit.id}/qr`}>
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Button color="tertiary" size="icon" className="h-7 w-7">
                                 <QrCode className="h-3.5 w-3.5" />
                               </Button>
                             </Link>

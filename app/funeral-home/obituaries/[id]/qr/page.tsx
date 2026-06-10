@@ -50,7 +50,7 @@ export default function QrPage() {
           {!obit ? "Nekrolog nie istnieje." : "Ten nekrolog nie jest jeszcze opublikowany."}
         </p>
         <Link href="/funeral-home/obituaries">
-          <Button variant="outline" className="gap-2">
+          <Button color="secondary">
             <ArrowLeft className="h-4 w-4" />
             Wróć
           </Button>
@@ -97,7 +97,7 @@ export default function QrPage() {
       <div className="p-6 space-y-4 max-w-lg">
         <div className="flex items-center gap-2">
           <Link href="/funeral-home/obituaries">
-            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
+            <Button color="tertiary" size="sm" className="gap-1.5 text-muted-foreground">
               <ArrowLeft className="h-4 w-4" />
               Nekrologi
             </Button>
@@ -137,11 +137,11 @@ export default function QrPage() {
                 <p className="flex-1 text-sm font-mono truncate text-muted-foreground">
                   {publicUrl}
                 </p>
-                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={copyUrl}>
+                <Button color="tertiary" size="icon" className="h-7 w-7 shrink-0" onClick={copyUrl}>
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
                 <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                  <Button color="tertiary" size="icon" className="h-7 w-7 shrink-0">
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Button>
                 </a>
@@ -155,7 +155,7 @@ export default function QrPage() {
                   Pobierz QR (PNG)
                 </Button>
               </a>
-              <Button variant="outline" className="flex-1 gap-2" onClick={handlePrint}>
+              <Button color="secondary" className="flex-1 gap-2" onClick={handlePrint}>
                 <Printer className="h-4 w-4" />
                 Drukuj / PDF
               </Button>

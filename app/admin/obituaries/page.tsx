@@ -171,7 +171,7 @@ export default function AdminObituariesPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Zaznaczono: <strong>{selectedCount}</strong></span>
                   <Button
-                    variant="outline"
+                    color="secondary"
                     size="sm"
                     className="h-8 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
                     onClick={() => setBulkDeleteOpen(true)}
@@ -179,7 +179,7 @@ export default function AdminObituariesPage() {
                     <Trash2 className="h-3.5 w-3.5" />
                     Usuń
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setSelected(new Set())}>
+                  <Button color="tertiary" size="sm" className="h-8 w-8 p-0" onClick={() => setSelected(new Set())}>
                     <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -276,7 +276,7 @@ export default function AdminObituariesPage() {
                       <td className="px-4 py-3">
                         {obit.status === "published" ? (
                           <a href={`https://ememoriespl.vercel.app/obituary/${obit.id}`} target="_blank" rel="noopener noreferrer">
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Button color="tertiary" size="icon" className="h-7 w-7">
                               <ExternalLink className="h-3.5 w-3.5" />
                             </Button>
                           </a>

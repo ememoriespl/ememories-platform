@@ -132,7 +132,7 @@ export function TimePicker({ value, onChange, className, disabled }: TimePickerP
         </div>
 
         <div className="flex items-center gap-2 border-t px-3 py-2.5">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => setOpen(false)}>
+          <Button color="secondary" size="sm" className="flex-1" onClick={() => setOpen(false)}>
             Anuluj
           </Button>
           <Button size="sm" className="flex-1" onClick={handleApply}>

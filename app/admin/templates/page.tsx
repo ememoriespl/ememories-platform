@@ -36,7 +36,7 @@ export default function TemplatesPage() {
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{templates.length} szablony dostępne</p>
-          <Button size="sm" className="gap-2">
+          <Button size="sm">
             <Plus className="h-4 w-4" />
             Nowy szablon
           </Button>
@@ -62,7 +62,7 @@ export default function TemplatesPage() {
                   <p className="text-xs text-muted-foreground">
                     Używany przez {tpl.usedBy} {tpl.usedBy === 1 ? "klienta" : "klientów"}
                   </p>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs">
+                  <Button color="tertiary" size="sm" className="h-7 text-xs">
                     Edytuj
                   </Button>
                 </div>

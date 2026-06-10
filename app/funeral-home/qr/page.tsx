@@ -59,13 +59,13 @@ export default function FhQrPage() {
                   </div>
                   <div className="flex gap-2">
                     <Link href={`/funeral-home/obituaries/${obit.id}/qr`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+                      <Button color="secondary" size="sm" className="w-full gap-1.5 text-xs">
                         <QrCode className="h-3.5 w-3.5" />
                         Pobierz QR
                       </Button>
                     </Link>
                     <Link href={`/funeral-home/obituaries/${obit.id}/preview`} className="flex-1">
-                      <Button variant="ghost" size="sm" className="w-full gap-1.5 text-xs">
+                      <Button color="tertiary" size="sm" className="w-full gap-1.5 text-xs">
                         <Eye className="h-3.5 w-3.5" />
                         Podgląd
                       </Button>

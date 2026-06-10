@@ -225,7 +225,7 @@ export default function FhDashboardPage() {
             </Select>
             <div className="ml-auto">
               <Link href="/funeral-home/obituaries/new">
-                <Button className="h-9 gap-2">
+                <Button >
                   <Plus className="h-4 w-4" />
                   Nowy nekrolog
                 </Button>
@@ -307,7 +307,7 @@ export default function FhDashboardPage() {
                         <td className="px-4 py-3">
                           {obit.status === "published" ? (
                             <a href={`https://ememoriespl.vercel.app/obituary/${obit.id}`} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Button color="tertiary" size="icon" className="h-7 w-7">
                                 <ExternalLink className="h-3.5 w-3.5" />
                               </Button>
                             </a>

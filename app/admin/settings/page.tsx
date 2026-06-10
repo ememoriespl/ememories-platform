@@ -126,7 +126,7 @@ export default function AdminSettingsPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <Button
-                            variant="ghost"
+                            color="tertiary"
                             size="icon"
                             className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => handleDeleteEmail(ae.id, ae.email)}

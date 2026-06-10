@@ -93,7 +93,7 @@ export default function PreviewPage() {
       <div className="p-6">
         <p className="text-muted-foreground">Nekrolog nie został znaleziony</p>
         <Link href="/funeral-home/obituaries">
-          <Button variant="outline" className="mt-4 gap-2">
+          <Button color="secondary" className="mt-4 gap-2">
             <ArrowLeft className="h-4 w-4" />
             Wróć do listy
           </Button>
@@ -139,20 +139,20 @@ export default function PreviewPage() {
                 : "Archiwalny"}
             </Badge>
             {obit.status === "published" && (
-              <Button size="sm" variant="outline" className="gap-2" onClick={() => toast.success("Link skopiowany!")}>
+              <Button size="sm" color="secondary" onClick={() => toast.success("Link skopiowany!")}>
                 <Share2 className="h-4 w-4" />
                 Udostępnij
               </Button>
             )}
             {obit.qrCode && (
               <Link href={`/funeral-home/obituaries/${id}/qr`}>
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" color="secondary">
                   <QrCode className="h-4 w-4" />
                   Kod QR
                 </Button>
               </Link>
             )}
-            <Button size="sm" className="gap-2" onClick={() => toast.success("PDF wygenerowany (demo)")}>
+            <Button size="sm" onClick={() => toast.success("PDF wygenerowany (demo)")}>
               <Download className="h-4 w-4" />
               Eksportuj PDF
             </Button>

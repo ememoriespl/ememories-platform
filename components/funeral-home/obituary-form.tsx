@@ -323,7 +323,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
                         </button>
                       </div>
                       <Button
-                        variant="outline"
+                        color="secondary"
                         size="sm"
                         className="gap-1.5"
                         onClick={() => {
@@ -502,7 +502,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
       {/* Fixed bottom action bar */}
       <div className="fixed bottom-0 left-60 right-0 z-10 border-t bg-background px-6 py-3 flex items-center justify-between">
         <Button
-          variant="ghost"
+          color="tertiary"
           onClick={() => router.push("/funeral-home/dashboard")}
           disabled={saving}
         >
@@ -510,15 +510,15 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
         </Button>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            className="gap-2"
+            color="secondary"
+           
             onClick={() => save("draft")}
             disabled={saving}
           >
             <Save className="h-4 w-4" />
             {saving ? "Zapisuję…" : "Zapisz szkic"}
           </Button>
-          <Button className="gap-2" onClick={() => save("published")} disabled={saving}>
+          <Button onClick={() => save("published")} disabled={saving}>
             <Send className="h-4 w-4" />
             {saving ? "Zapisuję…" : "Opublikuj"}
           </Button>

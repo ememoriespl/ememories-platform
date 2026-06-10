@@ -56,7 +56,7 @@ export default function FhTemplatesPage() {
               </CardHeader>
               <CardContent>
                 {!tpl.active && (
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button color="secondary" size="sm" className="w-full">
                     Wybierz ten szablon
                   </Button>
                 )}
