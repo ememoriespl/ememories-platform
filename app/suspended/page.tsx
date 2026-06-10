@@ -1,11 +1,14 @@
-import { Flower2 } from "lucide-react"
+"use client"
+
+import { FlowerTulip } from "@phosphor-icons/react"
 
 export default function SuspendedPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <div className="text-center max-w-md">
-        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary mx-auto mb-6">
-          <Flower2 className="h-7 w-7 text-primary-foreground" />
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <FlowerTulip className="h-8 w-8 text-primary" weight="duotone" />
+          <span className="text-xl font-semibold tracking-tight">eMemories</span>
         </div>
         <h1 className="text-2xl font-semibold mb-2">Konto nieaktywne</h1>
         <p className="text-muted-foreground text-sm leading-relaxed">
