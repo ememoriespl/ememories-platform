@@ -58,8 +58,8 @@ export function ObituaryPreview({ data }: { data: PreviewData }) {
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">
         Podgląd A4
       </p>
-      <div ref={containerRef} className="w-full">
-        <div style={{ height: Math.ceil(A4_H * scale), position: "relative", overflow: "hidden" }}>
+      <div ref={containerRef} className="w-full rounded-xl border border-border shadow-sm overflow-hidden">
+        <div style={{ height: Math.ceil(A4_H * scale), position: "relative" }}>
           <div
             style={{
               width: A4_W,
@@ -77,8 +77,6 @@ export function ObituaryPreview({ data }: { data: PreviewData }) {
                 width: A4_W,
                 height: A4_H,
                 background: "#fff",
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
                 display: "flex",
                 flexDirection: "row",
                 fontFamily: "Georgia, 'Times New Roman', serif",
