@@ -20,7 +20,17 @@ export interface OtpPayload {
   code: string
 }
 
-function getRole(email: string): Role {
+async function getRole(email: string): Promise<Role> {
+  try {
+    const { createServerClient } = await import("@/lib/supabase")
+    const supabase = createServerClient()
+    const { data } = await supabase
+      .from("admin_emails")
+      .select("email")
+      .eq("email", email)
+      .single()
+    if (data) return "admin"
+  } catch {}
   return email.endsWith("@ememories.pl") ? "admin" : "funeral-home"
 }
 
@@ -39,14 +49,14 @@ export async function verifyOtpToken(
     const { payload } = await jwtVerify(token, OTP_SECRET)
     const { email, code } = payload as unknown as OtpPayload
     if (code !== inputCode) return null
-    return { email, role: getRole(email) }
+    return { email, role: await getRole(email) }
   } catch {
     return null
   }
 }
 
 export async function createSession(email: string): Promise<void> {
-  const role = getRole(email)
+  const role = await getRole(email)
   const token = await new SignJWT({ email, role } satisfies SessionPayload)
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
