@@ -7,9 +7,9 @@ import {
   Users,
   FileText,
   Settings,
-  Flower2,
   BookOpen,
 } from "lucide-react"
+import { FlowerTulip } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -27,7 +27,7 @@ export function AdminSidebar() {
     <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
       <div className="flex h-[72px] items-center gap-2.5 px-6 border-b">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <Flower2 className="h-4 w-4 text-primary-foreground" />
+          <FlowerTulip className="h-4 w-4 text-primary-foreground" weight="duotone" />
         </div>
         <p className="text-[18px] font-semibold leading-none">eMemories</p>
       </div>

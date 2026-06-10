@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Flower2, Mail, ArrowLeft } from "lucide-react"
+import { Mail, ArrowLeft } from "lucide-react"
+import { FlowerTulip } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -73,7 +74,7 @@ export default function LoginPage() {
           }}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Flower2 className="h-5 w-5" />
+            <FlowerTulip className="h-5 w-5" weight="duotone" />
           </div>
           <h1 className="text-xl font-semibold tracking-tight">eMemories</h1>
           <p className="text-sm text-muted-foreground">Platforma do tworzenia eNekrologów</p>
