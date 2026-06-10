@@ -52,6 +52,7 @@ function SpinInput({
         inputMode="numeric"
         value={pad(value)}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={(e) => e.target.select()}
         className="h-11 w-14 rounded-md border border-input bg-background text-center tabular-nums text-xl font-semibold outline-none focus:ring-2 focus:ring-ring/50"
       />
       <button
@@ -112,7 +113,7 @@ export function TimePicker({ value, onChange, className, disabled }: TimePickerP
         </span>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className="w-44 p-0 overflow-hidden">
+      <PopoverContent align="start" className="w-auto min-w-[var(--anchor-width)] p-0 overflow-hidden">
         <div className="flex items-center justify-center gap-2 px-4 py-4">
           <SpinInput
             value={h}

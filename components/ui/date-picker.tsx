@@ -120,7 +120,7 @@ export function DatePicker({
         </span>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className="w-auto p-0 overflow-hidden">
+      <PopoverContent align="start" className="w-auto min-w-[var(--anchor-width)] p-0 overflow-hidden">
         {/* Segmented DD/MM/RRRR input + Dziś button */}
         <div className="flex items-center gap-2 px-3 py-2.5 border-b">
           <div className="flex items-center gap-0.5 flex-1 rounded-md border border-input bg-muted/30 px-2.5 py-1.5 tabular-nums text-sm">
