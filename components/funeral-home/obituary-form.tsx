@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { DatePicker } from "@/components/ui/date-picker"
+import { TimePicker } from "@/components/ui/time-picker"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Upload, X, Send, Save } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -253,21 +256,21 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Data urodzenia</Label>
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={data.birthDate}
                       max={data.deathDate || new Date().toISOString().split("T")[0]}
-                      onChange={(e) => update("birthDate", e.target.value)}
+                      onChange={(v) => update("birthDate", v)}
+                      placeholder="Wybierz datę"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Data śmierci</Label>
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={data.deathDate}
                       min={data.birthDate || undefined}
                       max={new Date().toISOString().split("T")[0]}
-                      onChange={(e) => update("deathDate", e.target.value)}
+                      onChange={(v) => update("deathDate", v)}
+                      placeholder="Wybierz datę"
                     />
                   </div>
                 </div>
@@ -413,18 +416,17 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Data ceremonii</Label>
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={data.ceremonyDate}
-                      onChange={(e) => update("ceremonyDate", e.target.value)}
+                      onChange={(v) => update("ceremonyDate", v)}
+                      placeholder="Wybierz datę"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Godzina ceremonii</Label>
-                    <Input
-                      type="time"
+                    <TimePicker
                       value={data.ceremonyTime}
-                      onChange={(e) => update("ceremonyTime", e.target.value)}
+                      onChange={(v) => update("ceremonyTime", v)}
                     />
                   </div>
                 </div>
@@ -440,20 +442,29 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
                     const entry = data.locations[key]
                     return (
                       <div key={key} className="space-y-2">
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            size="sm"
                             checked={entry.enabled}
-                            onChange={(e) =>
+                            onCheckedChange={(checked) =>
                               update("locations", {
                                 ...data.locations,
-                                [key]: { ...entry, enabled: e.target.checked },
+                                [key]: { ...entry, enabled: checked },
                               })
                             }
-                            className="h-4 w-4 rounded border-input accent-foreground"
                           />
-                          <span className="text-sm font-medium">{labels[key]}</span>
-                        </label>
+                          <span
+                            className="text-sm font-medium cursor-pointer select-none"
+                            onClick={() =>
+                              update("locations", {
+                                ...data.locations,
+                                [key]: { ...entry, enabled: !entry.enabled },
+                              })
+                            }
+                          >
+                            {labels[key]}
+                          </span>
+                        </div>
                         {entry.enabled && (
                           <Input
                             placeholder="Wpisz adres..."
