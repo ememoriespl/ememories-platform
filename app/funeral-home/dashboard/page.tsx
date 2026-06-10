@@ -127,6 +127,20 @@ export default function FhDashboardPage() {
     }
   }
 
+  async function handlePublish(id: string) {
+    try {
+      await fetch(`/api/obituaries/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "published" }),
+      })
+      setObituaries((prev) => prev.map((o) => (o.id === id ? { ...o, status: "published" as ObituaryStatus } : o)))
+      toast.success("Nekrolog opublikowany")
+    } catch {
+      toast.error("Błąd podczas publikacji")
+    }
+  }
+
   return (
     <>
       <Topbar title="Nekrologi" subtitle={fh?.name ?? ""} />
@@ -311,11 +325,24 @@ export default function FhDashboardPage() {
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edytuj
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => setArchiveTarget(obit)}>
-                                <Archive className="mr-2 h-4 w-4" />
-                                Archiwizuj
-                              </DropdownMenuItem>
+                              {(obit.status === "draft" || obit.status === "archived") && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handlePublish(obit.id)}>
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Opublikuj
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {obit.status !== "archived" && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => setArchiveTarget(obit)}>
+                                    <Archive className="mr-2 h-4 w-4" />
+                                    Archiwizuj
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
