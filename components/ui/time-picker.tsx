@@ -52,7 +52,7 @@ function SpinInput({
         inputMode="numeric"
         value={pad(value)}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 w-14 rounded-md border border-input bg-background text-center font-mono text-xl font-semibold outline-none focus:ring-2 focus:ring-ring/50"
+        className="h-11 w-14 rounded-md border border-input bg-background text-center tabular-nums text-xl font-semibold outline-none focus:ring-2 focus:ring-ring/50"
       />
       <button
         type="button"
@@ -107,7 +107,7 @@ export function TimePicker({ value, onChange, className, disabled }: TimePickerP
         )}
       >
         <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className={cn("flex-1 font-mono", !value && "font-sans")}>
+        <span className="flex-1 tabular-nums">
           {value ?? "Wybierz godzinę"}
         </span>
       </PopoverTrigger>
