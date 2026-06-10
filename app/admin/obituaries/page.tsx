@@ -163,9 +163,9 @@ export default function AdminObituariesPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex items-center gap-2.5">
                 <CardTitle className="text-base">Nekrologi</CardTitle>
-                <CardDescription>{filtered.length} rekordów</CardDescription>
+                <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{filtered.length} rekordów</span>
               </div>
               {selectedCount > 0 && (
                 <div className="flex items-center gap-2">

@@ -73,9 +73,7 @@ export default function LoginPage() {
             transition: "opacity 0.5s ease, transform 0.5s ease",
           }}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <FlowerTulip className="h-5 w-5" weight="duotone" />
-          </div>
+          <FlowerTulip className="h-10 w-10 text-primary" weight="duotone" />
           <h1 className="text-xl font-semibold tracking-tight">eMemories</h1>
           <p className="text-sm text-muted-foreground">Platforma do tworzenia eNekrologów</p>
         </div>

@@ -160,8 +160,10 @@ export default function ObituariesPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Nekrologi</CardTitle>
-            <CardDescription>{filtered.length} rekordów</CardDescription>
+            <div className="flex items-center gap-2.5">
+              <CardTitle className="text-base">Nekrologi</CardTitle>
+              <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{filtered.length} rekordów</span>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">

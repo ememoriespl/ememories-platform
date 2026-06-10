@@ -21,7 +21,7 @@ export function Checkbox({ checked, onCheckedChange, className, disabled }: Chec
       onCheckedChange={onCheckedChange}
       disabled={disabled}
       className={cn(
-        "flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-background transition-colors outline-none",
+        "flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border bg-background transition-colors outline-none",
         "data-[checked]:border-primary data-[checked]:bg-primary data-[checked]:text-primary-foreground",
         "data-[indeterminate]:border-primary data-[indeterminate]:bg-primary data-[indeterminate]:text-primary-foreground",
         "focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
@@ -32,9 +32,9 @@ export function Checkbox({ checked, onCheckedChange, className, disabled }: Chec
     >
       <CheckboxPrimitive.Indicator>
         {isIndeterminate ? (
-          <Minus className="h-2.5 w-2.5" strokeWidth={3} />
+          <Minus className="h-3 w-3" strokeWidth={3} />
         ) : (
-          <Check className="h-2.5 w-2.5" strokeWidth={3} />
+          <Check className="h-3 w-3" strokeWidth={3} />
         )}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>

@@ -26,9 +26,7 @@ export function AdminSidebar() {
   return (
     <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
       <div className="flex h-[72px] items-center gap-2.5 px-6 border-b">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <FlowerTulip className="h-4 w-4 text-primary-foreground" weight="duotone" />
-        </div>
+        <FlowerTulip className="h-7 w-7 text-primary" weight="duotone" />
         <p className="text-[18px] font-semibold leading-none">eMemories</p>
       </div>
 

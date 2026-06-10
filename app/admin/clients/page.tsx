@@ -379,9 +379,9 @@ export default function ClientsPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex items-center gap-2.5">
                 <CardTitle className="text-base">Wszyscy klienci</CardTitle>
-                <CardDescription>{filtered.length} zakładów pogrzebowych</CardDescription>
+                <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{filtered.length} zakładów</span>
               </div>
 
               {someSelected && (
