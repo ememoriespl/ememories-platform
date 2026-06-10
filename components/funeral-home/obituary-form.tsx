@@ -12,6 +12,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { TimePicker } from "@/components/ui/time-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Upload, X, Send, Save } from "lucide-react"
+import { ObituaryPreview } from "@/components/funeral-home/obituary-preview"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -224,8 +225,10 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
         </div>
       </div>
 
-      {/* Tab content */}
-      <div className="p-6 max-w-2xl space-y-6 pb-24">
+      {/* Tab content — two-column when on Dane tab */}
+      <div className="flex">
+        <div className="flex-1 min-w-0 p-6 pb-24">
+          <div className="max-w-2xl space-y-6">
         {activeTab === "dane" && (
           <>
             {/* Dane podstawowe */}
@@ -495,6 +498,17 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
         {activeTab === "enekrolog" && (
           <div className="flex items-center justify-center h-48 rounded-xl border border-dashed text-sm text-muted-foreground">
             eNekrolog — wkrótce
+          </div>
+        )}
+          </div>
+        </div>
+
+        {/* Right: A4 preview — sticky, only on Dane tab */}
+        {activeTab === "dane" && (
+          <div className="hidden xl:block w-[400px] shrink-0 border-l bg-muted/10">
+            <div className="sticky top-[117px] h-[calc(100vh-181px)] overflow-y-auto p-5">
+              <ObituaryPreview data={data} />
+            </div>
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Clock, ChevronUp, ChevronDown } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -29,15 +29,47 @@ function SpinInput({
   value,
   onUp,
   onDown,
-  onChange,
+  onCommit,
   max,
 }: {
   value: number
   onUp: () => void
   onDown: () => void
-  onChange: (val: string) => void
+  onCommit: (val: number) => void
   max: number
 }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const focused = useRef(false)
+
+  useEffect(() => {
+    const el = inputRef.current
+    if (el && !focused.current) {
+      el.value = pad(value)
+    }
+  }, [value])
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 2)
+    e.target.value = raw
+    const n = parseInt(raw, 10)
+    if (!isNaN(n)) onCommit(Math.min(max, Math.max(0, n)))
+  }
+
+  function handleBlur() {
+    focused.current = false
+    const el = inputRef.current
+    if (!el) return
+    const n = parseInt(el.value, 10)
+    const clamped = isNaN(n) ? value : Math.min(max, Math.max(0, n))
+    el.value = pad(clamped)
+    onCommit(clamped)
+  }
+
+  function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
+    focused.current = true
+    e.target.select()
+  }
+
   return (
     <div className="flex flex-col items-center gap-1">
       <button
@@ -48,11 +80,13 @@ function SpinInput({
         <ChevronUp className="h-4 w-4" />
       </button>
       <input
+        ref={inputRef}
         type="text"
         inputMode="numeric"
-        value={pad(value)}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={(e) => e.target.select()}
+        defaultValue={pad(value)}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onFocus={handleFocus}
         className="h-11 w-14 rounded-md border border-input bg-background text-center tabular-nums text-xl font-semibold outline-none focus:ring-2 focus:ring-ring/50"
       />
       <button
@@ -79,15 +113,6 @@ export function TimePicker({ value, onChange, className, disabled }: TimePickerP
       setM(parsed.minutes)
     }
     setOpen(isOpen)
-  }
-
-  function handleHInput(val: string) {
-    const n = parseInt(val.replace(/\D/g, "").slice(0, 2), 10)
-    if (!isNaN(n)) setH(Math.min(23, Math.max(0, n)))
-  }
-  function handleMInput(val: string) {
-    const n = parseInt(val.replace(/\D/g, "").slice(0, 2), 10)
-    if (!isNaN(n)) setM(Math.min(59, Math.max(0, n)))
   }
 
   function handleApply() {
@@ -119,7 +144,7 @@ export function TimePicker({ value, onChange, className, disabled }: TimePickerP
             value={h}
             onUp={() => setH((prev) => (prev + 1) % 24)}
             onDown={() => setH((prev) => (prev - 1 + 24) % 24)}
-            onChange={handleHInput}
+            onCommit={setH}
             max={23}
           />
           <span className="text-2xl font-bold text-muted-foreground pb-0.5 select-none">:</span>
@@ -127,7 +152,7 @@ export function TimePicker({ value, onChange, className, disabled }: TimePickerP
             value={m}
             onUp={() => setM((prev) => (prev + 1) % 60)}
             onDown={() => setM((prev) => (prev - 1 + 60) % 60)}
-            onChange={handleMInput}
+            onCommit={setM}
             max={59}
           />
         </div>
