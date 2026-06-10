@@ -58,6 +58,7 @@ import {
   X,
   LogIn,
 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { FuneralHome, FuneralHomeStatus } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -79,13 +80,10 @@ const statusLabel: Record<FuneralHomeStatus, string> = {
   suspended: "Zawieszony",
 }
 
-const statusVariant: Record<
-  FuneralHomeStatus,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  active: "default",
-  inactive: "secondary",
-  suspended: "destructive",
+const statusVariant: Record<FuneralHomeStatus, "success" | "gray" | "error"> = {
+  active: "success",
+  inactive: "gray",
+  suspended: "error",
 }
 
 type DbClient = {
@@ -283,7 +281,7 @@ export default function ClientsPage() {
         qr_limit: parseInt(editForm.qrLimit) || editTarget.qrLimit,
       })
       setClients((prev) =>
-        prev.map((c) => (c.id === editTarget.id ? dbToClient(updated) : c))
+        prev.map((c) => (c.id === editTarget.id ? { ...dbToClient(updated), obituaryCount: c.obituaryCount } : c))
       )
       setEditTarget(null)
       toast.success("Dane klienta zostały zaktualizowane")
@@ -423,11 +421,17 @@ export default function ClientsPage() {
                 </thead>
                 <tbody className="divide-y">
                   {loading ? (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
-                        Ładowanie...
-                      </td>
-                    </tr>
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <tr key={i} className="border-b">
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-4" /></td>
+                        <td className="px-4 py-3"><div className="space-y-1.5"><Skeleton className="h-4 w-36" /><Skeleton className="h-3 w-48" /></div></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-40" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                        <td className="px-4 py-3 text-right"><Skeleton className="h-7 w-7 ml-auto rounded-lg" /></td>
+                      </tr>
+                    ))
                   ) : filtered.map((client) => {
                     const pct = client.qrLimit > 0 ? Math.round((client.obituaryCount / client.qrLimit) * 100) : 0
                     const isSelected = selected.has(client.id)

@@ -51,10 +51,10 @@ const statusLabel: Record<ObituaryStatus, string> = {
   archived: "Archiwalny",
 }
 
-const statusVariant: Record<ObituaryStatus, "default" | "secondary" | "outline"> = {
+const statusVariant: Record<ObituaryStatus, "success" | "gray" | "outline"> = {
   draft: "outline",
-  published: "default",
-  archived: "secondary",
+  published: "success",
+  archived: "gray",
 }
 
 interface DbObituary {

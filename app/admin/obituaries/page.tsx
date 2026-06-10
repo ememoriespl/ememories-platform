@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Search, ExternalLink } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 
 type ObituaryStatus = "draft" | "published" | "archived"
@@ -24,10 +25,10 @@ const statusLabel: Record<ObituaryStatus, string> = {
   archived: "Archiwalny",
 }
 
-const statusVariant: Record<ObituaryStatus, "default" | "secondary" | "outline"> = {
+const statusVariant: Record<ObituaryStatus, "success" | "gray" | "outline"> = {
   draft: "outline",
-  published: "default",
-  archived: "secondary",
+  published: "success",
+  archived: "gray",
 }
 
 interface AdminObituary {
@@ -116,7 +117,17 @@ export default function AdminObituariesPage() {
                 </thead>
                 <tbody className="divide-y">
                   {loading ? (
-                    <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Ładowanie...</td></tr>
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <tr key={i} className="border-b">
+                        <td className="px-4 py-3"><div className="flex items-center gap-3"><Skeleton className="h-8 w-8 rounded-full shrink-0" /><div className="space-y-1.5"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-20" /></div></div></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-28" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-5 w-24 rounded-full" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-8" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-7 w-7 rounded" /></td>
+                      </tr>
+                    ))
                   ) : filtered.map((obit) => (
                     <tr key={obit.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
