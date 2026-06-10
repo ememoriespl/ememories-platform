@@ -121,14 +121,18 @@ export interface ObituaryFormProps {
 export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: ObituaryFormProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabId>("dane")
-  const previewColRef = useRef<HTMLDivElement>(null)
-  const [previewColWidth, setPreviewColWidth] = useState(0)
+  const previewSpacerRef = useRef<HTMLDivElement>(null)
+  const [panelRect, setPanelRect] = useState<{ left: number; width: number } | null>(null)
   useEffect(() => {
-    const el = previewColRef.current
-    if (!el) return
-    const obs = new ResizeObserver(([e]) => setPreviewColWidth(Math.floor(e.contentRect.width)))
-    obs.observe(el)
-    return () => obs.disconnect()
+    const update = () => {
+      const el = previewSpacerRef.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      if (r.width > 0) setPanelRect({ left: r.left, width: r.width })
+    }
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
   }, [])
   const [data, setData] = useState<FormData>(() => {
     if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft" }
@@ -512,25 +516,28 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
           </div>
         </div>
 
-        {/* Right: A4 preview — spacer + fixed panel */}
+        {/* Right: A4 preview */}
         {activeTab === "dane" && (
           <>
-            {/* flex spacer keeps form column from growing into preview area */}
-            <div className="hidden xl:block w-[660px] shrink-0" />
-            {/* fixed panel — explicit dimensions, no CSS cascade */}
-            <div
-              className="hidden xl:flex flex-col justify-center"
-              style={{
-                position: "fixed",
-                left: "calc(100vw - 660px)",
-                width: 660,
-                top: 117,
-                bottom: 64,
-                padding: "20px 20px 20px 12px",
-              }}
-            >
-              <ObituaryPreview data={data} availableWidth={628} />
-            </div>
+            <div ref={previewSpacerRef} className="hidden xl:block w-[660px] shrink-0" />
+            {panelRect && (
+              <div
+                style={{
+                  position: "fixed",
+                  left: panelRect.left,
+                  width: panelRect.width,
+                  top: 117,
+                  bottom: 64,
+                  zIndex: 45,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  padding: 32,
+                }}
+              >
+                <ObituaryPreview data={data} availableWidth={panelRect.width - 64} />
+              </div>
+            )}
           </>
         )}
       </div>
