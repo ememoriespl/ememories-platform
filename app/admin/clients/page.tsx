@@ -54,7 +54,6 @@ import {
   UserCheck,
   Trash2,
   CheckCircle2,
-  PauseCircle,
   X,
   LogIn,
 } from "lucide-react"
@@ -224,15 +223,15 @@ export default function ClientsPage() {
     } catch { toast.error("Błąd podczas aktywacji") }
   }
 
-  async function handleBulkSuspend() {
+  async function handleBulkDeactivate() {
     try {
-      await Promise.all([...selected].map((id) => patchClient(id, { status: "suspended" })))
+      await Promise.all([...selected].map((id) => patchClient(id, { status: "inactive" })))
       setClients((prev) =>
-        prev.map((c) => (selected.has(c.id) ? { ...c, status: "suspended" as FuneralHomeStatus } : c))
+        prev.map((c) => (selected.has(c.id) ? { ...c, status: "inactive" as FuneralHomeStatus } : c))
       )
-      toast.success(`Zawieszono ${selectedCount} klientów`)
+      toast.success(`Dezaktywowano ${selectedCount} klientów`)
       clearSelection()
-    } catch { toast.error("Błąd podczas zawieszania") }
+    } catch { toast.error("Błąd podczas dezaktywacji") }
   }
 
   async function handleBulkDelete() {
@@ -393,9 +392,9 @@ export default function ClientsPage() {
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Aktywuj
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={handleBulkSuspend}>
-                    <PauseCircle className="h-3.5 w-3.5" />
-                    Zawieś
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={handleBulkDeactivate}>
+                    <UserX className="h-3.5 w-3.5" />
+                    Dezaktywuj
                   </Button>
                   <Button
                     variant="outline"
