@@ -29,7 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, ExternalLink, MoreHorizontal, Trash2, X } from "lucide-react"
+import { Search, ExternalLink, MoreHorizontal, Trash2, X, Pencil } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -291,6 +291,7 @@ export default function AdminObituariesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => router.push(`/funeral-home/obituaries/${obit.id}/edit`)}>
+                              <Pencil className="mr-2 h-4 w-4" />
                               Edytuj
                             </DropdownMenuItem>
                             <DropdownMenuItem
