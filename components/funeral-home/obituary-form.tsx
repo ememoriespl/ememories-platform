@@ -512,15 +512,26 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
           </div>
         </div>
 
-        {/* Right: A4 preview — sticky, only on Dane tab */}
+        {/* Right: A4 preview — spacer + fixed panel */}
         {activeTab === "dane" && (
-          <div ref={previewColRef} className="hidden xl:block w-[660px] shrink-0">
-            <div className="sticky top-[117px] h-[calc(100vh-181px)] flex flex-col justify-center pl-2 pr-5 py-5">
-              {previewColWidth > 0 && (
-                <ObituaryPreview data={data} availableWidth={previewColWidth - 28} />
-              )}
+          <>
+            {/* flex spacer keeps form column from growing into preview area */}
+            <div className="hidden xl:block w-[660px] shrink-0" />
+            {/* fixed panel — explicit dimensions, no CSS cascade */}
+            <div
+              className="hidden xl:flex flex-col justify-center"
+              style={{
+                position: "fixed",
+                left: "calc(100vw - 660px)",
+                width: 660,
+                top: 117,
+                bottom: 64,
+                padding: "20px 20px 20px 12px",
+              }}
+            >
+              <ObituaryPreview data={data} availableWidth={628} />
             </div>
-          </div>
+          </>
         )}
       </div>
 
