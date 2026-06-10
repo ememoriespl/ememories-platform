@@ -506,7 +506,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
         {/* Right: A4 preview — sticky, only on Dane tab */}
         {activeTab === "dane" && (
           <div className="hidden xl:block w-[620px] shrink-0">
-            <div className="sticky top-[117px] h-[calc(100vh-181px)] flex items-center justify-center px-8 py-8">
+            <div className="sticky top-[117px] h-[calc(100vh-181px)] flex items-center justify-center px-5 py-5">
               <ObituaryPreview data={data} />
             </div>
           </div>

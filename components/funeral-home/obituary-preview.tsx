@@ -58,7 +58,7 @@ export function ObituaryPreview({ data }: { data: PreviewData }) {
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">
         Podgląd A4
       </p>
-      <div ref={containerRef} className="w-full border border-border shadow-sm overflow-hidden">
+      <div ref={containerRef} className="w-full border border-border overflow-hidden">
         <div style={{ height: Math.ceil(A4_H * scale), position: "relative" }}>
           <div
             style={{
