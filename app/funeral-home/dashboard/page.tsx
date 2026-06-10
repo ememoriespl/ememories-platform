@@ -234,8 +234,8 @@ export default function FhDashboardPage() {
                       <SortHead col="death_date" sort={sort} onSort={toggleSort}>Data śmierci</SortHead>
                       <SortHead col="views" sort={sort} onSort={toggleSort}>Wyświetlenia</SortHead>
                       <SortHead col="created" sort={sort} onSort={toggleSort}>Dodany</SortHead>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">eNekrolog</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Akcje</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">eNekrolog</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Akcje</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">

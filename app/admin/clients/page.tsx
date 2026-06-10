@@ -60,6 +60,7 @@ import {
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { FuneralHome, FuneralHomeStatus } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -418,12 +419,9 @@ export default function ClientsPage() {
                 <thead>
                   <tr className="border-b bg-muted/40">
                     <th className="px-4 py-3 w-10">
-                      <input
-                        type="checkbox"
-                        checked={allSelected}
-                        ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected }}
-                        onChange={toggleAll}
-                        className="h-4 w-4 rounded border-input accent-foreground cursor-pointer"
+                      <Checkbox
+                        checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                        onCheckedChange={toggleAll}
                       />
                     </th>
                     <SortHead col="name" sort={sort} onSort={toggleSort}>Nazwa</SortHead>
@@ -431,7 +429,7 @@ export default function ClientsPage() {
                     <SortHead col="obituaries" sort={sort} onSort={toggleSort}>Nekrologi</SortHead>
                     <SortHead col="status" sort={sort} onSort={toggleSort}>Status</SortHead>
                     <SortHead col="created" sort={sort} onSort={toggleSort}>Utworzony</SortHead>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Akcje</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Akcje</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -457,11 +455,9 @@ export default function ClientsPage() {
                         className={`hover:bg-muted/30 transition-colors ${isSelected ? "bg-muted/20" : ""}`}
                       >
                         <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={isSelected}
-                            onChange={() => toggleOne(client.id)}
-                            className="h-4 w-4 rounded border-input accent-foreground cursor-pointer"
+                            onCheckedChange={() => toggleOne(client.id)}
                           />
                         </td>
                         <td className="px-4 py-3">

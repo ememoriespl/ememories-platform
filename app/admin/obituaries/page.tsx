@@ -32,6 +32,7 @@ import {
 import { Search, ExternalLink, MoreHorizontal, Trash2, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 
 type ObituaryStatus = "draft" | "published" | "archived"
@@ -191,12 +192,9 @@ export default function AdminObituariesPage() {
                 <thead>
                   <tr className="border-b bg-muted/40">
                     <th className="px-4 py-3 w-10">
-                      <input
-                        type="checkbox"
-                        checked={allSelected}
-                        ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected }}
-                        onChange={toggleAll}
-                        className="h-4 w-4 rounded border-input accent-foreground cursor-pointer"
+                      <Checkbox
+                        checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                        onCheckedChange={toggleAll}
                       />
                     </th>
                     <SortHead col="name" sort={sort} onSort={toggleSort}>Zmarły/a</SortHead>
@@ -205,8 +203,8 @@ export default function AdminObituariesPage() {
                     <SortHead col="death_date" sort={sort} onSort={toggleSort}>Data śmierci</SortHead>
                     <SortHead col="views" sort={sort} onSort={toggleSort}>Wyświetlenia</SortHead>
                     <SortHead col="created" sort={sort} onSort={toggleSort}>Dodany</SortHead>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">eNekrolog</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Akcje</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">eNekrolog</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Akcje</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -230,11 +228,9 @@ export default function AdminObituariesPage() {
                       className={`hover:bg-muted/30 transition-colors ${selected.has(obit.id) ? "bg-muted/20" : ""}`}
                     >
                       <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={selected.has(obit.id)}
-                          onChange={() => toggleOne(obit.id)}
-                          className="h-4 w-4 rounded border-input accent-foreground cursor-pointer"
+                          onCheckedChange={() => toggleOne(obit.id)}
                         />
                       </td>
                       <td className="px-4 py-3">

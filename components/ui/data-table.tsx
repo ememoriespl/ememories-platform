@@ -68,7 +68,7 @@ export function SortHead({ col, sort, onSort, className, children }: SortHeadPro
   return (
     <th
       className={cn(
-        "px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground select-none whitespace-nowrap",
+        "px-4 py-3 text-left text-sm font-medium text-muted-foreground select-none whitespace-nowrap",
         className
       )}
     >

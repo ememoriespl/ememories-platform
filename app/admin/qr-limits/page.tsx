@@ -97,9 +97,9 @@ export default function QrLimitsPage() {
                     <SortHead col="status" sort={sort} onSort={toggleSort}>Status</SortHead>
                     <SortHead col="used" sort={sort} onSort={toggleSort}>Użyte</SortHead>
                     <SortHead col="limit" sort={sort} onSort={toggleSort}>Limit</SortHead>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground w-48">Użycie</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground w-48">Użycie</th>
                     <SortHead col="remaining" sort={sort} onSort={toggleSort}>Pozostałe</SortHead>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">Edytuj</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Edytuj</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
