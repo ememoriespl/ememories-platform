@@ -507,7 +507,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
         {activeTab === "dane" && (
           <div className="hidden xl:block w-[660px] shrink-0">
             <div className="sticky top-[117px] h-[calc(100vh-181px)] relative">
-              <div className="absolute inset-4 flex flex-col items-center justify-center">
+              <div className="absolute inset-3 flex flex-col justify-center">
                 <ObituaryPreview data={data} />
               </div>
             </div>
