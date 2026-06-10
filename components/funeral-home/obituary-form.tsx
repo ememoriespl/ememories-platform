@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -121,6 +121,15 @@ export interface ObituaryFormProps {
 export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: ObituaryFormProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabId>("dane")
+  const previewColRef = useRef<HTMLDivElement>(null)
+  const [previewColWidth, setPreviewColWidth] = useState(0)
+  useEffect(() => {
+    const el = previewColRef.current
+    if (!el) return
+    const obs = new ResizeObserver(([e]) => setPreviewColWidth(Math.floor(e.contentRect.width)))
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
   const [data, setData] = useState<FormData>(() => {
     if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft" }
     const parsed = parseLocationJSON(initialRaw.location ?? "", fhAddress)
@@ -505,11 +514,11 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
 
         {/* Right: A4 preview — sticky, only on Dane tab */}
         {activeTab === "dane" && (
-          <div className="hidden xl:block w-[660px] shrink-0">
-            <div className="sticky top-[117px] h-[calc(100vh-181px)] relative">
-              <div className="absolute inset-3 flex flex-col justify-center">
-                <ObituaryPreview data={data} />
-              </div>
+          <div ref={previewColRef} className="hidden xl:block w-[660px] shrink-0">
+            <div className="sticky top-[117px] h-[calc(100vh-181px)] flex flex-col justify-center p-4">
+              {previewColWidth > 0 && (
+                <ObituaryPreview data={data} availableWidth={previewColWidth - 32} />
+              )}
             </div>
           </div>
         )}

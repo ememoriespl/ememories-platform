@@ -1,6 +1,5 @@
 "use client"
 
-import { useRef, useState, useEffect } from "react"
 import { format, isValid } from "date-fns"
 import { pl } from "date-fns/locale"
 
@@ -32,20 +31,8 @@ function safeFormat(dateStr: string, fmt: string): string {
   }
 }
 
-export function ObituaryPreview({ data }: { data: PreviewData }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.38)
-
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const obs = new ResizeObserver(([entry]) => {
-      const w = entry.contentRect.width
-      if (w > 0) setScale(w / A4_W)
-    })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
+export function ObituaryPreview({ data, availableWidth }: { data: PreviewData; availableWidth?: number }) {
+  const scale = availableWidth && availableWidth > 0 ? availableWidth / A4_W : 0.5
 
   const hasName = data.firstName || data.lastName
   const name = hasName ? `${data.firstName} ${data.lastName}`.trim() : "Imię Nazwisko"
@@ -53,12 +40,14 @@ export function ObituaryPreview({ data }: { data: PreviewData }) {
   const deathFmt = data.deathDate ? safeFormat(data.deathDate, "d MMMM yyyy") : null
   const ceremonyDateFmt = data.ceremonyDate ? safeFormat(data.ceremonyDate, "d MMMM yyyy") : null
 
+  const cardWidth = availableWidth ?? Math.round(A4_W * scale)
+
   return (
-    <div className="flex w-full flex-col gap-3">
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">
+    <div>
+      <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">
         Podgląd A4
       </p>
-      <div ref={containerRef} className="w-full border border-border overflow-hidden">
+      <div style={{ width: cardWidth, border: "1px solid var(--border)", overflow: "hidden" }}>
         <div style={{ height: Math.ceil(A4_H * scale), position: "relative" }}>
           <div
             style={{
