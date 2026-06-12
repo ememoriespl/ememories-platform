@@ -11,13 +11,11 @@ function generateCode(): string {
 async function isAllowedEmail(email: string): Promise<boolean> {
   if (email.endsWith("@ememories.pl")) return true
   const supabase = createServerClient()
-  const { data } = await supabase
-    .from("funeral_homes")
-    .select("id")
-    .eq("email", email)
-    .eq("status", "active")
-    .maybeSingle()
-  return !!data
+  const [{ data: admin }, { data: funeralHome }] = await Promise.all([
+    supabase.from("admin_emails").select("email").eq("email", email).maybeSingle(),
+    supabase.from("funeral_homes").select("id").eq("email", email).eq("status", "active").maybeSingle(),
+  ])
+  return !!admin || !!funeralHome
 }
 
 export async function POST(req: NextRequest) {
