@@ -9,8 +9,8 @@ import {
   Settings,
   BookOpen,
 } from "lucide-react"
-import { FlowerTulip } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
+import { LogoLight } from "@/components/logo"
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -24,9 +24,8 @@ export function AdminSidebar() {
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
-      <div className="flex h-[72px] items-center gap-2.5 px-6 border-b">
-        <FlowerTulip className="h-7 w-7 text-primary" weight="duotone" />
-        <p className="text-[18px] font-semibold leading-none">eMemories</p>
+      <div className="flex h-[72px] items-center px-6 border-b">
+        <LogoLight />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">

@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BookOpen, Settings } from "lucide-react"
-import { FlowerTulip } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
+import { LogoLight } from "@/components/logo"
 
 const navItems = [
   { href: "/funeral-home/dashboard", label: "Nekrologi", icon: BookOpen },
@@ -16,9 +16,8 @@ export function FhSidebar() {
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r bg-sidebar">
-      <div className="flex h-[72px] items-center gap-2.5 px-6 border-b">
-        <FlowerTulip className="h-7 w-7 text-primary" weight="duotone" />
-        <p className="text-sm font-semibold leading-none">eMemories</p>
+      <div className="flex h-[72px] items-center px-6 border-b">
+        <LogoLight />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
