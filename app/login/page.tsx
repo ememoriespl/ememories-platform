@@ -103,7 +103,7 @@ export default function LoginPage() {
               </form>
             ) : (
               <form key="code" onSubmit={handleVerifyCode} className="space-y-4">
-                <div className="space-y-1 text-center">
+                <div className="space-y-1">
                   <p className="text-sm font-medium">Kod wysłany na</p>
                   <p className="text-sm text-muted-foreground">{email}</p>
                 </div>
