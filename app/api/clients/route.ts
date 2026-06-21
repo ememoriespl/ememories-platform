@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
-  const { name, email, phone, address, qr_limit } = body
+  const { name, nip, email, phone, address, qr_limit } = body
 
   if (!name || !email) {
     return NextResponse.json({ error: "name and email are required" }, { status: 400 })
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from("funeral_homes")
-    .insert({ name, email, phone: phone ?? null, address: address ?? null, qr_limit: qr_limit ?? 50, status: "active", qr_used: 0 })
+    .insert({ name, nip: nip ?? null, email, phone: phone ?? null, address: address ?? null, qr_limit: qr_limit ?? 50, status: "active", qr_used: 0 })
     .select()
     .single()
 

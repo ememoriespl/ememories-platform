@@ -90,6 +90,7 @@ const statusVariant: Record<FuneralHomeStatus, "success" | "gray" | "error"> = {
 type DbClient = {
   id: string
   name: string
+  nip: string | null
   email: string
   phone: string | null
   address: string | null
@@ -101,10 +102,20 @@ type DbClient = {
   last_login_at: string | null
 }
 
+function formatNip(nip: string | null | undefined): string {
+  if (!nip) return "—"
+  const digits = nip.replace(/\D/g, "")
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 8)}-${digits.slice(8, 10)}`
+  }
+  return nip
+}
+
 function dbToClient(r: DbClient): FuneralHome & { obituaryCount: number } {
   return {
     id: r.id,
     name: r.name,
+    nip: r.nip ?? "",
     email: r.email,
     phone: r.phone ?? "",
     address: r.address ?? "",
@@ -127,11 +138,11 @@ export default function ClientsPage() {
   const { sort, toggleSort, sortData, paginate, page, setPage } = useTableState(10)
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [newClient, setNewClient] = useState({ name: "", email: "", phone: "", address: "", qrLimit: "50" })
+  const [newClient, setNewClient] = useState({ name: "", nip: "", email: "", phone: "", address: "", qrLimit: "50" })
   const [creating, setCreating] = useState(false)
 
   const [editTarget, setEditTarget] = useState<FuneralHome | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", address: "", qrLimit: "50" })
+  const [editForm, setEditForm] = useState({ name: "", nip: "", email: "", phone: "", address: "", qrLimit: "50" })
   const [saving, setSaving] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<FuneralHome | null>(null)
@@ -257,6 +268,7 @@ export default function ClientsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newClient.name,
+          nip: newClient.nip || null,
           email: newClient.email,
           phone: newClient.phone || null,
           address: newClient.address || null,
@@ -269,7 +281,7 @@ export default function ClientsPage() {
       }
       const created: DbClient = await res.json()
       setClients((prev) => [dbToClient(created), ...prev])
-      setNewClient({ name: "", email: "", phone: "", address: "", qrLimit: "50" })
+      setNewClient({ name: "", nip: "", email: "", phone: "", address: "", qrLimit: "50" })
       setCreateOpen(false)
       toast.success("Klient został utworzony")
     } catch (e: unknown) {
@@ -281,7 +293,7 @@ export default function ClientsPage() {
 
   function openEdit(client: FuneralHome) {
     setEditTarget(client)
-    setEditForm({ name: client.name, email: client.email, phone: client.phone ?? "", address: client.address ?? "", qrLimit: String(client.qrLimit) })
+    setEditForm({ name: client.name, nip: client.nip ?? "", email: client.email, phone: client.phone ?? "", address: client.address ?? "", qrLimit: String(client.qrLimit) })
   }
 
   async function handleEdit() {
@@ -290,6 +302,7 @@ export default function ClientsPage() {
     try {
       const updated = await patchClient(editTarget.id, {
         name: editForm.name,
+        nip: editForm.nip || null,
         email: editForm.email,
         phone: editForm.phone || null,
         address: editForm.address || null,
@@ -546,6 +559,21 @@ export default function ClientsPage() {
               />
             </div>
             <div className="space-y-2">
+              <Label>NIP</Label>
+              <Input
+                placeholder="000-000-00-00"
+                value={newClient.nip}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 10)
+                  const formatted = digits.length <= 3 ? digits
+                    : digits.length <= 6 ? `${digits.slice(0,3)}-${digits.slice(3)}`
+                    : digits.length <= 8 ? `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`
+                    : `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6,8)}-${digits.slice(8)}`
+                  setNewClient((p) => ({ ...p, nip: formatted }))
+                }}
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Adres e-mail</Label>
               <Input
                 type="email"
@@ -604,6 +632,21 @@ export default function ClientsPage() {
                 placeholder="np. Dom Pogrzebowy Wieczność"
                 value={editForm.name}
                 onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>NIP</Label>
+              <Input
+                placeholder="000-000-00-00"
+                value={editForm.nip}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 10)
+                  const formatted = digits.length <= 3 ? digits
+                    : digits.length <= 6 ? `${digits.slice(0,3)}-${digits.slice(3)}`
+                    : digits.length <= 8 ? `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`
+                    : `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6,8)}-${digits.slice(8)}`
+                  setEditForm((p) => ({ ...p, nip: formatted }))
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -704,6 +747,10 @@ export default function ClientsPage() {
             <div className="flex justify-between py-2 border-b">
               <span className="text-muted-foreground">Nazwa</span>
               <span className="font-medium">{viewTarget?.name}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-muted-foreground">NIP</span>
+              <span className="font-medium">{formatNip(viewTarget?.nip)}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
               <span className="text-muted-foreground">E-mail</span>

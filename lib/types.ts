@@ -5,6 +5,7 @@ export type ActivityType = 'obituary_created' | 'obituary_published' | 'client_c
 export interface FuneralHome {
   id: string
   name: string
+  nip?: string
   email: string
   phone: string
   address: string
