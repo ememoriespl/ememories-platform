@@ -7,14 +7,14 @@ import { cookies } from "next/headers"
 
 export default async function FuneralHomeLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
-  if (!session || session.role !== "funeral-home") {
+  if (!session || (session.role !== "funeral-home" && session.role !== "admin")) {
     redirect("/login")
   }
 
   const cookieStore = await cookies()
   const isImpersonating = !!cookieStore.get("admin_return_session")
 
-  if (!isImpersonating) {
+  if (!isImpersonating && session.role !== "admin") {
     const supabase = createServerClient()
     const { data: fh } = await supabase
       .from("funeral_homes")
