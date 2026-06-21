@@ -66,15 +66,23 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left — illustration */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        <Image
-          src="/login-img-1x.webp"
-          alt=""
-          fill
-          className="object-cover object-center"
-          sizes="50vw"
-          priority
-        />
+      <div className="hidden lg:flex lg:w-1/2 p-5 pr-0">
+        <div
+          className="relative w-full overflow-hidden rounded-[20px]"
+          style={{
+            opacity: visible ? 1 : 0,
+            transition: "opacity 0.7s ease 0.1s",
+          }}
+        >
+          <Image
+            src="/login-img-1x.webp"
+            alt=""
+            fill
+            className="object-cover object-center"
+            sizes="50vw"
+            priority
+          />
+        </div>
       </div>
 
       {/* Right — form */}
@@ -84,11 +92,11 @@ export default function LoginPage() {
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? "translateY(0)" : "translateY(16px)",
-            transition: "opacity 0.5s ease, transform 0.5s ease",
+            transition: "opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s",
           }}
         >
           <div className="flex flex-col items-start gap-2">
-            <LogoLight />
+            <LogoLight style={{ height: 40, width: "auto" }} />
             <p className="text-sm text-muted-foreground">Platforma do tworzenia eNekrologów</p>
           </div>
 
@@ -151,11 +159,11 @@ export default function LoginPage() {
             )}
           </div>
 
-          <p className="text-center text-xs text-muted-foreground px-2">
+          <p className="text-xs text-muted-foreground">
             Logując się do eMemories, potwierdzasz zapoznanie się z Regulaminem oraz Polityką Prywatności, w tym zasadami przetwarzania danych osobowych.
           </p>
 
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             © 2026 eMemories.pl — wszelkie prawa zastrzeżone
           </p>
         </div>

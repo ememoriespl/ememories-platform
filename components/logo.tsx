@@ -1,4 +1,4 @@
-export function LogoLight({ className }: { className?: string }) {
+export function LogoLight({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       width="133"
@@ -7,6 +7,7 @@ export function LogoLight({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      style={style}
       aria-label="eMemories"
     >
       <g clipPath="url(#logo-clip)">
