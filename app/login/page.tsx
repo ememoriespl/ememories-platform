@@ -65,27 +65,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left — illustration */}
-      <div className="hidden lg:flex lg:w-1/2 p-5 pr-0">
-        <div
-          className="relative w-full overflow-hidden rounded-[20px]"
-          style={{
-            opacity: visible ? 1 : 0,
-            transition: "opacity 0.7s ease 0.1s",
-          }}
-        >
-          <Image
-            src="/login-img-1x.webp"
-            alt=""
-            fill
-            className="object-cover object-center"
-            sizes="50vw"
-            priority
-          />
-        </div>
-      </div>
-
-      {/* Right — form */}
+      {/* Left — form */}
       <div className="flex flex-1 flex-col items-center justify-center p-8 bg-background">
         <div
           className="w-full max-w-sm space-y-8"
@@ -166,6 +146,26 @@ export default function LoginPage() {
           <p className="text-xs text-muted-foreground">
             © 2026 eMemories.pl — wszelkie prawa zastrzeżone
           </p>
+        </div>
+      </div>
+
+      {/* Right — illustration */}
+      <div className="hidden lg:flex lg:w-1/2 p-5 pl-0">
+        <div
+          className="relative w-full overflow-hidden rounded-[20px]"
+          style={{
+            opacity: visible ? 1 : 0,
+            transition: "opacity 0.7s ease 0.1s",
+          }}
+        >
+          <Image
+            src="/login-img-1x.webp"
+            alt=""
+            fill
+            className="object-cover object-center"
+            sizes="50vw"
+            priority
+          />
         </div>
       </div>
     </div>
