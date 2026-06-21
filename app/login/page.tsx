@@ -155,6 +155,16 @@ export default function LoginPage() {
         </div>
 
         <p
+          className="text-center text-xs text-muted-foreground px-2"
+          style={{
+            opacity: visible ? 1 : 0,
+            transition: "opacity 0.7s ease 0.3s",
+          }}
+        >
+          Logując się do eMemories, potwierdzasz zapoznanie się z Regulaminem oraz Polityką Prywatności, w tym zasadami przetwarzania danych osobowych.
+        </p>
+
+        <p
           className="text-center text-xs text-muted-foreground"
           style={{
             opacity: visible ? 1 : 0,
