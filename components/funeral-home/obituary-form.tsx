@@ -116,9 +116,10 @@ export interface ObituaryFormProps {
   obituaryId?: string
   initialRaw?: ObituaryRaw
   fhAddress?: string
+  backUrl?: string
 }
 
-export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: ObituaryFormProps) {
+export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", backUrl = "/funeral-home/dashboard" }: ObituaryFormProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabId>("dane")
   const previewSpacerRef = useRef<HTMLDivElement>(null)
@@ -209,7 +210,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
             })
       if (!res.ok) throw new Error()
       toast.success(status === "published" ? "Opublikowano!" : "Zapisano szkic")
-      router.push("/funeral-home/dashboard")
+      router.push(backUrl)
     } catch {
       toast.error("Błąd podczas zapisywania")
       setSaving(false)
@@ -546,7 +547,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "" }: O
       <div className="fixed bottom-0 left-60 right-0 z-10 border-t bg-background px-6 py-3 flex items-center justify-between">
         <Button
           color="tertiary"
-          onClick={() => router.push("/funeral-home/dashboard")}
+          onClick={() => router.push(backUrl)}
           disabled={saving}
         >
           Anuluj
