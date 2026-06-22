@@ -139,7 +139,7 @@ export default function LoginPage() {
             )}
           </div>
 
-          <p className="text-sm text-black">
+          <p className="text-sm text-muted-foreground">
             Logując się do eMemories, potwierdzasz zapoznanie się z Regulaminem oraz Polityką Prywatności, w tym zasadami przetwarzania danych osobowych.
           </p>
 
