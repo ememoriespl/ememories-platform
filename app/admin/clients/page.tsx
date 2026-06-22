@@ -219,7 +219,10 @@ export default function ClientsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     })
-    if (!res.ok) throw new Error("Błąd aktualizacji")
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error ?? "Błąd aktualizacji")
+    }
     return (await res.json()) as DbClient
   }
 
@@ -313,7 +316,9 @@ export default function ClientsPage() {
       )
       setEditTarget(null)
       toast.success("Dane klienta zostały zaktualizowane")
-    } catch { toast.error("Błąd podczas zapisywania") } finally { setSaving(false) }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Błąd podczas zapisywania")
+    } finally { setSaving(false) }
   }
 
   async function handleToggleStatus(client: FuneralHome) {

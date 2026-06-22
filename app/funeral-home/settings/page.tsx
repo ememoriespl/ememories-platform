@@ -10,6 +10,7 @@ import { toast } from "sonner"
 
 interface FhData {
   name: string
+  nip: string | null
   email: string
   phone: string | null
   address: string | null
@@ -70,6 +71,10 @@ export default function FhSettingsPage() {
             <div className="space-y-2">
               <Label className="text-muted-foreground">Adres e-mail</Label>
               <Input value={data?.email ?? ""} disabled className="bg-muted/50 cursor-not-allowed" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">NIP</Label>
+              <Input value={data?.nip ?? "—"} disabled className="bg-muted/50 cursor-not-allowed" />
             </div>
             <div className="space-y-2">
               <Label>Telefon</Label>
