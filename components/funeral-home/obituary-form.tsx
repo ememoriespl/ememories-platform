@@ -11,15 +11,34 @@ import { Separator } from "@/components/ui/separator"
 import { DatePicker } from "@/components/ui/date-picker"
 import { TimePicker } from "@/components/ui/time-picker"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Upload, X, Send, Save } from "lucide-react"
+import { Upload, X, Send, Save, GripVertical } from "lucide-react"
 import { ObituaryPreview, DEFAULT_PRINT_TEMPLATE, type PrintTemplateSettings } from "@/components/funeral-home/obituary-preview"
-import { PRINT_FONTS, PRINT_FONTS_CLASSNAME } from "@/lib/print-fonts"
+import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
 import { PRINT_SIGILS } from "@/lib/print-sigils"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
+import type { ContentBlockId } from "@/components/funeral-home/obituary-preview"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 const BASE_URL = "https://ememoriespl.vercel.app"
+
+const WEIGHT_NAMES: Record<number, string> = {
+  100: "Thin",
+  200: "Extra Light",
+  300: "Light",
+  400: "Normalna",
+  500: "Medium",
+  600: "Semi Bold",
+  700: "Pogrubiona",
+  800: "Extra Bold",
+  900: "Black",
+}
+
+const BLOCK_LABELS: Record<ContentBlockId, string> = {
+  headline: "Nagłówek",
+  body: "Treść",
+  ceremony: "Ceremonia",
+}
 
 type TabId = "dane" | "szablon" | "enekrolog"
 
@@ -74,6 +93,9 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     align: p.align ?? DEFAULT_PRINT_TEMPLATE.align,
     sigilId: p.sigilId ?? DEFAULT_PRINT_TEMPLATE.sigilId,
     sigilSize: p.sigilSize ?? DEFAULT_PRINT_TEMPLATE.sigilSize,
+    showPhoto: p.showPhoto ?? DEFAULT_PRINT_TEMPLATE.showPhoto,
+    columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
+    blockOrder: p.blockOrder ?? DEFAULT_PRINT_TEMPLATE.blockOrder,
     sizes: { ...DEFAULT_PRINT_TEMPLATE.sizes, ...p.sizes },
   }
 }
@@ -179,6 +201,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
   })
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [draggedBlock, setDraggedBlock] = useState<ContentBlockId | null>(null)
 
   function update<K extends keyof FormData>(field: K, value: FormData[K]) {
     setData((prev) => ({ ...prev, [field]: value }))
@@ -542,7 +565,17 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                   <Label>Czcionka</Label>
                   <Select
                     value={data.printTemplate.fontId}
-                    onValueChange={(v) => v && updateTemplate("fontId", v as string)}
+                    onValueChange={(v) => {
+                      if (!v) return
+                      setData((prev) => ({
+                        ...prev,
+                        printTemplate: {
+                          ...prev.printTemplate,
+                          fontId: v as string,
+                          fontWeight: getClosestWeight(v as string, prev.printTemplate.fontWeight),
+                        },
+                      }))
+                    }}
                   >
                     <SelectTrigger className="w-full">
                       <span style={{ fontFamily: `var(${PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.cssVar})` }}>
@@ -562,23 +595,21 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Grubość</Label>
-                    <div className="flex gap-2">
-                      {([400, 700] as const).map((w) => (
-                        <button
-                          key={w}
-                          type="button"
-                          onClick={() => updateTemplate("fontWeight", w)}
-                          className={cn(
-                            "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
-                            data.printTemplate.fontWeight === w
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-muted-foreground"
-                          )}
-                        >
-                          {w === 400 ? "Normalna" : "Pogrubiona"}
-                        </button>
-                      ))}
-                    </div>
+                    <Select
+                      value={String(data.printTemplate.fontWeight)}
+                      onValueChange={(v) => v && updateTemplate("fontWeight", Number(v))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <span>{data.printTemplate.fontWeight} — {WEIGHT_NAMES[data.printTemplate.fontWeight] ?? ""}</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.weights.map((w) => (
+                          <SelectItem key={w} value={String(w)}>
+                            {w} — {WEIGHT_NAMES[w] ?? ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Wyrównanie</Label>
@@ -615,30 +646,116 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
               </CardHeader>
               <CardContent className="space-y-4">
                 {([
-                  { key: "name", label: "Imię i nazwisko", min: 14, max: 36 },
-                  { key: "dates", label: "Daty", min: 8, max: 20 },
-                  { key: "headline", label: "Nagłówek", min: 9, max: 22 },
-                  { key: "body", label: "Treść", min: 9, max: 20 },
-                  { key: "ceremonyLabel", label: "Etykieta ceremonii", min: 7, max: 16 },
-                  { key: "ceremonyInfo", label: "Informacje o ceremonii", min: 8, max: 18 },
+                  { key: "name", label: "Imię i nazwisko" },
+                  { key: "dates", label: "Daty" },
+                  { key: "headline", label: "Nagłówek" },
+                  { key: "body", label: "Treść" },
+                  { key: "ceremonyLabel", label: "Etykieta ceremonii" },
+                  { key: "ceremonyInfo", label: "Informacje o ceremonii" },
                 ] as const).map((s) => (
-                  <div key={s.key} className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label>{s.label}</Label>
-                      <span className="text-xs text-muted-foreground">{data.printTemplate.sizes[s.key]}px</span>
+                  <div key={s.key} className="flex items-center justify-between gap-4">
+                    <Label>{s.label}</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={data.printTemplate.sizes[s.key]}
+                        onChange={(e) =>
+                          updateTemplate("sizes", { ...data.printTemplate.sizes, [s.key]: Number(e.target.value) || 1 })
+                        }
+                        className="w-20 text-right"
+                      />
+                      <span className="text-xs text-muted-foreground">px</span>
                     </div>
-                    <input
-                      type="range"
-                      min={s.min}
-                      max={s.max}
-                      value={data.printTemplate.sizes[s.key]}
-                      onChange={(e) =>
-                        updateTemplate("sizes", { ...data.printTemplate.sizes, [s.key]: Number(e.target.value) })
-                      }
-                      className="w-full accent-primary"
-                    />
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Zdjęcie</CardTitle>
+                <CardDescription>Widoczność zdjęcia portretowego na wydruku</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    size="sm"
+                    checked={data.printTemplate.showPhoto}
+                    onCheckedChange={(checked) => updateTemplate("showPhoto", !!checked)}
+                  />
+                  <span
+                    className="text-sm font-medium cursor-pointer select-none"
+                    onClick={() => updateTemplate("showPhoto", !data.printTemplate.showPhoto)}
+                  >
+                    Pokaż zdjęcie na wydruku
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Układ</CardTitle>
+                <CardDescription>Pozycja kolumny ze zdjęciem i kolejność bloków treści</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Kolumna ze zdjęciem</Label>
+                  <div className="flex gap-2">
+                    {([
+                      { id: "left", label: "Lewo" },
+                      { id: "right", label: "Prawo" },
+                    ] as const).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => updateTemplate("columnPosition", p.id)}
+                        className={cn(
+                          "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
+                          data.printTemplate.columnPosition === p.id
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-muted-foreground"
+                        )}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Kolejność bloków treści</Label>
+                  <p className="text-xs text-muted-foreground">Przeciągnij, aby zmienić kolejność</p>
+                  <div className="space-y-1.5">
+                    {data.printTemplate.blockOrder.map((blockId, i) => (
+                      <div
+                        key={blockId}
+                        draggable
+                        onDragStart={() => setDraggedBlock(blockId)}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => {
+                          if (!draggedBlock || draggedBlock === blockId) return
+                          const order = [...data.printTemplate.blockOrder]
+                          const from = order.indexOf(draggedBlock)
+                          const to = order.indexOf(blockId)
+                          order.splice(from, 1)
+                          order.splice(to, 0, draggedBlock)
+                          updateTemplate("blockOrder", order)
+                          setDraggedBlock(null)
+                        }}
+                        onDragEnd={() => setDraggedBlock(null)}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm cursor-grab active:cursor-grabbing transition-opacity",
+                          draggedBlock === blockId && "opacity-40"
+                        )}
+                      >
+                        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
+                        {BLOCK_LABELS[blockId]}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -666,19 +783,18 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     </button>
                   ))}
                 </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label>Wielkość sygnetu</Label>
-                    <span className="text-xs text-muted-foreground">{data.printTemplate.sigilSize}px</span>
+                <div className="flex items-center justify-between gap-4">
+                  <Label>Wielkość sygnetu</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={data.printTemplate.sigilSize}
+                      onChange={(e) => updateTemplate("sigilSize", Number(e.target.value) || 1)}
+                      className="w-20 text-right"
+                    />
+                    <span className="text-xs text-muted-foreground">px</span>
                   </div>
-                  <input
-                    type="range"
-                    min={16}
-                    max={64}
-                    value={data.printTemplate.sigilSize}
-                    onChange={(e) => updateTemplate("sigilSize", Number(e.target.value))}
-                    className="w-full accent-primary"
-                  />
                 </div>
               </CardContent>
             </Card>

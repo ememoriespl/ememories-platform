@@ -19,12 +19,17 @@ export interface PreviewData {
   photoBw: boolean
 }
 
+export type ContentBlockId = "headline" | "body" | "ceremony"
+
 export interface PrintTemplateSettings {
   fontId: string
-  fontWeight: 400 | 700
+  fontWeight: number
   align: "left" | "center" | "right"
   sigilId: string
   sigilSize: number
+  showPhoto: boolean
+  columnPosition: "left" | "right"
+  blockOrder: ContentBlockId[]
   sizes: {
     name: number
     dates: number
@@ -41,6 +46,9 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   align: "center",
   sigilId: DEFAULT_SIGIL_ID,
   sigilSize: 32,
+  showPhoto: true,
+  columnPosition: "left",
+  blockOrder: ["headline", "body", "ceremony"],
   sizes: {
     name: 22,
     dates: 12,
@@ -91,6 +99,79 @@ export function ObituaryPreview({
     ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(publicUrl)}`
     : null
 
+  const blocks: Partial<Record<ContentBlockId, React.ReactNode>> = {
+    headline: data.obituaryHeadline ? (
+      <p
+        style={{
+          fontSize: template.sizes.headline,
+          fontStyle: "italic",
+          textAlign: align,
+          lineHeight: 1.75,
+          color: "#333",
+        }}
+      >
+        {data.obituaryHeadline}
+      </p>
+    ) : null,
+    body: (
+      <p
+        style={{
+          fontSize: template.sizes.body,
+          textAlign: align,
+          lineHeight: 1.85,
+          color: "#222",
+          whiteSpace: "pre-wrap",
+          flex: 1,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {data.obituaryText || ""}
+      </p>
+    ),
+    ceremony:
+      ceremonyDateFmt || data.ceremonyInfo || qrImageUrl ? (
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p
+              style={{
+                fontSize: template.sizes.ceremonyLabel,
+                textAlign: align,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                fontWeight: 600,
+                marginBottom: 6,
+                color: "#888",
+              }}
+            >
+              Ceremonia pogrzebowa
+            </p>
+            {ceremonyDateFmt && (
+              <p style={{ fontSize: template.sizes.ceremonyInfo + 1, textAlign: align, marginBottom: 4, color: "#222" }}>
+                {ceremonyDateFmt}
+                {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
+              </p>
+            )}
+            {data.ceremonyInfo && (
+              <p style={{ fontSize: template.sizes.ceremonyInfo, textAlign: align, fontStyle: "italic", lineHeight: 1.6, color: "#555" }}>
+                {data.ceremonyInfo}
+              </p>
+            )}
+          </div>
+          {qrImageUrl && (
+            <div style={{ flexShrink: 0, textAlign: "center" }}>
+              <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={72} height={72} />
+              <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
+            </div>
+          )}
+        </div>
+      ) : null,
+  }
+
+  const orderedBlocks = template.blockOrder
+    .map((id) => ({ id, node: blocks[id] }))
+    .filter((b) => b.node !== null)
+
   return (
     <div className={PRINT_FONTS_CLASSNAME}>
       <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">
@@ -116,20 +197,19 @@ export function ObituaryPreview({
                 height: A4_H,
                 background: "#fff",
                 display: "flex",
-                flexDirection: "row",
+                flexDirection: template.columnPosition === "right" ? "row-reverse" : "row",
                 fontFamily,
                 fontWeight: template.fontWeight,
                 color: "#111",
                 overflow: "hidden",
               }}
             >
-              {/* Left column: sigil, photo, name, dates */}
+              {/* Photo column: sigil, photo, name, dates */}
               <div
                 style={{
                   width: 340,
                   flexShrink: 0,
                   background: "#fff",
-                  borderRight: "1px solid #e5e7eb",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -142,7 +222,7 @@ export function ObituaryPreview({
                   {getSigilChar(template.sigilId)}
                 </div>
 
-                {data.photo && (
+                {template.showPhoto && data.photo && (
                   <div style={{ marginBottom: 20 }}>
                     <img
                       src={data.photo}
@@ -187,7 +267,7 @@ export function ObituaryPreview({
                 </p>
               </div>
 
-              {/* Right column: headline, body, ceremony */}
+              {/* Content column: headline, body, ceremony — order configurable */}
               <div
                 style={{
                   flex: 1,
@@ -197,89 +277,17 @@ export function ObituaryPreview({
                   overflow: "hidden",
                 }}
               >
-                {/* Headline */}
-                {data.obituaryHeadline ? (
-                  <p
-                    style={{
-                      fontSize: template.sizes.headline,
-                      fontStyle: "italic",
-                      textAlign: align,
-                      lineHeight: 1.75,
-                      marginBottom: 20,
-                      color: "#333",
-                      borderBottom: "1px solid #e5e7eb",
-                      paddingBottom: 16,
-                    }}
-                  >
-                    {data.obituaryHeadline}
-                  </p>
-                ) : (
-                  <div style={{ borderBottom: "1px solid #e5e7eb", marginBottom: 20, paddingBottom: 16 }} />
-                )}
-
-                {/* Body */}
-                <p
-                  style={{
-                    fontSize: template.sizes.body,
-                    textAlign: align,
-                    lineHeight: 1.85,
-                    color: "#222",
-                    whiteSpace: "pre-wrap",
-                    flex: 1,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {data.obituaryText || ""}
-                </p>
-
-                {/* Ceremony + QR */}
-                {(ceremonyDateFmt || data.ceremonyInfo || qrImageUrl) && (
+                {orderedBlocks.map((b, i) => (
                   <div
+                    key={b.id}
                     style={{
-                      marginTop: 20,
-                      borderTop: "1px solid #e5e7eb",
-                      paddingTop: 16,
-                      display: "flex",
-                      alignItems: "flex-end",
-                      justifyContent: "space-between",
-                      gap: 20,
+                      ...(i > 0 && { marginTop: 20, paddingTop: 16, borderTop: "1px solid #e5e7eb" }),
+                      ...(b.id === "body" && { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }),
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p
-                        style={{
-                          fontSize: template.sizes.ceremonyLabel,
-                          textAlign: align,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.12em",
-                          fontWeight: 600,
-                          marginBottom: 6,
-                          color: "#888",
-                        }}
-                      >
-                        Ceremonia pogrzebowa
-                      </p>
-                      {ceremonyDateFmt && (
-                        <p style={{ fontSize: template.sizes.ceremonyInfo + 1, textAlign: align, marginBottom: 4, color: "#222" }}>
-                          {ceremonyDateFmt}
-                          {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
-                        </p>
-                      )}
-                      {data.ceremonyInfo && (
-                        <p style={{ fontSize: template.sizes.ceremonyInfo, textAlign: align, fontStyle: "italic", lineHeight: 1.6, color: "#555" }}>
-                          {data.ceremonyInfo}
-                        </p>
-                      )}
-                    </div>
-                    {qrImageUrl && (
-                      <div style={{ flexShrink: 0, textAlign: "center" }}>
-                        <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={72} height={72} />
-                        <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
-                      </div>
-                    )}
+                    {b.node}
                   </div>
-                )}
+                ))}
               </div>
             </div>
           </div>
