@@ -12,7 +12,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { TimePicker } from "@/components/ui/time-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Upload, X, Send, Save, GripVertical } from "lucide-react"
-import { ObituaryPreview, DEFAULT_PRINT_TEMPLATE, type PrintTemplateSettings } from "@/components/funeral-home/obituary-preview"
+import { ObituaryPreview, DEFAULT_PRINT_TEMPLATE, DEFAULT_BLOCK_ORDER, type PrintTemplateSettings, type BlockSettings } from "@/components/funeral-home/obituary-preview"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
 import { PRINT_SIGILS } from "@/lib/print-sigils"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
@@ -35,12 +35,19 @@ const WEIGHT_NAMES: Record<number, string> = {
 }
 
 const BLOCK_LABELS: Record<ContentBlockId, string> = {
+  photo: "Zdjęcie",
   name: "Imię i nazwisko",
   dates: "Data",
   headline: "Nagłówek",
   body: "Treść",
   ceremony: "Ceremonia",
 }
+
+const ALIGN_OPTIONS = [
+  { id: "left", label: "Lewo" },
+  { id: "center", label: "Środek" },
+  { id: "right", label: "Prawo" },
+] as const
 
 type TabId = "dane" | "szablon" | "enekrolog"
 
@@ -86,26 +93,30 @@ function defaultLocations(fhAddress = ""): Locations {
   }
 }
 
+function reconcileBlockOrder(saved: unknown): ContentBlockId[] {
+  const savedOrder = Array.isArray(saved) ? saved.filter((id): id is ContentBlockId => DEFAULT_BLOCK_ORDER.includes(id)) : []
+  const missing = DEFAULT_BLOCK_ORDER.filter((id) => !savedOrder.includes(id))
+  return [...missing, ...savedOrder]
+}
+
 function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_PRINT_TEMPLATE
-  const p = raw as Partial<PrintTemplateSettings> & {
-    sizes?: Partial<PrintTemplateSettings["sizes"]>
-    blockMargins?: Partial<PrintTemplateSettings["blockMargins"]>
+  const p = raw as Partial<PrintTemplateSettings> & { blocks?: Partial<Record<ContentBlockId, Partial<BlockSettings>>> }
+  const blocks = { ...DEFAULT_PRINT_TEMPLATE.blocks }
+  for (const id of DEFAULT_BLOCK_ORDER) {
+    blocks[id] = { ...DEFAULT_PRINT_TEMPLATE.blocks[id], ...p.blocks?.[id] }
   }
   return {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
-    align: p.align ?? DEFAULT_PRINT_TEMPLATE.align,
     sigilId: p.sigilId ?? DEFAULT_PRINT_TEMPLATE.sigilId,
     sigilSize: p.sigilSize ?? DEFAULT_PRINT_TEMPLATE.sigilSize,
     showPhoto: p.showPhoto ?? DEFAULT_PRINT_TEMPLATE.showPhoto,
-    photoSize: p.photoSize ?? DEFAULT_PRINT_TEMPLATE.photoSize,
     qrSize: p.qrSize ?? DEFAULT_PRINT_TEMPLATE.qrSize,
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
-    blockOrder: p.blockOrder ?? DEFAULT_PRINT_TEMPLATE.blockOrder,
-    blockMargins: { ...DEFAULT_PRINT_TEMPLATE.blockMargins, ...p.blockMargins },
-    sizes: { ...DEFAULT_PRINT_TEMPLATE.sizes, ...p.sizes },
+    blockOrder: reconcileBlockOrder(p.blockOrder),
+    blocks,
   }
 }
 
@@ -218,6 +229,16 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
 
   function updateTemplate<K extends keyof PrintTemplateSettings>(field: K, value: PrintTemplateSettings[K]) {
     setData((prev) => ({ ...prev, printTemplate: { ...prev.printTemplate, [field]: value } }))
+  }
+
+  function updateBlock<K extends keyof BlockSettings>(blockId: ContentBlockId, field: K, value: BlockSettings[K]) {
+    setData((prev) => ({
+      ...prev,
+      printTemplate: {
+        ...prev.printTemplate,
+        blocks: { ...prev.printTemplate.blocks, [blockId]: { ...prev.printTemplate.blocks[blockId], [field]: value } },
+      },
+    }))
   }
 
   async function handlePhotoUpload(file: File) {
@@ -566,8 +587,8 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
           <div className={cn("space-y-6", PRINT_FONTS_CLASSNAME)}>
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Typografia</CardTitle>
-                <CardDescription>Czcionka, grubość i wyrównanie tekstu na szablonie</CardDescription>
+                <CardTitle className="text-base">Czcionka</CardTitle>
+                <CardDescription>Krój i grubość dla całego szablonu</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -601,92 +622,33 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Grubość</Label>
-                    <Select
-                      value={String(data.printTemplate.fontWeight)}
-                      onValueChange={(v) => v && updateTemplate("fontWeight", Number(v))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <span>{data.printTemplate.fontWeight} — {WEIGHT_NAMES[data.printTemplate.fontWeight] ?? ""}</span>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.weights.map((w) => (
-                          <SelectItem key={w} value={String(w)}>
-                            {w} — {WEIGHT_NAMES[w] ?? ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Wyrównanie</Label>
-                    <div className="flex gap-2">
-                      {([
-                        { id: "left", label: "Lewo" },
-                        { id: "center", label: "Środek" },
-                        { id: "right", label: "Prawo" },
-                      ] as const).map((a) => (
-                        <button
-                          key={a.id}
-                          type="button"
-                          onClick={() => updateTemplate("align", a.id)}
-                          className={cn(
-                            "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
-                            data.printTemplate.align === a.id
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-muted-foreground"
-                          )}
-                        >
-                          {a.label}
-                        </button>
+                <div className="space-y-2">
+                  <Label>Grubość</Label>
+                  <Select
+                    value={String(data.printTemplate.fontWeight)}
+                    onValueChange={(v) => v && updateTemplate("fontWeight", Number(v))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <span>{data.printTemplate.fontWeight} — {WEIGHT_NAMES[data.printTemplate.fontWeight] ?? ""}</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.weights.map((w) => (
+                        <SelectItem key={w} value={String(w)}>
+                          {w} — {WEIGHT_NAMES[w] ?? ""}
+                        </SelectItem>
                       ))}
-                    </div>
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Wielkości informacji</CardTitle>
-                <CardDescription>Rozmiar czcionki dla poszczególnych elementów</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {([
-                  { key: "name", label: "Imię i nazwisko" },
-                  { key: "dates", label: "Daty" },
-                  { key: "headline", label: "Nagłówek" },
-                  { key: "body", label: "Treść" },
-                  { key: "ceremonyLabel", label: "Etykieta ceremonii" },
-                  { key: "ceremonyInfo", label: "Informacje o ceremonii" },
-                ] as const).map((s) => (
-                  <div key={s.key} className="flex items-center justify-between gap-4">
-                    <Label>{s.label}</Label>
-                    <div className="flex items-center gap-1.5">
-                      <Input
-                        type="number"
-                        min={1}
-                        value={data.printTemplate.sizes[s.key]}
-                        onChange={(e) =>
-                          updateTemplate("sizes", { ...data.printTemplate.sizes, [s.key]: Number(e.target.value) || 1 })
-                        }
-                        className="w-20 text-right"
-                      />
-                      <span className="text-xs text-muted-foreground">px</span>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle className="text-base">Zdjęcie</CardTitle>
-                <CardDescription>Widoczność i wielkość zdjęcia portretowego na wydruku</CardDescription>
+                <CardDescription>Widoczność zdjęcia portretowego na wydruku</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="flex items-center gap-2">
                   <Checkbox
                     size="sm"
@@ -700,21 +662,6 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     Pokaż zdjęcie na wydruku
                   </span>
                 </div>
-                {data.printTemplate.showPhoto && (
-                  <div className="flex items-center justify-between gap-4">
-                    <Label>Wielkość zdjęcia</Label>
-                    <div className="flex items-center gap-1.5">
-                      <Input
-                        type="number"
-                        min={1}
-                        value={data.printTemplate.photoSize}
-                        onChange={(e) => updateTemplate("photoSize", Number(e.target.value) || 1)}
-                        className="w-20 text-right"
-                      />
-                      <span className="text-xs text-muted-foreground">px</span>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -747,7 +694,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Kolumna graficzna (sygnet, zdjęcie, QR)</Label>
+                  <Label>Kolumna graficzna (sygnet, QR)</Label>
                   <div className="flex gap-2">
                     {([
                       { id: "left", label: "Lewo" },
@@ -794,66 +741,129 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Kolejność i marginesy bloków treści</Label>
-                  <p className="text-xs text-muted-foreground">Przeciągnij, aby zmienić kolejność. Marginesy góra/dół w px.</p>
-                  <div className="space-y-1.5">
-                    {data.printTemplate.blockOrder.map((blockId, i) => (
-                      <div
-                        key={blockId}
-                        draggable
-                        onDragStart={() => setDraggedBlock(blockId)}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={() => {
-                          if (!draggedBlock || draggedBlock === blockId) return
-                          const order = [...data.printTemplate.blockOrder]
-                          const from = order.indexOf(draggedBlock)
-                          const to = order.indexOf(blockId)
-                          order.splice(from, 1)
-                          order.splice(to, 0, draggedBlock)
-                          updateTemplate("blockOrder", order)
-                          setDraggedBlock(null)
-                        }}
-                        onDragEnd={() => setDraggedBlock(null)}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg border bg-muted/30 px-2 py-2 text-sm cursor-grab active:cursor-grabbing transition-opacity",
-                          draggedBlock === blockId && "opacity-40"
-                        )}
-                      >
-                        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
-                        <span className="flex-1 truncate">{BLOCK_LABELS[blockId]}</span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-[10px] text-muted-foreground">góra</span>
-                          <Input
-                            type="number"
-                            value={data.printTemplate.blockMargins[blockId].top}
-                            onChange={(e) =>
-                              updateTemplate("blockMargins", {
-                                ...data.printTemplate.blockMargins,
-                                [blockId]: { ...data.printTemplate.blockMargins[blockId], top: Number(e.target.value) || 0 },
-                              })
-                            }
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                            className="w-14 h-7 text-right px-1.5 text-xs"
-                          />
-                          <span className="text-[10px] text-muted-foreground">dół</span>
-                          <Input
-                            type="number"
-                            value={data.printTemplate.blockMargins[blockId].bottom}
-                            onChange={(e) =>
-                              updateTemplate("blockMargins", {
-                                ...data.printTemplate.blockMargins,
-                                [blockId]: { ...data.printTemplate.blockMargins[blockId], bottom: Number(e.target.value) || 0 },
-                              })
-                            }
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                            className="w-14 h-7 text-right px-1.5 text-xs"
-                          />
+                  <Label>Bloki treści</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Przeciągnij za uchwyt, aby zmienić kolejność. Każdy blok ma własny rozmiar, wyrównanie i marginesy.
+                  </p>
+                  <div className="space-y-2">
+                    {data.printTemplate.blockOrder.map((blockId, i) => {
+                      const block = data.printTemplate.blocks[blockId]
+                      return (
+                        <div
+                          key={blockId}
+                          draggable
+                          onDragStart={() => setDraggedBlock(blockId)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => {
+                            if (!draggedBlock || draggedBlock === blockId) return
+                            const order = [...data.printTemplate.blockOrder]
+                            const from = order.indexOf(draggedBlock)
+                            const to = order.indexOf(blockId)
+                            order.splice(from, 1)
+                            order.splice(to, 0, draggedBlock)
+                            updateTemplate("blockOrder", order)
+                            setDraggedBlock(null)
+                          }}
+                          onDragEnd={() => setDraggedBlock(null)}
+                          className={cn(
+                            "rounded-lg border bg-muted/30 p-2.5 space-y-2.5 cursor-grab active:cursor-grabbing transition-opacity",
+                            draggedBlock === blockId && "opacity-40"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
+                            <span className="flex-1 text-sm font-medium truncate">{BLOCK_LABELS[blockId]}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {blockId === "photo" ? "Wielkość zdjęcia" : "Rozmiar czcionki"}
+                            </span>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={block.size}
+                                  onChange={(e) => updateBlock(blockId, "size", Number(e.target.value) || 1)}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                  className="w-16 h-7 text-right px-1.5 text-xs"
+                                />
+                                <span className="text-[10px] text-muted-foreground">px</span>
+                              </div>
+                              {blockId === "ceremony" && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">etykieta</span>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={block.labelSize ?? 9}
+                                    onChange={(e) => updateBlock(blockId, "labelSize", Number(e.target.value) || 1)}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                    className="w-16 h-7 text-right px-1.5 text-xs"
+                                  />
+                                  <span className="text-[10px] text-muted-foreground">px</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground shrink-0">Wyrównanie</span>
+                            <div className="flex gap-1">
+                              {ALIGN_OPTIONS.map((a) => (
+                                <button
+                                  key={a.id}
+                                  type="button"
+                                  onClick={() => updateBlock(blockId, "align", a.id)}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                  className={cn(
+                                    "rounded-md border-2 px-2 py-1 text-[10px] font-medium transition-colors",
+                                    block.align === a.id
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border hover:border-muted-foreground"
+                                  )}
+                                >
+                                  {a.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground shrink-0">Marginesy</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground">góra</span>
+                                <Input
+                                  type="number"
+                                  value={block.marginTop}
+                                  onChange={(e) => updateBlock(blockId, "marginTop", Number(e.target.value) || 0)}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                  className="w-14 h-7 text-right px-1.5 text-xs"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground">dół</span>
+                                <Input
+                                  type="number"
+                                  value={block.marginBottom}
+                                  onChange={(e) => updateBlock(blockId, "marginBottom", Number(e.target.value) || 0)}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                  className="w-14 h-7 text-right px-1.5 text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               </CardContent>
