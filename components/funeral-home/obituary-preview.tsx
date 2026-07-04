@@ -19,7 +19,12 @@ export interface PreviewData {
   photoBw: boolean
 }
 
-export type ContentBlockId = "headline" | "body" | "ceremony"
+export type ContentBlockId = "name" | "dates" | "headline" | "body" | "ceremony"
+
+export interface BlockMargin {
+  top: number
+  bottom: number
+}
 
 export interface PrintTemplateSettings {
   fontId: string
@@ -28,8 +33,12 @@ export interface PrintTemplateSettings {
   sigilId: string
   sigilSize: number
   showPhoto: boolean
+  photoSize: number
+  qrSize: number
   columnPosition: "left" | "right"
+  verticalAlign: "top" | "center" | "bottom"
   blockOrder: ContentBlockId[]
+  blockMargins: Record<ContentBlockId, BlockMargin>
   sizes: {
     name: number
     dates: number
@@ -47,8 +56,18 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   sigilId: DEFAULT_SIGIL_ID,
   sigilSize: 32,
   showPhoto: true,
+  photoSize: 130,
+  qrSize: 72,
   columnPosition: "left",
-  blockOrder: ["headline", "body", "ceremony"],
+  verticalAlign: "center",
+  blockOrder: ["name", "dates", "headline", "body", "ceremony"],
+  blockMargins: {
+    name: { top: 0, bottom: 8 },
+    dates: { top: 0, bottom: 24 },
+    headline: { top: 0, bottom: 24 },
+    body: { top: 0, bottom: 24 },
+    ceremony: { top: 0, bottom: 0 },
+  },
   sizes: {
     name: 22,
     dates: 12,
@@ -57,6 +76,12 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
     ceremonyLabel: 9,
     ceremonyInfo: 11,
   },
+}
+
+const VERTICAL_ALIGN_MAP: Record<PrintTemplateSettings["verticalAlign"], string> = {
+  top: "flex-start",
+  center: "center",
+  bottom: "flex-end",
 }
 
 // A4 landscape: 297mm × 210mm at 96dpi ≈ 1123 × 794
@@ -91,15 +116,32 @@ export function ObituaryPreview({
   const birthFmt = data.birthDate ? safeFormat(data.birthDate, "d MMMM yyyy") : null
   const deathFmt = data.deathDate ? safeFormat(data.deathDate, "d MMMM yyyy") : null
   const ceremonyDateFmt = data.ceremonyDate ? safeFormat(data.ceremonyDate, "d MMMM yyyy") : null
+  const dateLine = birthFmt && deathFmt ? `${birthFmt} — ${deathFmt}` : birthFmt ? `ur. ${birthFmt}` : deathFmt ? `zm. ${deathFmt}` : "—"
 
   const cardWidth = availableWidth ?? Math.round(A4_W * scale)
   const fontFamily = getPrintFontFamily(template.fontId)
   const align = template.align
   const qrImageUrl = publicUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(publicUrl)}`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=${template.qrSize * 2}x${template.qrSize * 2}&margin=8&data=${encodeURIComponent(publicUrl)}`
     : null
 
   const blocks: Partial<Record<ContentBlockId, React.ReactNode>> = {
+    name: (
+      <h1
+        style={{
+          fontSize: template.sizes.name,
+          fontWeight: "bold",
+          textAlign: align,
+          lineHeight: 1.3,
+          opacity: hasName ? 1 : 0.25,
+        }}
+      >
+        {name}
+      </h1>
+    ),
+    dates: (
+      <p style={{ fontSize: template.sizes.dates, textAlign: align, color: "#666", lineHeight: 1.6 }}>{dateLine}</p>
+    ),
     headline: data.obituaryHeadline ? (
       <p
         style={{
@@ -121,48 +163,37 @@ export function ObituaryPreview({
           lineHeight: 1.85,
           color: "#222",
           whiteSpace: "pre-wrap",
-          flex: 1,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
         }}
       >
         {data.obituaryText || ""}
       </p>
     ),
     ceremony:
-      ceremonyDateFmt || data.ceremonyInfo || qrImageUrl ? (
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p
-              style={{
-                fontSize: template.sizes.ceremonyLabel,
-                textAlign: align,
-                textTransform: "uppercase",
-                letterSpacing: "0.12em",
-                fontWeight: 600,
-                marginBottom: 6,
-                color: "#888",
-              }}
-            >
-              Ceremonia pogrzebowa
+      ceremonyDateFmt || data.ceremonyInfo ? (
+        <div>
+          <p
+            style={{
+              fontSize: template.sizes.ceremonyLabel,
+              textAlign: align,
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              fontWeight: 600,
+              marginBottom: 6,
+              color: "#888",
+            }}
+          >
+            Ceremonia pogrzebowa
+          </p>
+          {ceremonyDateFmt && (
+            <p style={{ fontSize: template.sizes.ceremonyInfo + 1, textAlign: align, marginBottom: 4, color: "#222" }}>
+              {ceremonyDateFmt}
+              {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
             </p>
-            {ceremonyDateFmt && (
-              <p style={{ fontSize: template.sizes.ceremonyInfo + 1, textAlign: align, marginBottom: 4, color: "#222" }}>
-                {ceremonyDateFmt}
-                {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
-              </p>
-            )}
-            {data.ceremonyInfo && (
-              <p style={{ fontSize: template.sizes.ceremonyInfo, textAlign: align, fontStyle: "italic", lineHeight: 1.6, color: "#555" }}>
-                {data.ceremonyInfo}
-              </p>
-            )}
-          </div>
-          {qrImageUrl && (
-            <div style={{ flexShrink: 0, textAlign: "center" }}>
-              <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={72} height={72} />
-              <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
-            </div>
+          )}
+          {data.ceremonyInfo && (
+            <p style={{ fontSize: template.sizes.ceremonyInfo, textAlign: align, fontStyle: "italic", lineHeight: 1.6, color: "#555" }}>
+              {data.ceremonyInfo}
+            </p>
           )}
         </div>
       ) : null,
@@ -204,7 +235,7 @@ export function ObituaryPreview({
                 overflow: "hidden",
               }}
             >
-              {/* Photo column: sigil, photo, name, dates */}
+              {/* Graphic column: sigil, photo, QR */}
               <div
                 style={{
                   width: 340,
@@ -215,79 +246,54 @@ export function ObituaryPreview({
                   alignItems: "center",
                   justifyContent: "center",
                   padding: "40px 36px",
-                  gap: 0,
+                  gap: 24,
                 }}
               >
-                <div style={{ fontSize: template.sigilSize, marginBottom: 20, color: "#555" }}>
-                  {getSigilChar(template.sigilId)}
-                </div>
+                <div style={{ fontSize: template.sigilSize, color: "#555" }}>{getSigilChar(template.sigilId)}</div>
 
                 {template.showPhoto && data.photo && (
-                  <div style={{ marginBottom: 20 }}>
-                    <img
-                      src={data.photo}
-                      alt=""
-                      style={{
-                        width: 130,
-                        height: 130,
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        display: "block",
-                        filter: data.photoBw ? "grayscale(100%)" : "none",
-                        boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
-                      }}
-                    />
-                  </div>
+                  <img
+                    src={data.photo}
+                    alt=""
+                    style={{
+                      width: template.photoSize,
+                      height: template.photoSize,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      display: "block",
+                      filter: data.photoBw ? "grayscale(100%)" : "none",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+                    }}
+                  />
                 )}
 
-                <h1
-                  style={{
-                    fontSize: template.sizes.name,
-                    fontWeight: "bold",
-                    textAlign: align,
-                    lineHeight: 1.3,
-                    marginBottom: 10,
-                    opacity: hasName ? 1 : 0.25,
-                  }}
-                >
-                  {name}
-                </h1>
-
-                <p
-                  style={{
-                    fontSize: template.sizes.dates,
-                    textAlign: align,
-                    color: "#666",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {birthFmt ? `ur. ${birthFmt}` : "—"}
-                  <br />
-                  {deathFmt ? `zm. ${deathFmt}` : "—"}
-                </p>
+                {qrImageUrl && (
+                  <div style={{ textAlign: "center" }}>
+                    <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={template.qrSize} height={template.qrSize} />
+                    <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
+                  </div>
+                )}
               </div>
 
-              {/* Content column: headline, body, ceremony — order configurable */}
+              {/* Content column: name, dates, headline, body, ceremony — order & spacing configurable */}
               <div
                 style={{
                   flex: 1,
                   display: "flex",
                   flexDirection: "column",
+                  justifyContent: VERTICAL_ALIGN_MAP[template.verticalAlign],
                   padding: "48px 48px 40px",
                   overflow: "hidden",
                 }}
               >
-                {orderedBlocks.map((b, i) => (
-                  <div
-                    key={b.id}
-                    style={{
-                      ...(i > 0 && { marginTop: 20, paddingTop: 16, borderTop: "1px solid #e5e7eb" }),
-                      ...(b.id === "body" && { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }),
-                    }}
-                  >
-                    {b.node}
-                  </div>
-                ))}
+                {orderedBlocks.map((b) => {
+                  const margin = template.blockMargins[b.id] ?? { top: 0, bottom: 0 }
+                  return (
+                    <div key={b.id} style={{ marginTop: margin.top, marginBottom: margin.bottom }}>
+                      {b.node}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>

@@ -35,6 +35,8 @@ const WEIGHT_NAMES: Record<number, string> = {
 }
 
 const BLOCK_LABELS: Record<ContentBlockId, string> = {
+  name: "Imię i nazwisko",
+  dates: "Data",
   headline: "Nagłówek",
   body: "Treść",
   ceremony: "Ceremonia",
@@ -86,7 +88,10 @@ function defaultLocations(fhAddress = ""): Locations {
 
 function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_PRINT_TEMPLATE
-  const p = raw as Partial<PrintTemplateSettings> & { sizes?: Partial<PrintTemplateSettings["sizes"]> }
+  const p = raw as Partial<PrintTemplateSettings> & {
+    sizes?: Partial<PrintTemplateSettings["sizes"]>
+    blockMargins?: Partial<PrintTemplateSettings["blockMargins"]>
+  }
   return {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
@@ -94,8 +99,12 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     sigilId: p.sigilId ?? DEFAULT_PRINT_TEMPLATE.sigilId,
     sigilSize: p.sigilSize ?? DEFAULT_PRINT_TEMPLATE.sigilSize,
     showPhoto: p.showPhoto ?? DEFAULT_PRINT_TEMPLATE.showPhoto,
+    photoSize: p.photoSize ?? DEFAULT_PRINT_TEMPLATE.photoSize,
+    qrSize: p.qrSize ?? DEFAULT_PRINT_TEMPLATE.qrSize,
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
+    verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
     blockOrder: p.blockOrder ?? DEFAULT_PRINT_TEMPLATE.blockOrder,
+    blockMargins: { ...DEFAULT_PRINT_TEMPLATE.blockMargins, ...p.blockMargins },
     sizes: { ...DEFAULT_PRINT_TEMPLATE.sizes, ...p.sizes },
   }
 }
@@ -675,9 +684,9 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Zdjęcie</CardTitle>
-                <CardDescription>Widoczność zdjęcia portretowego na wydruku</CardDescription>
+                <CardDescription>Widoczność i wielkość zdjęcia portretowego na wydruku</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     size="sm"
@@ -691,17 +700,54 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     Pokaż zdjęcie na wydruku
                   </span>
                 </div>
+                {data.printTemplate.showPhoto && (
+                  <div className="flex items-center justify-between gap-4">
+                    <Label>Wielkość zdjęcia</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={data.printTemplate.photoSize}
+                        onChange={(e) => updateTemplate("photoSize", Number(e.target.value) || 1)}
+                        className="w-20 text-right"
+                      />
+                      <span className="text-xs text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Kod QR</CardTitle>
+                <CardDescription>Wielkość kodu QR prowadzącego do eNekrologu</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between gap-4">
+                  <Label>Wielkość QR kodu</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={data.printTemplate.qrSize}
+                      onChange={(e) => updateTemplate("qrSize", Number(e.target.value) || 1)}
+                      className="w-20 text-right"
+                    />
+                    <span className="text-xs text-muted-foreground">px</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Układ</CardTitle>
-                <CardDescription>Pozycja kolumny ze zdjęciem i kolejność bloków treści</CardDescription>
+                <CardDescription>Pozycja kolumny graficznej, wyrównanie i kolejność bloków treści</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Kolumna ze zdjęciem</Label>
+                  <Label>Kolumna graficzna (sygnet, zdjęcie, QR)</Label>
                   <div className="flex gap-2">
                     {([
                       { id: "left", label: "Lewo" },
@@ -724,8 +770,32 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Kolejność bloków treści</Label>
-                  <p className="text-xs text-muted-foreground">Przeciągnij, aby zmienić kolejność</p>
+                  <Label>Wyrównanie treści w pionie</Label>
+                  <div className="flex gap-2">
+                    {([
+                      { id: "top", label: "Góra" },
+                      { id: "center", label: "Środek" },
+                      { id: "bottom", label: "Dół" },
+                    ] as const).map((v) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => updateTemplate("verticalAlign", v.id)}
+                        className={cn(
+                          "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
+                          data.printTemplate.verticalAlign === v.id
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-muted-foreground"
+                        )}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Kolejność i marginesy bloków treści</Label>
+                  <p className="text-xs text-muted-foreground">Przeciągnij, aby zmienić kolejność. Marginesy góra/dół w px.</p>
                   <div className="space-y-1.5">
                     {data.printTemplate.blockOrder.map((blockId, i) => (
                       <div
@@ -745,13 +815,43 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                         }}
                         onDragEnd={() => setDraggedBlock(null)}
                         className={cn(
-                          "flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm cursor-grab active:cursor-grabbing transition-opacity",
+                          "flex items-center gap-2 rounded-lg border bg-muted/30 px-2 py-2 text-sm cursor-grab active:cursor-grabbing transition-opacity",
                           draggedBlock === blockId && "opacity-40"
                         )}
                       >
                         <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                         <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
-                        {BLOCK_LABELS[blockId]}
+                        <span className="flex-1 truncate">{BLOCK_LABELS[blockId]}</span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-[10px] text-muted-foreground">góra</span>
+                          <Input
+                            type="number"
+                            value={data.printTemplate.blockMargins[blockId].top}
+                            onChange={(e) =>
+                              updateTemplate("blockMargins", {
+                                ...data.printTemplate.blockMargins,
+                                [blockId]: { ...data.printTemplate.blockMargins[blockId], top: Number(e.target.value) || 0 },
+                              })
+                            }
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                            className="w-14 h-7 text-right px-1.5 text-xs"
+                          />
+                          <span className="text-[10px] text-muted-foreground">dół</span>
+                          <Input
+                            type="number"
+                            value={data.printTemplate.blockMargins[blockId].bottom}
+                            onChange={(e) =>
+                              updateTemplate("blockMargins", {
+                                ...data.printTemplate.blockMargins,
+                                [blockId]: { ...data.printTemplate.blockMargins[blockId], bottom: Number(e.target.value) || 0 },
+                              })
+                            }
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                            className="w-14 h-7 text-right px-1.5 text-xs"
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
