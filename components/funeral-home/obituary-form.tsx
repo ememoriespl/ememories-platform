@@ -12,9 +12,14 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { TimePicker } from "@/components/ui/time-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Upload, X, Send, Save } from "lucide-react"
-import { ObituaryPreview } from "@/components/funeral-home/obituary-preview"
+import { ObituaryPreview, DEFAULT_PRINT_TEMPLATE, type PrintTemplateSettings } from "@/components/funeral-home/obituary-preview"
+import { PRINT_FONTS, PRINT_FONTS_CLASSNAME } from "@/lib/print-fonts"
+import { PRINT_SIGILS } from "@/lib/print-sigils"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+
+const BASE_URL = "https://ememoriespl.vercel.app"
 
 type TabId = "dane" | "szablon" | "enekrolog"
 
@@ -49,6 +54,7 @@ interface FormData {
   photo: string | null
   photoBw: boolean
   status: string
+  printTemplate: PrintTemplateSettings
 }
 
 function defaultLocations(fhAddress = ""): Locations {
@@ -59,10 +65,23 @@ function defaultLocations(fhAddress = ""): Locations {
   }
 }
 
+function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
+  if (!raw || typeof raw !== "object") return DEFAULT_PRINT_TEMPLATE
+  const p = raw as Partial<PrintTemplateSettings> & { sizes?: Partial<PrintTemplateSettings["sizes"]> }
+  return {
+    fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
+    fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
+    align: p.align ?? DEFAULT_PRINT_TEMPLATE.align,
+    sigilId: p.sigilId ?? DEFAULT_PRINT_TEMPLATE.sigilId,
+    sigilSize: p.sigilSize ?? DEFAULT_PRINT_TEMPLATE.sigilSize,
+    sizes: { ...DEFAULT_PRINT_TEMPLATE.sizes, ...p.sizes },
+  }
+}
+
 function parseLocationJSON(
   raw: string,
   fhAddress: string
-): Pick<FormData, "locations" | "obituaryHeadline" | "ceremonyDate" | "ceremonyTime"> {
+): Pick<FormData, "locations" | "obituaryHeadline" | "ceremonyDate" | "ceremonyTime" | "printTemplate"> {
   try {
     const parsed = JSON.parse(raw)
     const locations: Locations = {
@@ -75,6 +94,7 @@ function parseLocationJSON(
       obituaryHeadline: parsed.obituaryHeadline ?? "",
       ceremonyDate: parsed.ceremonyDate ?? "",
       ceremonyTime: parsed.ceremonyTime ?? "",
+      printTemplate: parsePrintTemplate(parsed.printTemplate),
     }
   } catch {
     return {
@@ -82,19 +102,21 @@ function parseLocationJSON(
       obituaryHeadline: "",
       ceremonyDate: "",
       ceremonyTime: "",
+      printTemplate: DEFAULT_PRINT_TEMPLATE,
     }
   }
 }
 
 function serializeLocation(data: FormData): string {
   return JSON.stringify({
-    v: 3,
+    v: 4,
     obituaryHeadline: data.obituaryHeadline,
     ceremonyDate: data.ceremonyDate,
     ceremonyTime: data.ceremonyTime,
     funeralHome: data.locations.funeralHome,
     church: data.locations.church,
     cemetery: data.locations.cemetery,
+    printTemplate: data.printTemplate,
   })
 }
 
@@ -136,7 +158,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
     return () => window.removeEventListener("resize", update)
   }, [])
   const [data, setData] = useState<FormData>(() => {
-    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft" }
+    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE }
     const parsed = parseLocationJSON(initialRaw.location ?? "", fhAddress)
     return {
       firstName: initialRaw.first_name ?? "",
@@ -152,6 +174,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
       photo: initialRaw.photo_url ?? null,
       photoBw: initialRaw.photo_bw ?? false,
       status: initialRaw.status ?? "draft",
+      printTemplate: parsed.printTemplate,
     }
   })
   const [uploading, setUploading] = useState(false)
@@ -159,6 +182,10 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
 
   function update<K extends keyof FormData>(field: K, value: FormData[K]) {
     setData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function updateTemplate<K extends keyof PrintTemplateSettings>(field: K, value: PrintTemplateSettings[K]) {
+    setData((prev) => ({ ...prev, printTemplate: { ...prev.printTemplate, [field]: value } }))
   }
 
   async function handlePhotoUpload(file: File) {
@@ -239,9 +266,9 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
         </div>
       </div>
 
-      {/* Tab content — two-column when on Dane tab */}
+      {/* Tab content — two-column when on Dane or Szablon tab */}
       <div className="flex">
-        <div className={cn("min-w-0 p-6 pb-24", activeTab === "dane" ? "w-1/2" : "flex-1")}>
+        <div className={cn("min-w-0 p-6 pb-24", activeTab === "dane" || activeTab === "szablon" ? "w-1/2" : "flex-1")}>
           <div className="max-w-2xl space-y-6">
         {activeTab === "dane" && (
           <>
@@ -504,8 +531,157 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
         )}
 
         {activeTab === "szablon" && (
-          <div className="flex items-center justify-center h-48 rounded-xl border border-dashed text-sm text-muted-foreground">
-            Szablon druku — wkrótce
+          <div className={cn("space-y-6", PRINT_FONTS_CLASSNAME)}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Typografia</CardTitle>
+                <CardDescription>Czcionka, grubość i wyrównanie tekstu na szablonie</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Czcionka</Label>
+                  <Select
+                    value={data.printTemplate.fontId}
+                    onValueChange={(v) => v && updateTemplate("fontId", v as string)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <span style={{ fontFamily: `var(${PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.cssVar})` }}>
+                        {PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.label}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent className={PRINT_FONTS_CLASSNAME}>
+                      {PRINT_FONTS.map((f) => (
+                        <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
+                          {f.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Grubość</Label>
+                    <div className="flex gap-2">
+                      {([400, 700] as const).map((w) => (
+                        <button
+                          key={w}
+                          type="button"
+                          onClick={() => updateTemplate("fontWeight", w)}
+                          className={cn(
+                            "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
+                            data.printTemplate.fontWeight === w
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-muted-foreground"
+                          )}
+                        >
+                          {w === 400 ? "Normalna" : "Pogrubiona"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Wyrównanie</Label>
+                    <div className="flex gap-2">
+                      {([
+                        { id: "left", label: "Lewo" },
+                        { id: "center", label: "Środek" },
+                        { id: "right", label: "Prawo" },
+                      ] as const).map((a) => (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => updateTemplate("align", a.id)}
+                          className={cn(
+                            "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
+                            data.printTemplate.align === a.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-muted-foreground"
+                          )}
+                        >
+                          {a.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Wielkości informacji</CardTitle>
+                <CardDescription>Rozmiar czcionki dla poszczególnych elementów</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {([
+                  { key: "name", label: "Imię i nazwisko", min: 14, max: 36 },
+                  { key: "dates", label: "Daty", min: 8, max: 20 },
+                  { key: "headline", label: "Nagłówek", min: 9, max: 22 },
+                  { key: "body", label: "Treść", min: 9, max: 20 },
+                  { key: "ceremonyLabel", label: "Etykieta ceremonii", min: 7, max: 16 },
+                  { key: "ceremonyInfo", label: "Informacje o ceremonii", min: 8, max: 18 },
+                ] as const).map((s) => (
+                  <div key={s.key} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label>{s.label}</Label>
+                      <span className="text-xs text-muted-foreground">{data.printTemplate.sizes[s.key]}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={s.min}
+                      max={s.max}
+                      value={data.printTemplate.sizes[s.key]}
+                      onChange={(e) =>
+                        updateTemplate("sizes", { ...data.printTemplate.sizes, [s.key]: Number(e.target.value) })
+                      }
+                      className="w-full accent-primary"
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Sygnet</CardTitle>
+                <CardDescription>Symbol wyświetlany nad zdjęciem</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  {PRINT_SIGILS.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      title={s.label}
+                      onClick={() => updateTemplate("sigilId", s.id)}
+                      className={cn(
+                        "flex-1 flex flex-col items-center gap-1 rounded-lg border-2 py-3 text-lg transition-colors",
+                        data.printTemplate.sigilId === s.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <span>{s.char}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>Wielkość sygnetu</Label>
+                    <span className="text-xs text-muted-foreground">{data.printTemplate.sigilSize}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={16}
+                    max={64}
+                    value={data.printTemplate.sigilSize}
+                    onChange={(e) => updateTemplate("sigilSize", Number(e.target.value))}
+                    className="w-full accent-primary"
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -518,7 +694,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
         </div>
 
         {/* Right: A4 preview */}
-        {activeTab === "dane" && (
+        {(activeTab === "dane" || activeTab === "szablon") && (
           <>
             <div ref={previewSpacerRef} className="hidden xl:block w-1/2 shrink-0" />
             {panelRect && (
@@ -536,7 +712,12 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                   padding: 32,
                 }}
               >
-                <ObituaryPreview data={data} availableWidth={panelRect.width - 64} />
+                <ObituaryPreview
+                  data={data}
+                  availableWidth={panelRect.width - 64}
+                  template={data.printTemplate}
+                  publicUrl={obituaryId ? `${BASE_URL}/obituary/${obituaryId}` : undefined}
+                />
               </div>
             )}
           </>
