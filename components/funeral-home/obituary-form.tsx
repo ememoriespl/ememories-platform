@@ -11,8 +11,21 @@ import { Separator } from "@/components/ui/separator"
 import { DatePicker } from "@/components/ui/date-picker"
 import { TimePicker } from "@/components/ui/time-picker"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Upload, X, Send, Save, GripVertical } from "lucide-react"
-import { ObituaryPreview, DEFAULT_PRINT_TEMPLATE, DEFAULT_BLOCK_ORDER, type PrintTemplateSettings, type BlockSettings } from "@/components/funeral-home/obituary-preview"
+import {
+  Upload,
+  X,
+  Send,
+  Save,
+  GripVertical,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  type LucideIcon,
+} from "lucide-react"
+import { ObituaryPreview, DEFAULT_PRINT_TEMPLATE, DEFAULT_BLOCK_ORDER, type PrintTemplateSettings, type BlockSettings, type QrSettings, type BlockAlign, type VerticalAlign } from "@/components/funeral-home/obituary-preview"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
 import { PRINT_SIGILS } from "@/lib/print-sigils"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
@@ -36,18 +49,60 @@ const WEIGHT_NAMES: Record<number, string> = {
 
 const BLOCK_LABELS: Record<ContentBlockId, string> = {
   photo: "Zdjęcie",
+  sp: "Ś.P.",
   name: "Imię i nazwisko",
   dates: "Data",
   headline: "Nagłówek",
   body: "Treść",
+  ceremonyLabel: "Etykieta",
   ceremony: "Ceremonia",
 }
 
-const ALIGN_OPTIONS = [
-  { id: "left", label: "Lewo" },
-  { id: "center", label: "Środek" },
-  { id: "right", label: "Prawo" },
-] as const
+const ALIGN_OPTIONS: { id: BlockAlign; label: string; icon: LucideIcon }[] = [
+  { id: "left", label: "Lewo", icon: AlignLeft },
+  { id: "center", label: "Środek", icon: AlignCenter },
+  { id: "right", label: "Prawo", icon: AlignRight },
+]
+
+const VALIGN_OPTIONS: { id: VerticalAlign; label: string; icon: LucideIcon }[] = [
+  { id: "top", label: "Góra", icon: AlignVerticalJustifyStart },
+  { id: "center", label: "Środek", icon: AlignVerticalJustifyCenter },
+  { id: "bottom", label: "Dół", icon: AlignVerticalJustifyEnd },
+]
+
+function IconToggleGroup<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T
+  onChange: (v: T) => void
+  options: { id: T; label: string; icon: LucideIcon }[]
+}) {
+  return (
+    <div className="flex gap-1">
+      {options.map((o) => {
+        const Icon = o.icon
+        return (
+          <button
+            key={o.id}
+            type="button"
+            title={o.label}
+            onClick={() => onChange(o.id)}
+            onMouseDown={(e) => e.stopPropagation()}
+            onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+            className={cn(
+              "rounded-md border-2 p-1.5 transition-colors",
+              value === o.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 type TabId = "dane" | "szablon" | "enekrolog"
 
@@ -95,8 +150,21 @@ function defaultLocations(fhAddress = ""): Locations {
 
 function reconcileBlockOrder(saved: unknown): ContentBlockId[] {
   const savedOrder = Array.isArray(saved) ? saved.filter((id): id is ContentBlockId => DEFAULT_BLOCK_ORDER.includes(id)) : []
-  const missing = DEFAULT_BLOCK_ORDER.filter((id) => !savedOrder.includes(id))
-  return [...missing, ...savedOrder]
+  const result = [...savedOrder]
+  for (const id of DEFAULT_BLOCK_ORDER) {
+    if (result.includes(id)) continue
+    const defaultIdx = DEFAULT_BLOCK_ORDER.indexOf(id)
+    let insertAt = 0
+    for (let i = defaultIdx - 1; i >= 0; i--) {
+      const idx = result.indexOf(DEFAULT_BLOCK_ORDER[i])
+      if (idx !== -1) {
+        insertAt = idx + 1
+        break
+      }
+    }
+    result.splice(insertAt, 0, id)
+  }
+  return result
 }
 
 function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
@@ -113,6 +181,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     sigilSize: p.sigilSize ?? DEFAULT_PRINT_TEMPLATE.sigilSize,
     showPhoto: p.showPhoto ?? DEFAULT_PRINT_TEMPLATE.showPhoto,
     qrSize: p.qrSize ?? DEFAULT_PRINT_TEMPLATE.qrSize,
+    qr: { ...DEFAULT_PRINT_TEMPLATE.qr, ...p.qr },
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
     blockOrder: reconcileBlockOrder(p.blockOrder),
@@ -238,6 +307,13 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
         ...prev.printTemplate,
         blocks: { ...prev.printTemplate.blocks, [blockId]: { ...prev.printTemplate.blocks[blockId], [field]: value } },
       },
+    }))
+  }
+
+  function updateQr<K extends keyof QrSettings>(field: K, value: QrSettings[K]) {
+    setData((prev) => ({
+      ...prev,
+      printTemplate: { ...prev.printTemplate, qr: { ...prev.printTemplate.qr, [field]: value } },
     }))
   }
 
@@ -668,9 +744,9 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Kod QR</CardTitle>
-                <CardDescription>Wielkość kodu QR prowadzącego do eNekrologu</CardDescription>
+                <CardDescription>Wielkość, wyrównanie i marginesy kodu QR prowadzącego do eNekrologu</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                   <Label>Wielkość QR kodu</Label>
                   <div className="flex items-center gap-1.5">
@@ -682,6 +758,37 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                       className="w-20 text-right"
                     />
                     <span className="text-xs text-muted-foreground">px</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <Label>Wyrównanie poziome</Label>
+                  <IconToggleGroup value={data.printTemplate.qr.align} onChange={(v) => updateQr("align", v)} options={ALIGN_OPTIONS} />
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <Label>Wyrównanie pionowe</Label>
+                  <IconToggleGroup value={data.printTemplate.qr.verticalAlign} onChange={(v) => updateQr("verticalAlign", v)} options={VALIGN_OPTIONS} />
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <Label>Marginesy</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground">góra</span>
+                      <Input
+                        type="number"
+                        value={data.printTemplate.qr.marginTop}
+                        onChange={(e) => updateQr("marginTop", Number(e.target.value) || 0)}
+                        className="w-16 h-8 text-right px-1.5 text-xs"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground">dół</span>
+                      <Input
+                        type="number"
+                        value={data.printTemplate.qr.marginBottom}
+                        onChange={(e) => updateQr("marginBottom", Number(e.target.value) || 0)}
+                        className="w-16 h-8 text-right px-1.5 text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -718,27 +825,11 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                 </div>
                 <div className="space-y-2">
                   <Label>Wyrównanie treści w pionie</Label>
-                  <div className="flex gap-2">
-                    {([
-                      { id: "top", label: "Góra" },
-                      { id: "center", label: "Środek" },
-                      { id: "bottom", label: "Dół" },
-                    ] as const).map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => updateTemplate("verticalAlign", v.id)}
-                        className={cn(
-                          "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
-                          data.printTemplate.verticalAlign === v.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-muted-foreground"
-                        )}
-                      >
-                        {v.label}
-                      </button>
-                    ))}
-                  </div>
+                  <IconToggleGroup
+                    value={data.printTemplate.verticalAlign}
+                    onChange={(v) => updateTemplate("verticalAlign", v)}
+                    options={VALIGN_OPTIONS}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Bloki treści</Label>
@@ -748,22 +839,26 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                   <div className="space-y-2">
                     {data.printTemplate.blockOrder.map((blockId, i) => {
                       const block = data.printTemplate.blocks[blockId]
+                      const isTextBlock = blockId !== "photo"
+                      const effectiveFontId = block.fontId ?? data.printTemplate.fontId
+                      const weightOptions = PRINT_FONTS.find((f) => f.id === effectiveFontId)?.weights ?? []
                       return (
                         <div
                           key={blockId}
                           draggable
                           onDragStart={() => setDraggedBlock(blockId)}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={() => {
+                          onDragOver={(e) => {
+                            e.preventDefault()
                             if (!draggedBlock || draggedBlock === blockId) return
                             const order = [...data.printTemplate.blockOrder]
                             const from = order.indexOf(draggedBlock)
                             const to = order.indexOf(blockId)
+                            if (from === -1 || to === -1 || from === to) return
                             order.splice(from, 1)
                             order.splice(to, 0, draggedBlock)
                             updateTemplate("blockOrder", order)
-                            setDraggedBlock(null)
                           }}
+                          onDrop={(e) => e.preventDefault()}
                           onDragEnd={() => setDraggedBlock(null)}
                           className={cn(
                             "rounded-lg border bg-muted/30 p-2.5 space-y-2.5 cursor-grab active:cursor-grabbing transition-opacity",
@@ -774,65 +869,115 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                             <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                             <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
                             <span className="flex-1 text-sm font-medium truncate">{BLOCK_LABELS[blockId]}</span>
+                            {blockId === "sp" && (
+                              <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                                <Checkbox
+                                  size="sm"
+                                  checked={block.enabled ?? true}
+                                  onCheckedChange={(checked) => updateBlock(blockId, "enabled", !!checked)}
+                                />
+                              </div>
+                            )}
                           </div>
+
+                          {blockId === "sp" && (
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs text-muted-foreground shrink-0">Treść</span>
+                              <Input
+                                value={block.text ?? ""}
+                                onChange={(e) => updateBlock(blockId, "text", e.target.value)}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                placeholder="Ś.P."
+                                className="w-32 h-7 text-right px-1.5 text-xs"
+                              />
+                            </div>
+                          )}
 
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs text-muted-foreground shrink-0">
                               {blockId === "photo" ? "Wielkość zdjęcia" : "Rozmiar czcionki"}
                             </span>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <div className="flex items-center gap-1">
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  value={block.size}
-                                  onChange={(e) => updateBlock(blockId, "size", Number(e.target.value) || 1)}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                  className="w-16 h-7 text-right px-1.5 text-xs"
-                                />
-                                <span className="text-[10px] text-muted-foreground">px</span>
-                              </div>
-                              {blockId === "ceremony" && (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">etykieta</span>
-                                  <Input
-                                    type="number"
-                                    min={1}
-                                    value={block.labelSize ?? 9}
-                                    onChange={(e) => updateBlock(blockId, "labelSize", Number(e.target.value) || 1)}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                    className="w-16 h-7 text-right px-1.5 text-xs"
-                                  />
-                                  <span className="text-[10px] text-muted-foreground">px</span>
-                                </div>
-                              )}
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                min={1}
+                                value={block.size}
+                                onChange={(e) => updateBlock(blockId, "size", Number(e.target.value) || 1)}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                className="w-16 h-7 text-right px-1.5 text-xs"
+                              />
+                              <span className="text-[10px] text-muted-foreground">px</span>
                             </div>
                           </div>
 
+                          {isTextBlock && (
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs text-muted-foreground shrink-0">Czcionka</span>
+                              <div className="flex items-center gap-1.5" onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                                <Select
+                                  value={block.fontId ?? "__default__"}
+                                  onValueChange={(v) => {
+                                    if (!v) return
+                                    const fontId = v === "__default__" ? undefined : (v as string)
+                                    updateBlock(blockId, "fontId", fontId)
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 text-xs w-32">
+                                    <span className="truncate">
+                                      {block.fontId ? PRINT_FONTS.find((f) => f.id === block.fontId)?.label : "Domyślna"}
+                                    </span>
+                                  </SelectTrigger>
+                                  <SelectContent className={PRINT_FONTS_CLASSNAME}>
+                                    <SelectItem value="__default__">Domyślna</SelectItem>
+                                    {PRINT_FONTS.map((f) => (
+                                      <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
+                                        {f.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Select
+                                  value={block.fontWeight !== undefined ? String(block.fontWeight) : "__default__"}
+                                  onValueChange={(v) => {
+                                    if (!v) return
+                                    updateBlock(blockId, "fontWeight", v === "__default__" ? undefined : Number(v))
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 text-xs w-24">
+                                    <span className="truncate">
+                                      {block.fontWeight !== undefined ? String(block.fontWeight) : "Domyślna"}
+                                    </span>
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__default__">Domyślna</SelectItem>
+                                    {weightOptions.map((w) => (
+                                      <SelectItem key={w} value={String(w)}>
+                                        {w}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs text-muted-foreground shrink-0">Wyrównanie</span>
-                            <div className="flex gap-1">
-                              {ALIGN_OPTIONS.map((a) => (
-                                <button
-                                  key={a.id}
-                                  type="button"
-                                  onClick={() => updateBlock(blockId, "align", a.id)}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                  className={cn(
-                                    "rounded-md border-2 px-2 py-1 text-[10px] font-medium transition-colors",
-                                    block.align === a.id
-                                      ? "border-primary bg-primary/5"
-                                      : "border-border hover:border-muted-foreground"
-                                  )}
-                                >
-                                  {a.label}
-                                </button>
-                              ))}
-                            </div>
+                            <IconToggleGroup value={block.align} onChange={(v) => updateBlock(blockId, "align", v)} options={ALIGN_OPTIONS} />
                           </div>
+
+                          {blockId === "photo" && (
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs text-muted-foreground shrink-0">Wyrównanie pionowe</span>
+                              <IconToggleGroup
+                                value={block.verticalAlign ?? "center"}
+                                onChange={(v) => updateBlock(blockId, "verticalAlign", v)}
+                                options={VALIGN_OPTIONS}
+                              />
+                            </div>
+                          )}
 
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs text-muted-foreground shrink-0">Marginesy</span>
