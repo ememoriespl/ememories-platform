@@ -20,58 +20,56 @@ export interface PreviewData {
 }
 
 export type ContentBlockId = "photo" | "sp" | "name" | "dates" | "headline" | "body" | "ceremonyLabel" | "ceremony"
+export type GraphicItemId = "photo" | "sigil" | "qr"
 
 export type BlockAlign = "left" | "center" | "right"
 export type VerticalAlign = "top" | "center" | "bottom"
+export type PhotoDisplayMode = "photo" | "sigil"
 
 export interface BlockSettings {
   size: number
   align: BlockAlign
-  verticalAlign?: VerticalAlign
   marginTop: number
   marginBottom: number
   fontId?: string
   fontWeight?: number
   enabled?: boolean
   text?: string
+  displayMode?: PhotoDisplayMode
 }
 
-export interface QrSettings {
+export interface GraphicItemSettings {
+  enabled: boolean
   align: BlockAlign
-  verticalAlign: VerticalAlign
   marginTop: number
   marginBottom: number
+  size: number
 }
 
 export interface PrintTemplateSettings {
   fontId: string
   fontWeight: number
   sigilId: string
-  sigilSize: number
-  showPhoto: boolean
-  qrSize: number
-  qr: QrSettings
   columnPosition: "left" | "right"
   verticalAlign: VerticalAlign
   blockOrder: ContentBlockId[]
   blocks: Record<ContentBlockId, BlockSettings>
+  graphicOrder: GraphicItemId[]
+  graphicItems: Record<GraphicItemId, GraphicItemSettings>
 }
 
 export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremony"]
+export const DEFAULT_GRAPHIC_ORDER: GraphicItemId[] = ["photo", "sigil", "qr"]
 
 export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   fontId: DEFAULT_PRINT_FONT_ID,
   fontWeight: 400,
   sigilId: DEFAULT_SIGIL_ID,
-  sigilSize: 32,
-  showPhoto: true,
-  qrSize: 72,
-  qr: { align: "center", verticalAlign: "center", marginTop: 24, marginBottom: 0 },
   columnPosition: "left",
   verticalAlign: "center",
   blockOrder: DEFAULT_BLOCK_ORDER,
   blocks: {
-    photo: { size: 130, align: "center", verticalAlign: "center", marginTop: 0, marginBottom: 20 },
+    photo: { size: 130, align: "center", marginTop: 0, marginBottom: 20, displayMode: "photo" },
     sp: { size: 14, align: "center", marginTop: 0, marginBottom: 8, enabled: true, text: "Ś.P." },
     name: { size: 22, align: "center", marginTop: 0, marginBottom: 8, fontWeight: 700 },
     dates: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
@@ -79,6 +77,12 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
     body: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
     ceremonyLabel: { size: 9, align: "center", marginTop: 0, marginBottom: 6, fontWeight: 600 },
     ceremony: { size: 11, align: "center", marginTop: 0, marginBottom: 0 },
+  },
+  graphicOrder: DEFAULT_GRAPHIC_ORDER,
+  graphicItems: {
+    photo: { enabled: false, align: "center", marginTop: 0, marginBottom: 20, size: 120 },
+    sigil: { enabled: true, align: "center", marginTop: 0, marginBottom: 24, size: 32 },
+    qr: { enabled: true, align: "center", marginTop: 0, marginBottom: 0, size: 72 },
   },
 }
 
@@ -137,31 +141,41 @@ export function ObituaryPreview({
 
   const cardWidth = availableWidth ?? Math.round(A4_W * scale)
   const fontFamily = getPrintFontFamily(template.fontId)
+  const g = template.graphicItems
   const qrImageUrl = publicUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=${template.qrSize * 2}x${template.qrSize * 2}&margin=8&data=${encodeURIComponent(publicUrl)}`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=${g.qr.size * 2}x${g.qr.size * 2}&margin=8&data=${encodeURIComponent(publicUrl)}`
     : null
 
   const b = template.blocks
-  const qr = template.qr
   const showCeremony = !!(ceremonyDateFmt || data.ceremonyInfo)
 
   const blocks: Partial<Record<ContentBlockId, React.ReactNode>> = {
-    photo:
-      template.showPhoto && data.photo ? (
-        <img
-          src={data.photo}
-          alt=""
-          style={{
-            width: b.photo.size,
-            height: b.photo.size,
-            borderRadius: "50%",
-            objectFit: "cover",
-            display: "block",
-            filter: data.photoBw ? "grayscale(100%)" : "none",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
-          }}
-        />
-      ) : null,
+    photo: (() => {
+      if (b.photo.displayMode === "sigil") {
+        return (
+          <div style={{ display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.photo.align] }}>
+            <div style={{ fontSize: b.photo.size, color: "#555" }}>{getSigilChar(template.sigilId)}</div>
+          </div>
+        )
+      }
+      return data.photo ? (
+        <div style={{ display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.photo.align] }}>
+          <img
+            src={data.photo}
+            alt=""
+            style={{
+              width: b.photo.size,
+              height: b.photo.size,
+              borderRadius: "50%",
+              objectFit: "cover",
+              display: "block",
+              filter: data.photoBw ? "grayscale(100%)" : "none",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+            }}
+          />
+        </div>
+      ) : null
+    })(),
     sp:
       b.sp.enabled && b.sp.text?.trim() ? (
         <p style={{ fontSize: b.sp.size, textAlign: b.sp.align, lineHeight: 1.4, ...fontStyleFor(b.sp) }}>{b.sp.text}</p>
@@ -254,28 +268,34 @@ export function ObituaryPreview({
 
   const orderedBlocks = template.blockOrder.map((id) => ({ id, node: blocks[id] })).filter((item) => item.node !== null)
 
-  const photoPinned = b.photo.verticalAlign !== undefined && b.photo.verticalAlign !== "center" && blocks.photo !== null
-  const stackedBlocks = photoPinned ? orderedBlocks.filter((item) => item.id !== "photo") : orderedBlocks
+  const graphicNodes: Partial<Record<GraphicItemId, React.ReactNode>> = {
+    photo:
+      g.photo.enabled && data.photo ? (
+        <img
+          src={data.photo}
+          alt=""
+          style={{
+            width: g.photo.size,
+            height: g.photo.size,
+            borderRadius: "50%",
+            objectFit: "cover",
+            display: "block",
+            filter: data.photoBw ? "grayscale(100%)" : "none",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+          }}
+        />
+      ) : null,
+    sigil: g.sigil.enabled ? <div style={{ fontSize: g.sigil.size, color: "#555" }}>{getSigilChar(template.sigilId)}</div> : null,
+    qr:
+      g.qr.enabled && qrImageUrl ? (
+        <div style={{ textAlign: "center" }}>
+          <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={g.qr.size} height={g.qr.size} />
+          <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
+        </div>
+      ) : null,
+  }
 
-  const photoPinStyle: React.CSSProperties | null = photoPinned
-    ? b.photo.verticalAlign === "top"
-      ? { position: "absolute", left: 0, right: 0, top: 0, display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.photo.align], marginTop: b.photo.marginTop }
-      : { position: "absolute", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.photo.align], marginBottom: b.photo.marginBottom }
-    : null
-
-  const qrNode = qrImageUrl ? (
-    <div style={{ textAlign: "center" }}>
-      <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={template.qrSize} height={template.qrSize} />
-      <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
-    </div>
-  ) : null
-
-  const qrPinStyle: React.CSSProperties | null =
-    qrNode && qr.verticalAlign !== "center"
-      ? qr.verticalAlign === "top"
-        ? { position: "absolute", left: 0, right: 0, top: 0, display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[qr.align], padding: "40px 36px", marginTop: qr.marginTop }
-        : { position: "absolute", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[qr.align], padding: "40px 36px", marginBottom: qr.marginBottom }
-      : null
+  const orderedGraphic = template.graphicOrder.map((id) => ({ id, node: graphicNodes[id] })).filter((item) => item.node !== null)
 
   return (
     <div className={PRINT_FONTS_CLASSNAME}>
@@ -309,67 +329,56 @@ export function ObituaryPreview({
                 overflow: "hidden",
               }}
             >
-              {/* Graphic column: sigil, QR */}
+              {/* Graphic column: photo, sigil, QR — order, alignment & margins configurable */}
               <div
                 style={{
                   width: 340,
                   flexShrink: 0,
                   background: "#fff",
-                  position: "relative",
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  justifyContent: "flex-start",
                   padding: "40px 36px",
                   overflow: "hidden",
                 }}
               >
-                <div style={{ fontSize: template.sigilSize, color: "#555" }}>{getSigilChar(template.sigilId)}</div>
-
-                {qrNode && qr.verticalAlign === "center" && (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: HORIZONTAL_ALIGN_MAP[qr.align],
-                      width: "100%",
-                      marginTop: qr.marginTop,
-                      marginBottom: qr.marginBottom,
-                    }}
-                  >
-                    {qrNode}
-                  </div>
-                )}
-                {qrPinStyle && <div style={qrPinStyle}>{qrNode}</div>}
+                {orderedGraphic.map((item) => {
+                  const settings = g[item.id]
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: HORIZONTAL_ALIGN_MAP[settings.align],
+                        marginTop: settings.marginTop,
+                        marginBottom: settings.marginBottom,
+                      }}
+                    >
+                      {item.node}
+                    </div>
+                  )
+                })}
               </div>
 
-              {/* Content column: photo, name, dates, headline, body, ceremony — order & spacing configurable */}
+              {/* Content column: photo/sigil, name, dates, headline, body, ceremony — order & spacing configurable */}
               <div
                 style={{
                   flex: 1,
-                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: VERTICAL_ALIGN_MAP[template.verticalAlign],
                   padding: "48px 48px 40px",
                   overflow: "hidden",
                 }}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: VERTICAL_ALIGN_MAP[template.verticalAlign],
-                  }}
-                >
-                  {stackedBlocks.map((item) => {
-                    const margin = b[item.id]
-                    return (
-                      <div key={item.id} style={{ marginTop: margin.marginTop, marginBottom: margin.marginBottom }}>
-                        {item.node}
-                      </div>
-                    )
-                  })}
-                </div>
-                {photoPinStyle && <div style={photoPinStyle}>{blocks.photo}</div>}
+                {orderedBlocks.map((item) => {
+                  const margin = b[item.id]
+                  return (
+                    <div key={item.id} style={{ marginTop: margin.marginTop, marginBottom: margin.marginBottom }}>
+                      {item.node}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>

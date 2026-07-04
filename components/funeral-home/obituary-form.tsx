@@ -25,11 +25,21 @@ import {
   AlignVerticalJustifyEnd,
   type LucideIcon,
 } from "lucide-react"
-import { ObituaryPreview, DEFAULT_PRINT_TEMPLATE, DEFAULT_BLOCK_ORDER, type PrintTemplateSettings, type BlockSettings, type QrSettings, type BlockAlign, type VerticalAlign } from "@/components/funeral-home/obituary-preview"
+import {
+  ObituaryPreview,
+  DEFAULT_PRINT_TEMPLATE,
+  DEFAULT_BLOCK_ORDER,
+  DEFAULT_GRAPHIC_ORDER,
+  type PrintTemplateSettings,
+  type BlockSettings,
+  type GraphicItemSettings,
+  type BlockAlign,
+  type VerticalAlign,
+} from "@/components/funeral-home/obituary-preview"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
 import { PRINT_SIGILS } from "@/lib/print-sigils"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
-import type { ContentBlockId } from "@/components/funeral-home/obituary-preview"
+import type { ContentBlockId, GraphicItemId } from "@/components/funeral-home/obituary-preview"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -57,6 +67,17 @@ const BLOCK_LABELS: Record<ContentBlockId, string> = {
   ceremonyLabel: "Etykieta",
   ceremony: "Ceremonia",
 }
+
+const GRAPHIC_LABELS: Record<GraphicItemId, string> = {
+  photo: "Zdjęcie",
+  sigil: "Sygnet",
+  qr: "Kod QR",
+}
+
+const PHOTO_MODE_OPTIONS = [
+  { id: "photo", label: "Zdjęcie" },
+  { id: "sigil", label: "Sygnet" },
+] as const
 
 const ALIGN_OPTIONS: { id: BlockAlign; label: string; icon: LucideIcon }[] = [
   { id: "left", label: "Lewo", icon: AlignLeft },
@@ -148,15 +169,15 @@ function defaultLocations(fhAddress = ""): Locations {
   }
 }
 
-function reconcileBlockOrder(saved: unknown): ContentBlockId[] {
-  const savedOrder = Array.isArray(saved) ? saved.filter((id): id is ContentBlockId => DEFAULT_BLOCK_ORDER.includes(id)) : []
+function reconcileOrder<T extends string>(saved: unknown, defaultOrder: readonly T[]): T[] {
+  const savedOrder = Array.isArray(saved) ? saved.filter((id): id is T => (defaultOrder as readonly string[]).includes(id)) : []
   const result = [...savedOrder]
-  for (const id of DEFAULT_BLOCK_ORDER) {
+  for (const id of defaultOrder) {
     if (result.includes(id)) continue
-    const defaultIdx = DEFAULT_BLOCK_ORDER.indexOf(id)
+    const defaultIdx = defaultOrder.indexOf(id)
     let insertAt = 0
     for (let i = defaultIdx - 1; i >= 0; i--) {
-      const idx = result.indexOf(DEFAULT_BLOCK_ORDER[i])
+      const idx = result.indexOf(defaultOrder[i])
       if (idx !== -1) {
         insertAt = idx + 1
         break
@@ -169,23 +190,43 @@ function reconcileBlockOrder(saved: unknown): ContentBlockId[] {
 
 function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_PRINT_TEMPLATE
-  const p = raw as Partial<PrintTemplateSettings> & { blocks?: Partial<Record<ContentBlockId, Partial<BlockSettings>>> }
+  const p = raw as Partial<PrintTemplateSettings> & {
+    blocks?: Partial<Record<ContentBlockId, Partial<BlockSettings>>>
+    graphicItems?: Partial<Record<GraphicItemId, Partial<GraphicItemSettings>>>
+    // legacy fields from earlier template versions, migrated below
+    sigilSize?: number
+    qrSize?: number
+    qr?: { align?: BlockAlign; marginTop?: number; marginBottom?: number }
+  }
   const blocks = { ...DEFAULT_PRINT_TEMPLATE.blocks }
   for (const id of DEFAULT_BLOCK_ORDER) {
     blocks[id] = { ...DEFAULT_PRINT_TEMPLATE.blocks[id], ...p.blocks?.[id] }
   }
+  const graphicItems = { ...DEFAULT_PRINT_TEMPLATE.graphicItems }
+  for (const id of DEFAULT_GRAPHIC_ORDER) {
+    graphicItems[id] = { ...DEFAULT_PRINT_TEMPLATE.graphicItems[id], ...p.graphicItems?.[id] }
+  }
+  if (p.sigilSize !== undefined) graphicItems.sigil = { ...graphicItems.sigil, size: p.sigilSize }
+  if (p.qrSize !== undefined) graphicItems.qr = { ...graphicItems.qr, size: p.qrSize }
+  if (p.qr) {
+    graphicItems.qr = {
+      ...graphicItems.qr,
+      align: p.qr.align ?? graphicItems.qr.align,
+      marginTop: p.qr.marginTop ?? graphicItems.qr.marginTop,
+      marginBottom: p.qr.marginBottom ?? graphicItems.qr.marginBottom,
+    }
+  }
+
   return {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
     sigilId: p.sigilId ?? DEFAULT_PRINT_TEMPLATE.sigilId,
-    sigilSize: p.sigilSize ?? DEFAULT_PRINT_TEMPLATE.sigilSize,
-    showPhoto: p.showPhoto ?? DEFAULT_PRINT_TEMPLATE.showPhoto,
-    qrSize: p.qrSize ?? DEFAULT_PRINT_TEMPLATE.qrSize,
-    qr: { ...DEFAULT_PRINT_TEMPLATE.qr, ...p.qr },
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
-    blockOrder: reconcileBlockOrder(p.blockOrder),
+    blockOrder: reconcileOrder(p.blockOrder, DEFAULT_BLOCK_ORDER),
     blocks,
+    graphicOrder: reconcileOrder(p.graphicOrder, DEFAULT_GRAPHIC_ORDER),
+    graphicItems,
   }
 }
 
@@ -291,6 +332,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [draggedBlock, setDraggedBlock] = useState<ContentBlockId | null>(null)
+  const [draggedGraphicItem, setDraggedGraphicItem] = useState<GraphicItemId | null>(null)
 
   function update<K extends keyof FormData>(field: K, value: FormData[K]) {
     setData((prev) => ({ ...prev, [field]: value }))
@@ -310,10 +352,13 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
     }))
   }
 
-  function updateQr<K extends keyof QrSettings>(field: K, value: QrSettings[K]) {
+  function updateGraphicItem<K extends keyof GraphicItemSettings>(itemId: GraphicItemId, field: K, value: GraphicItemSettings[K]) {
     setData((prev) => ({
       ...prev,
-      printTemplate: { ...prev.printTemplate, qr: { ...prev.printTemplate.qr, [field]: value } },
+      printTemplate: {
+        ...prev.printTemplate,
+        graphicItems: { ...prev.printTemplate.graphicItems, [itemId]: { ...prev.printTemplate.graphicItems[itemId], [field]: value } },
+      },
     }))
   }
 
@@ -663,8 +708,8 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
           <div className={cn("space-y-6", PRINT_FONTS_CLASSNAME)}>
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Czcionka</CardTitle>
-                <CardDescription>Krój i grubość dla całego szablonu</CardDescription>
+                <CardTitle className="text-base">Ustawienia ogólne</CardTitle>
+                <CardDescription>Czcionka, pozycja kolumny graficznej i wyrównanie treści w pionie</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -716,92 +761,9 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Zdjęcie</CardTitle>
-                <CardDescription>Widoczność zdjęcia portretowego na wydruku</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    size="sm"
-                    checked={data.printTemplate.showPhoto}
-                    onCheckedChange={(checked) => updateTemplate("showPhoto", !!checked)}
-                  />
-                  <span
-                    className="text-sm font-medium cursor-pointer select-none"
-                    onClick={() => updateTemplate("showPhoto", !data.printTemplate.showPhoto)}
-                  >
-                    Pokaż zdjęcie na wydruku
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Kod QR</CardTitle>
-                <CardDescription>Wielkość, wyrównanie i marginesy kodu QR prowadzącego do eNekrologu</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                  <Label>Wielkość QR kodu</Label>
-                  <div className="flex items-center gap-1.5">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={data.printTemplate.qrSize}
-                      onChange={(e) => updateTemplate("qrSize", Number(e.target.value) || 1)}
-                      className="w-20 text-right"
-                    />
-                    <span className="text-xs text-muted-foreground">px</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <Label>Wyrównanie poziome</Label>
-                  <IconToggleGroup value={data.printTemplate.qr.align} onChange={(v) => updateQr("align", v)} options={ALIGN_OPTIONS} />
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <Label>Wyrównanie pionowe</Label>
-                  <IconToggleGroup value={data.printTemplate.qr.verticalAlign} onChange={(v) => updateQr("verticalAlign", v)} options={VALIGN_OPTIONS} />
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <Label>Marginesy</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">góra</span>
-                      <Input
-                        type="number"
-                        value={data.printTemplate.qr.marginTop}
-                        onChange={(e) => updateQr("marginTop", Number(e.target.value) || 0)}
-                        className="w-16 h-8 text-right px-1.5 text-xs"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">dół</span>
-                      <Input
-                        type="number"
-                        value={data.printTemplate.qr.marginBottom}
-                        onChange={(e) => updateQr("marginBottom", Number(e.target.value) || 0)}
-                        className="w-16 h-8 text-right px-1.5 text-xs"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Układ</CardTitle>
-                <CardDescription>Pozycja kolumny graficznej, wyrównanie i kolejność bloków treści</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Kolumna graficzna (sygnet, QR)</Label>
+                  <Label>Kolumna graficzna (sygnet, QR, zdjęcie)</Label>
                   <div className="flex gap-2">
                     {([
                       { id: "left", label: "Lewo" },
@@ -831,225 +793,336 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     options={VALIGN_OPTIONS}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Kolumna graficzna</CardTitle>
+                <CardDescription>
+                  Przeciągnij za uchwyt, aby zmienić kolejność w pionie. Włącz/wyłącz, wyrównaj i ustaw marginesy dla zdjęcia, sygnetu i kodu QR.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-2">
-                  <Label>Bloki treści</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Przeciągnij za uchwyt, aby zmienić kolejność. Każdy blok ma własny rozmiar, wyrównanie i marginesy.
-                  </p>
-                  <div className="space-y-2">
-                    {data.printTemplate.blockOrder.map((blockId, i) => {
-                      const block = data.printTemplate.blocks[blockId]
-                      const isTextBlock = blockId !== "photo"
-                      const effectiveFontId = block.fontId ?? data.printTemplate.fontId
-                      const weightOptions = PRINT_FONTS.find((f) => f.id === effectiveFontId)?.weights ?? []
-                      return (
-                        <div
-                          key={blockId}
-                          draggable
-                          onDragStart={() => setDraggedBlock(blockId)}
-                          onDragOver={(e) => {
-                            e.preventDefault()
-                            if (!draggedBlock || draggedBlock === blockId) return
-                            const order = [...data.printTemplate.blockOrder]
-                            const from = order.indexOf(draggedBlock)
-                            const to = order.indexOf(blockId)
-                            if (from === -1 || to === -1 || from === to) return
-                            order.splice(from, 1)
-                            order.splice(to, 0, draggedBlock)
-                            updateTemplate("blockOrder", order)
-                          }}
-                          onDrop={(e) => e.preventDefault()}
-                          onDragEnd={() => setDraggedBlock(null)}
-                          className={cn(
-                            "rounded-lg border bg-muted/30 p-2.5 space-y-2.5 cursor-grab active:cursor-grabbing transition-opacity",
-                            draggedBlock === blockId && "opacity-40"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
-                            <span className="flex-1 text-sm font-medium truncate">{BLOCK_LABELS[blockId]}</span>
-                            {blockId === "sp" && (
-                              <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
-                                <Checkbox
-                                  size="sm"
-                                  checked={block.enabled ?? true}
-                                  onCheckedChange={(checked) => updateBlock(blockId, "enabled", !!checked)}
-                                />
-                              </div>
-                            )}
+                  {data.printTemplate.graphicOrder.map((itemId, i) => {
+                    const item = data.printTemplate.graphicItems[itemId]
+                    return (
+                      <div
+                        key={itemId}
+                        draggable
+                        onDragStart={() => setDraggedGraphicItem(itemId)}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          if (!draggedGraphicItem || draggedGraphicItem === itemId) return
+                          const order = [...data.printTemplate.graphicOrder]
+                          const from = order.indexOf(draggedGraphicItem)
+                          const to = order.indexOf(itemId)
+                          if (from === -1 || to === -1 || from === to) return
+                          order.splice(from, 1)
+                          order.splice(to, 0, draggedGraphicItem)
+                          updateTemplate("graphicOrder", order)
+                        }}
+                        onDrop={(e) => e.preventDefault()}
+                        onDragEnd={() => setDraggedGraphicItem(null)}
+                        className={cn(
+                          "rounded-lg border bg-muted/30 p-2.5 space-y-2.5 cursor-grab active:cursor-grabbing transition-opacity",
+                          draggedGraphicItem === itemId && "opacity-40"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
+                          <span className="flex-1 text-sm font-medium truncate">{GRAPHIC_LABELS[itemId]}</span>
+                          <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                            <Checkbox
+                              size="sm"
+                              checked={item.enabled}
+                              onCheckedChange={(checked) => updateGraphicItem(itemId, "enabled", !!checked)}
+                            />
                           </div>
+                        </div>
 
-                          {blockId === "sp" && (
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs text-muted-foreground shrink-0">Treść</span>
-                              <Input
-                                value={block.text ?? ""}
-                                onChange={(e) => updateBlock(blockId, "text", e.target.value)}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                placeholder="Ś.P."
-                                className="w-32 h-7 text-right px-1.5 text-xs"
-                              />
-                            </div>
-                          )}
-
+                        {itemId === "sigil" && (
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-muted-foreground shrink-0">
-                              {blockId === "photo" ? "Wielkość zdjęcia" : "Rozmiar czcionki"}
-                            </span>
+                            <span className="text-xs text-muted-foreground shrink-0">Symbol</span>
+                            <div className="flex gap-1" onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                              {PRINT_SIGILS.map((s) => (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  title={s.label}
+                                  onClick={() => updateTemplate("sigilId", s.id)}
+                                  className={cn(
+                                    "h-7 w-7 flex items-center justify-center rounded-md border-2 text-sm transition-colors",
+                                    data.printTemplate.sigilId === s.id
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border hover:border-muted-foreground"
+                                  )}
+                                >
+                                  {s.char}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {itemId === "qr" ? "Wielkość QR kodu" : itemId === "sigil" ? "Wielkość sygnetu" : "Wielkość zdjęcia"}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min={1}
+                              value={item.size}
+                              onChange={(e) => updateGraphicItem(itemId, "size", Number(e.target.value) || 1)}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                              className="w-16 h-7 text-right px-1.5 text-xs"
+                            />
+                            <span className="text-[10px] text-muted-foreground">px</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground shrink-0">Wyrównanie</span>
+                          <IconToggleGroup value={item.align} onChange={(v) => updateGraphicItem(itemId, "align", v)} options={ALIGN_OPTIONS} />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground shrink-0">Marginesy</span>
+                          <div className="flex items-center gap-2 shrink-0">
                             <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground">góra</span>
                               <Input
                                 type="number"
-                                min={1}
-                                value={block.size}
-                                onChange={(e) => updateBlock(blockId, "size", Number(e.target.value) || 1)}
+                                value={item.marginTop}
+                                onChange={(e) => updateGraphicItem(itemId, "marginTop", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-16 h-7 text-right px-1.5 text-xs"
-                              />
-                              <span className="text-[10px] text-muted-foreground">px</span>
-                            </div>
-                          </div>
-
-                          {isTextBlock && (
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs text-muted-foreground shrink-0">Czcionka</span>
-                              <div className="flex items-center gap-1.5" onMouseDown={(e) => e.stopPropagation()} draggable={false}>
-                                <Select
-                                  value={block.fontId ?? "__default__"}
-                                  onValueChange={(v) => {
-                                    if (!v) return
-                                    const fontId = v === "__default__" ? undefined : (v as string)
-                                    updateBlock(blockId, "fontId", fontId)
-                                  }}
-                                >
-                                  <SelectTrigger className="h-7 text-xs w-32">
-                                    <span className="truncate">
-                                      {block.fontId ? PRINT_FONTS.find((f) => f.id === block.fontId)?.label : "Domyślna"}
-                                    </span>
-                                  </SelectTrigger>
-                                  <SelectContent className={PRINT_FONTS_CLASSNAME}>
-                                    <SelectItem value="__default__">Domyślna</SelectItem>
-                                    {PRINT_FONTS.map((f) => (
-                                      <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
-                                        {f.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <Select
-                                  value={block.fontWeight !== undefined ? String(block.fontWeight) : "__default__"}
-                                  onValueChange={(v) => {
-                                    if (!v) return
-                                    updateBlock(blockId, "fontWeight", v === "__default__" ? undefined : Number(v))
-                                  }}
-                                >
-                                  <SelectTrigger className="h-7 text-xs w-24">
-                                    <span className="truncate">
-                                      {block.fontWeight !== undefined ? String(block.fontWeight) : "Domyślna"}
-                                    </span>
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__default__">Domyślna</SelectItem>
-                                    {weightOptions.map((w) => (
-                                      <SelectItem key={w} value={String(w)}>
-                                        {w}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-muted-foreground shrink-0">Wyrównanie</span>
-                            <IconToggleGroup value={block.align} onChange={(v) => updateBlock(blockId, "align", v)} options={ALIGN_OPTIONS} />
-                          </div>
-
-                          {blockId === "photo" && (
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs text-muted-foreground shrink-0">Wyrównanie pionowe</span>
-                              <IconToggleGroup
-                                value={block.verticalAlign ?? "center"}
-                                onChange={(v) => updateBlock(blockId, "verticalAlign", v)}
-                                options={VALIGN_OPTIONS}
+                                className="w-14 h-7 text-right px-1.5 text-xs"
                               />
                             </div>
-                          )}
-
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-muted-foreground shrink-0">Marginesy</span>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-muted-foreground">góra</span>
-                                <Input
-                                  type="number"
-                                  value={block.marginTop}
-                                  onChange={(e) => updateBlock(blockId, "marginTop", Number(e.target.value) || 0)}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                  className="w-14 h-7 text-right px-1.5 text-xs"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-muted-foreground">dół</span>
-                                <Input
-                                  type="number"
-                                  value={block.marginBottom}
-                                  onChange={(e) => updateBlock(blockId, "marginBottom", Number(e.target.value) || 0)}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                  className="w-14 h-7 text-right px-1.5 text-xs"
-                                />
-                              </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground">dół</span>
+                              <Input
+                                type="number"
+                                value={item.marginBottom}
+                                onChange={(e) => updateGraphicItem(itemId, "marginBottom", Number(e.target.value) || 0)}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                className="w-14 h-7 text-right px-1.5 text-xs"
+                              />
                             </div>
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Sygnet</CardTitle>
-                <CardDescription>Symbol wyświetlany nad zdjęciem</CardDescription>
+                <CardTitle className="text-base">Kolumna z treścią</CardTitle>
+                <CardDescription>
+                  Przeciągnij za uchwyt, aby zmienić kolejność. Każdy blok ma własny rozmiar, czcionkę, wyrównanie i marginesy.
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  {PRINT_SIGILS.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      title={s.label}
-                      onClick={() => updateTemplate("sigilId", s.id)}
-                      className={cn(
-                        "flex-1 flex flex-col items-center gap-1 rounded-lg border-2 py-3 text-lg transition-colors",
-                        data.printTemplate.sigilId === s.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-muted-foreground"
-                      )}
-                    >
-                      <span>{s.char}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <Label>Wielkość sygnetu</Label>
-                  <div className="flex items-center gap-1.5">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={data.printTemplate.sigilSize}
-                      onChange={(e) => updateTemplate("sigilSize", Number(e.target.value) || 1)}
-                      className="w-20 text-right"
-                    />
-                    <span className="text-xs text-muted-foreground">px</span>
-                  </div>
+              <CardContent>
+                <div className="space-y-2">
+                  {data.printTemplate.blockOrder.map((blockId, i) => {
+                    const block = data.printTemplate.blocks[blockId]
+                    const isTextBlock = blockId !== "photo"
+                    const effectiveFontId = block.fontId ?? data.printTemplate.fontId
+                    const weightOptions = PRINT_FONTS.find((f) => f.id === effectiveFontId)?.weights ?? []
+                    return (
+                      <div
+                        key={blockId}
+                        draggable
+                        onDragStart={() => setDraggedBlock(blockId)}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          if (!draggedBlock || draggedBlock === blockId) return
+                          const order = [...data.printTemplate.blockOrder]
+                          const from = order.indexOf(draggedBlock)
+                          const to = order.indexOf(blockId)
+                          if (from === -1 || to === -1 || from === to) return
+                          order.splice(from, 1)
+                          order.splice(to, 0, draggedBlock)
+                          updateTemplate("blockOrder", order)
+                        }}
+                        onDrop={(e) => e.preventDefault()}
+                        onDragEnd={() => setDraggedBlock(null)}
+                        className={cn(
+                          "rounded-lg border bg-muted/30 p-2.5 space-y-2.5 cursor-grab active:cursor-grabbing transition-opacity",
+                          draggedBlock === blockId && "opacity-40"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
+                          <span className="flex-1 text-sm font-medium truncate">{BLOCK_LABELS[blockId]}</span>
+                          {blockId === "sp" && (
+                            <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                              <Checkbox
+                                size="sm"
+                                checked={block.enabled ?? true}
+                                onCheckedChange={(checked) => updateBlock(blockId, "enabled", !!checked)}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {blockId === "sp" && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground shrink-0">Treść</span>
+                            <Input
+                              value={block.text ?? ""}
+                              onChange={(e) => updateBlock(blockId, "text", e.target.value)}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                              placeholder="Ś.P."
+                              className="w-32 h-7 text-right px-1.5 text-xs"
+                            />
+                          </div>
+                        )}
+
+                        {blockId === "photo" && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground shrink-0">Zawartość</span>
+                            <div className="flex gap-1">
+                              {PHOTO_MODE_OPTIONS.map((m) => (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => updateBlock(blockId, "displayMode", m.id)}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                  className={cn(
+                                    "rounded-md border-2 px-2 py-1 text-[10px] font-medium transition-colors",
+                                    (block.displayMode ?? "photo") === m.id
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border hover:border-muted-foreground"
+                                  )}
+                                >
+                                  {m.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {blockId === "photo"
+                              ? block.displayMode === "sigil"
+                                ? "Wielkość sygnetu"
+                                : "Wielkość zdjęcia"
+                              : "Rozmiar czcionki"}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min={1}
+                              value={block.size}
+                              onChange={(e) => updateBlock(blockId, "size", Number(e.target.value) || 1)}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                              className="w-16 h-7 text-right px-1.5 text-xs"
+                            />
+                            <span className="text-[10px] text-muted-foreground">px</span>
+                          </div>
+                        </div>
+
+                        {isTextBlock && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground shrink-0">Czcionka</span>
+                            <div className="flex items-center gap-1.5" onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                              <Select
+                                value={block.fontId ?? "__default__"}
+                                onValueChange={(v) => {
+                                  if (!v) return
+                                  const fontId = v === "__default__" ? undefined : (v as string)
+                                  updateBlock(blockId, "fontId", fontId)
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs w-32">
+                                  <span className="truncate">
+                                    {block.fontId ? PRINT_FONTS.find((f) => f.id === block.fontId)?.label : "Domyślna"}
+                                  </span>
+                                </SelectTrigger>
+                                <SelectContent className={PRINT_FONTS_CLASSNAME}>
+                                  <SelectItem value="__default__">Domyślna</SelectItem>
+                                  {PRINT_FONTS.map((f) => (
+                                    <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
+                                      {f.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Select
+                                value={block.fontWeight !== undefined ? String(block.fontWeight) : "__default__"}
+                                onValueChange={(v) => {
+                                  if (!v) return
+                                  updateBlock(blockId, "fontWeight", v === "__default__" ? undefined : Number(v))
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs w-24">
+                                  <span className="truncate">
+                                    {block.fontWeight !== undefined ? String(block.fontWeight) : "Domyślna"}
+                                  </span>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__default__">Domyślna</SelectItem>
+                                  {weightOptions.map((w) => (
+                                    <SelectItem key={w} value={String(w)}>
+                                      {w}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground shrink-0">Wyrównanie</span>
+                          <IconToggleGroup value={block.align} onChange={(v) => updateBlock(blockId, "align", v)} options={ALIGN_OPTIONS} />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground shrink-0">Marginesy</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground">góra</span>
+                              <Input
+                                type="number"
+                                value={block.marginTop}
+                                onChange={(e) => updateBlock(blockId, "marginTop", Number(e.target.value) || 0)}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                className="w-14 h-7 text-right px-1.5 text-xs"
+                              />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground">dół</span>
+                              <Input
+                                type="number"
+                                value={block.marginBottom}
+                                onChange={(e) => updateBlock(blockId, "marginBottom", Number(e.target.value) || 0)}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                className="w-14 h-7 text-right px-1.5 text-xs"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
