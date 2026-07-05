@@ -13,9 +13,6 @@ export interface PrintSigilOption {
 export const PRINT_SIGILS: PrintSigilOption[] = [
   { id: "cross-latin", label: "Krzyż łaciński", kind: "text", char: "✝" },
   { id: "cross-orthodox", label: "Krzyż prawosławny", kind: "text", char: "☦" },
-  { id: "cross-outline", label: "Krzyż ozdobny", kind: "text", char: "✙" },
-  { id: "star-of-david", label: "Gwiazda Dawida", kind: "text", char: "✡" },
-  { id: "flower", label: "Kwiat", kind: "text", char: "❀" },
   { id: "cross-outline-leaf", label: "Krzyż z liściem", kind: "image", src: "/sigils/cross-outline-leaf.svg", aspect: 0.734, contentOnly: true },
   { id: "cross-branch", label: "Krzyż z gałązką", kind: "image", src: "/sigils/cross-branch.svg", aspect: 1.75, contentOnly: true },
   { id: "wreath-cross", label: "Wieniec z krzyżem", kind: "image", src: "/sigils/wreath-cross.svg", aspect: 1.069, contentOnly: true },
