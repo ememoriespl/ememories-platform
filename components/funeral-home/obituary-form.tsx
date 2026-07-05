@@ -352,6 +352,7 @@ export interface ObituaryFormProps {
 
 export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", backUrl = "/funeral-home/dashboard" }: ObituaryFormProps) {
   const router = useRouter()
+  const [recordId, setRecordId] = useState(obituaryId)
   const [activeTab, setActiveTab] = useState<TabId>("dane")
   const previewSpacerRef = useRef<HTMLDivElement>(null)
   const [panelRect, setPanelRect] = useState<{ left: number; width: number } | null>(null)
@@ -454,21 +455,29 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
         photo_bw: data.photoBw,
         status,
       }
-      const res =
-        mode === "new"
-          ? await fetch("/api/obituaries", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            })
-          : await fetch(`/api/obituaries/${obituaryId}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            })
+      const isCreate = !recordId
+      const res = isCreate
+        ? await fetch("/api/obituaries", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+        : await fetch(`/api/obituaries/${recordId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
       if (!res.ok) throw new Error()
+      if (isCreate) {
+        const created = await res.json()
+        setRecordId(created.id)
+      }
       toast.success(status === "published" ? "Opublikowano!" : "Zapisano szkic")
-      router.push(backUrl)
+      if (status === "published") {
+        router.push(backUrl)
+        return
+      }
+      setSaving(false)
     } catch {
       toast.error("Błąd podczas zapisywania")
       setSaving(false)
@@ -1184,7 +1193,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                   data={data}
                   availableWidth={panelRect.width - 64}
                   template={data.printTemplate}
-                  publicUrl={obituaryId ? `${BASE_URL}/obituary/${obituaryId}` : undefined}
+                  publicUrl={recordId ? `${BASE_URL}/obituary/${recordId}` : undefined}
                 />
               </div>
             )}
