@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardAction } from "@/components/ui/card"
+import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -24,6 +25,7 @@ import {
   AlignVerticalJustifyStart,
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -122,6 +124,35 @@ function IconToggleGroup<T extends string>({
         )
       })}
     </div>
+  )
+}
+
+function CollapsibleSectionCard({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: string
+  children: React.ReactNode
+}) {
+  return (
+    <Card>
+      <Collapsible>
+        <CollapsibleTrigger className="group/collapsible-trigger cursor-pointer">
+          <CardHeader>
+            <CardTitle className="text-base">{title}</CardTitle>
+            {description && <CardDescription>{description}</CardDescription>}
+            <CardAction>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[panel-open]/collapsible-trigger:rotate-180" />
+            </CardAction>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsiblePanel>
+          <CardContent className="space-y-4 pt-4">{children}</CardContent>
+        </CollapsiblePanel>
+      </Collapsible>
+    </Card>
   )
 }
 
@@ -866,50 +897,40 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Ramka</CardTitle>
-                <CardDescription>Dekoracyjna ramka wokół całej kartki A4.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="shrink-0">Kolor</Label>
-                  <ColorPicker
-                    value={data.printTemplate.frame.color}
-                    onChange={(hex) => updateTemplate("frame", { ...data.printTemplate.frame, color: hex })}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {FRAME_STYLE_OPTIONS.map((f) => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() => updateTemplate("frame", { ...data.printTemplate.frame, style: f.id })}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-colors",
-                        data.printTemplate.frame.style === f.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-muted-foreground"
-                      )}
-                    >
-                      <div className="relative h-12 w-16 shrink-0 bg-white ring-1 ring-inset ring-border">
-                        {renderFrame({ style: f.id, color: data.printTemplate.frame.color }, { margin: 4, cornerSize: 16 })}
-                      </div>
-                      <span className="text-[10px] font-medium text-center leading-tight">{f.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <CollapsibleSectionCard title="Ramka" description="Dekoracyjna ramka wokół całej kartki A4.">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="shrink-0">Kolor</Label>
+                <ColorPicker
+                  value={data.printTemplate.frame.color}
+                  onChange={(hex) => updateTemplate("frame", { ...data.printTemplate.frame, color: hex })}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {FRAME_STYLE_OPTIONS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => updateTemplate("frame", { ...data.printTemplate.frame, style: f.id })}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-colors",
+                      data.printTemplate.frame.style === f.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-muted-foreground"
+                    )}
+                  >
+                    <div className="relative h-12 w-16 shrink-0 bg-white ring-1 ring-inset ring-border">
+                      {renderFrame({ style: f.id, color: data.printTemplate.frame.color }, { margin: 4, cornerSize: 16 })}
+                    </div>
+                    <span className="text-[10px] font-medium text-center leading-tight">{f.label}</span>
+                  </button>
+                ))}
+              </div>
+            </CollapsibleSectionCard>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Kolumna graficzna</CardTitle>
-                <CardDescription>
-                  Przeciągnij za uchwyt, aby zmienić kolejność w pionie. Włącz/wyłącz, wyrównaj i ustaw marginesy dla zdjęcia, sygnetu i kodu QR.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            <CollapsibleSectionCard
+              title="Kolumna graficzna"
+              description="Przeciągnij za uchwyt, aby zmienić kolejność w pionie. Włącz/wyłącz, wyrównaj i ustaw marginesy dla zdjęcia, sygnetu i kodu QR."
+            >
                 <div className="space-y-2">
                   {data.printTemplate.graphicOrder.map((itemId, i) => {
                     const item = data.printTemplate.graphicItems[itemId]
@@ -1013,17 +1034,12 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     )
                   })}
                 </div>
-              </CardContent>
-            </Card>
+            </CollapsibleSectionCard>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Kolumna z treścią</CardTitle>
-                <CardDescription>
-                  Przeciągnij za uchwyt, aby zmienić kolejność. Każdy blok ma własny rozmiar, czcionkę, wyrównanie i marginesy.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            <CollapsibleSectionCard
+              title="Kolumna z treścią"
+              description="Przeciągnij za uchwyt, aby zmienić kolejność. Każdy blok ma własny rozmiar, czcionkę, wyrównanie i marginesy."
+            >
                 <div className="space-y-2">
                   {data.printTemplate.blockOrder.map((blockId, i) => {
                     const block = data.printTemplate.blocks[blockId]
@@ -1197,8 +1213,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     )
                   })}
                 </div>
-              </CardContent>
-            </Card>
+            </CollapsibleSectionCard>
           </div>
         )}
 
