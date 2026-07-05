@@ -234,11 +234,14 @@ export function ObituaryPreview({
   availableWidth,
   template = DEFAULT_PRINT_TEMPLATE,
   publicUrl,
+  bare = false,
 }: {
   data: PreviewData
   availableWidth?: number
   template?: PrintTemplateSettings
   publicUrl?: string
+  /** Renders just the A4 page at natural size with no preview chrome (label, border, scaling) — used for printing. */
+  bare?: boolean
 }) {
   const scale = availableWidth && availableWidth > 0 ? availableWidth / A4_W : 0.5
 
@@ -404,6 +407,82 @@ export function ObituaryPreview({
 
   const orderedGraphic = template.graphicOrder.map((id) => ({ id, node: graphicNodes[id] })).filter((item) => item.node !== null)
 
+  const pageContent = (
+    <div style={{ width: A4_W, height: A4_H, position: "relative" }}>
+      {/* A4 landscape page */}
+      <div
+        style={{
+          width: A4_W,
+          height: A4_H,
+          background: "#fff",
+          display: "flex",
+          flexDirection: template.columnPosition === "right" ? "row-reverse" : "row",
+          fontFamily,
+          fontWeight: template.fontWeight,
+          color: "#111",
+          overflow: "hidden",
+        }}
+      >
+        {/* Graphic column: photo, sigil, QR — order, alignment & margins configurable */}
+        <div
+          style={{
+            width: 340,
+            flexShrink: 0,
+            background: "#fff",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            padding: "40px 36px",
+            overflow: "hidden",
+          }}
+        >
+          {orderedGraphic.map((item) => {
+            const settings = g[item.id]
+            return (
+              <div
+                key={item.id}
+                style={{
+                  display: "flex",
+                  justifyContent: HORIZONTAL_ALIGN_MAP[settings.align],
+                  marginTop: settings.marginTop,
+                  marginBottom: settings.marginBottom,
+                }}
+              >
+                {item.node}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Content column: photo/sigil, name, dates, headline, body, ceremony — order & spacing configurable */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: VERTICAL_ALIGN_MAP[template.verticalAlign],
+            padding: "48px 48px 40px",
+            overflow: "hidden",
+          }}
+        >
+          {orderedBlocks.map((item) => {
+            const margin = b[item.id]
+            return (
+              <div key={item.id} style={{ marginTop: margin.marginTop, marginBottom: margin.marginBottom }}>
+                {item.node}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>{renderFrame(template.frame)}</div>
+    </div>
+  )
+
+  if (bare) {
+    return <div className={PRINT_FONTS_CLASSNAME}>{pageContent}</div>
+  }
+
   return (
     <div className={PRINT_FONTS_CLASSNAME}>
       <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">
@@ -422,73 +501,7 @@ export function ObituaryPreview({
               left: 0,
             }}
           >
-            {/* A4 landscape page */}
-            <div
-              style={{
-                width: A4_W,
-                height: A4_H,
-                background: "#fff",
-                display: "flex",
-                flexDirection: template.columnPosition === "right" ? "row-reverse" : "row",
-                fontFamily,
-                fontWeight: template.fontWeight,
-                color: "#111",
-                overflow: "hidden",
-              }}
-            >
-              {/* Graphic column: photo, sigil, QR — order, alignment & margins configurable */}
-              <div
-                style={{
-                  width: 340,
-                  flexShrink: 0,
-                  background: "#fff",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "flex-start",
-                  padding: "40px 36px",
-                  overflow: "hidden",
-                }}
-              >
-                {orderedGraphic.map((item) => {
-                  const settings = g[item.id]
-                  return (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: HORIZONTAL_ALIGN_MAP[settings.align],
-                        marginTop: settings.marginTop,
-                        marginBottom: settings.marginBottom,
-                      }}
-                    >
-                      {item.node}
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Content column: photo/sigil, name, dates, headline, body, ceremony — order & spacing configurable */}
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: VERTICAL_ALIGN_MAP[template.verticalAlign],
-                  padding: "48px 48px 40px",
-                  overflow: "hidden",
-                }}
-              >
-                {orderedBlocks.map((item) => {
-                  const margin = b[item.id]
-                  return (
-                    <div key={item.id} style={{ marginTop: margin.marginTop, marginBottom: margin.marginBottom }}>
-                      {item.node}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-            <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>{renderFrame(template.frame)}</div>
+            {pageContent}
           </div>
         </div>
       </div>

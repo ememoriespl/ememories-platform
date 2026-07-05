@@ -16,6 +16,7 @@ import {
   X,
   Send,
   Save,
+  Download,
   GripVertical,
   AlignLeft,
   AlignCenter,
@@ -490,7 +491,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
   return (
     <>
       {/* Tab bar — button minimal horizontal */}
-      <div className="sticky top-[72px] z-10 border-b bg-background">
+      <div className="sticky top-[72px] z-10 border-b bg-background print:hidden">
         <div className="flex px-6">
           {TABS.map((tab) => (
             <button
@@ -510,7 +511,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
       </div>
 
       {/* Tab content — two-column when on Dane or Szablon tab */}
-      <div className="flex">
+      <div className="flex print:hidden">
         <div className={cn("min-w-0 p-6 pb-24", activeTab === "dane" || activeTab === "szablon" ? "w-1/2" : "flex-1")}>
           <div className="max-w-2xl space-y-6">
         {activeTab === "dane" && (
@@ -1241,7 +1242,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
       </div>
 
       {/* Fixed bottom action bar */}
-      <div className="fixed bottom-0 left-60 right-0 z-10 border-t bg-background px-6 py-3 flex items-center justify-between">
+      <div className="fixed bottom-0 left-60 right-0 z-10 border-t bg-background px-6 py-3 flex items-center justify-between print:hidden">
         <Button
           color="tertiary"
           onClick={() => router.push(backUrl)}
@@ -1252,18 +1253,32 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
         <div className="flex items-center gap-2">
           <Button
             color="secondary"
-           
+
             onClick={() => save("draft")}
             disabled={saving}
           >
             <Save className="h-4 w-4" />
             {saving ? "Zapisuję…" : "Zapisz szkic"}
           </Button>
+          <Button color="secondary" onClick={() => window.print()}>
+            <Download className="h-4 w-4" />
+            Pobierz .pdf
+          </Button>
           <Button onClick={() => save("published")} disabled={saving}>
             <Send className="h-4 w-4" />
             {saving ? "Zapisuję…" : "Opublikuj"}
           </Button>
         </div>
+      </div>
+
+      {/* Print-only A4 page — hidden on screen, shown (and only this) when printing/exporting to PDF */}
+      <div className="hidden print:block">
+        <ObituaryPreview
+          data={data}
+          template={data.printTemplate}
+          publicUrl={recordId ? `${BASE_URL}/obituary/${recordId}` : undefined}
+          bare
+        />
       </div>
     </>
   )
