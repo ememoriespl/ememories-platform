@@ -30,6 +30,8 @@ import {
   DEFAULT_PRINT_TEMPLATE,
   DEFAULT_BLOCK_ORDER,
   DEFAULT_GRAPHIC_ORDER,
+  FRAME_STYLE_OPTIONS,
+  renderFrame,
   type PrintTemplateSettings,
   type BlockSettings,
   type GraphicItemSettings,
@@ -280,6 +282,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
+    frame: { ...DEFAULT_PRINT_TEMPLATE.frame, ...p.frame },
     blockOrder: reconcileOrder(p.blockOrder, DEFAULT_BLOCK_ORDER),
     blocks,
     graphicOrder: reconcileOrder(p.graphicOrder, DEFAULT_GRAPHIC_ORDER),
@@ -858,6 +861,42 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     onChange={(v) => updateTemplate("verticalAlign", v)}
                     options={VALIGN_OPTIONS}
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Ramka</CardTitle>
+                <CardDescription>Dekoracyjna ramka wokół całej kartki A4.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="shrink-0">Kolor</Label>
+                  <ColorPicker
+                    value={data.printTemplate.frame.color}
+                    onChange={(hex) => updateTemplate("frame", { ...data.printTemplate.frame, color: hex })}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {FRAME_STYLE_OPTIONS.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => updateTemplate("frame", { ...data.printTemplate.frame, style: f.id })}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-colors",
+                        data.printTemplate.frame.style === f.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <div className="relative h-12 w-16 shrink-0 bg-white ring-1 ring-inset ring-border">
+                        {renderFrame({ style: f.id, color: data.printTemplate.frame.color }, { margin: 4, cornerSize: 16 })}
+                      </div>
+                      <span className="text-[10px] font-medium text-center leading-tight">{f.label}</span>
+                    </button>
+                  ))}
                 </div>
               </CardContent>
             </Card>
