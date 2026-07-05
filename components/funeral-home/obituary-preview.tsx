@@ -4,6 +4,7 @@ import { format, isValid } from "date-fns"
 import { pl } from "date-fns/locale"
 import { PRINT_FONTS_CLASSNAME, getPrintFontFamily, DEFAULT_PRINT_FONT_ID } from "@/lib/print-fonts"
 import { getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
+import { SIGIL_ICON_DATA } from "@/lib/sigil-icons"
 
 export interface PreviewData {
   firstName: string
@@ -209,22 +210,17 @@ function renderSigil(sigilId: string, size: number, color: string): React.ReactN
   if (option.kind === "text") {
     return <div style={{ fontSize: size, color, lineHeight: 1 }}>{option.char}</div>
   }
-  const width = size * (option.aspect ?? 1)
+  const icon = SIGIL_ICON_DATA[sigilId]
+  if (!icon) return null
+  // Inline real SVG paths with a fill attribute instead of a CSS mask-image: Chromium silently
+  // drops mask-image when printing/exporting to PDF, but native SVG fill prints correctly.
   return (
-    <div
-      style={{
-        width,
-        height: size,
-        backgroundColor: color,
-        WebkitMaskImage: `url(${option.src})`,
-        maskImage: `url(${option.src})`,
-        WebkitMaskRepeat: "no-repeat",
-        maskRepeat: "no-repeat",
-        WebkitMaskSize: "contain",
-        maskSize: "contain",
-        WebkitMaskPosition: "center",
-        maskPosition: "center",
-      }}
+    <svg
+      viewBox={icon.viewBox}
+      width={size * icon.aspect}
+      height={size}
+      fill={color}
+      dangerouslySetInnerHTML={{ __html: icon.innerHTML }}
     />
   )
 }
