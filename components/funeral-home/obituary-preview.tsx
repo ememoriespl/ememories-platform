@@ -3,7 +3,7 @@
 import { format, isValid } from "date-fns"
 import { pl } from "date-fns/locale"
 import { PRINT_FONTS_CLASSNAME, getPrintFontFamily, DEFAULT_PRINT_FONT_ID } from "@/lib/print-fonts"
-import { getSigilChar, DEFAULT_SIGIL_ID } from "@/lib/print-sigils"
+import { getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 
 export interface PreviewData {
   firstName: string
@@ -19,12 +19,11 @@ export interface PreviewData {
   photoBw: boolean
 }
 
-export type ContentBlockId = "photo" | "sp" | "name" | "dates" | "headline" | "body" | "ceremonyLabel" | "ceremony"
+export type ContentBlockId = "photo" | "sigil" | "sp" | "name" | "dates" | "headline" | "body" | "ceremonyLabel" | "ceremony"
 export type GraphicItemId = "photo" | "sigil" | "qr"
 
 export type BlockAlign = "left" | "center" | "right"
 export type VerticalAlign = "top" | "center" | "bottom"
-export type PhotoDisplayMode = "photo" | "sigil"
 
 export interface BlockSettings {
   size: number
@@ -35,7 +34,8 @@ export interface BlockSettings {
   fontWeight?: number
   enabled?: boolean
   text?: string
-  displayMode?: PhotoDisplayMode
+  sigilId?: string
+  color?: string
 }
 
 export interface GraphicItemSettings {
@@ -44,12 +44,13 @@ export interface GraphicItemSettings {
   marginTop: number
   marginBottom: number
   size: number
+  sigilId?: string
+  color?: string
 }
 
 export interface PrintTemplateSettings {
   fontId: string
   fontWeight: number
-  sigilId: string
   columnPosition: "left" | "right"
   verticalAlign: VerticalAlign
   blockOrder: ContentBlockId[]
@@ -58,18 +59,18 @@ export interface PrintTemplateSettings {
   graphicItems: Record<GraphicItemId, GraphicItemSettings>
 }
 
-export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremony"]
+export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sigil", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremony"]
 export const DEFAULT_GRAPHIC_ORDER: GraphicItemId[] = ["photo", "sigil", "qr"]
 
 export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   fontId: DEFAULT_PRINT_FONT_ID,
   fontWeight: 400,
-  sigilId: DEFAULT_SIGIL_ID,
   columnPosition: "left",
   verticalAlign: "center",
   blockOrder: DEFAULT_BLOCK_ORDER,
   blocks: {
-    photo: { size: 130, align: "center", marginTop: 0, marginBottom: 20, displayMode: "photo" },
+    photo: { size: 130, align: "center", marginTop: 0, marginBottom: 20, enabled: true },
+    sigil: { size: 64, align: "center", marginTop: 0, marginBottom: 20, enabled: false, sigilId: DEFAULT_SIGIL_ID, color: DEFAULT_SIGIL_COLOR },
     sp: { size: 14, align: "center", marginTop: 0, marginBottom: 8, enabled: true, text: "Ś.P." },
     name: { size: 22, align: "center", marginTop: 0, marginBottom: 8, fontWeight: 700 },
     dates: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
@@ -81,7 +82,7 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   graphicOrder: DEFAULT_GRAPHIC_ORDER,
   graphicItems: {
     photo: { enabled: false, align: "center", marginTop: 0, marginBottom: 20, size: 120 },
-    sigil: { enabled: true, align: "center", marginTop: 0, marginBottom: 24, size: 32 },
+    sigil: { enabled: true, align: "center", marginTop: 0, marginBottom: 24, size: 32, sigilId: DEFAULT_SIGIL_ID, color: DEFAULT_SIGIL_COLOR },
     qr: { enabled: true, align: "center", marginTop: 0, marginBottom: 0, size: 72 },
   },
 }
@@ -119,6 +120,31 @@ function fontStyleFor(block: BlockSettings): React.CSSProperties {
   return style
 }
 
+function renderSigil(sigilId: string, size: number, color: string): React.ReactNode {
+  const option = getSigilOption(sigilId)
+  if (option.kind === "text") {
+    return <div style={{ fontSize: size, color, lineHeight: 1 }}>{option.char}</div>
+  }
+  const width = size * (option.aspect ?? 1)
+  return (
+    <div
+      style={{
+        width,
+        height: size,
+        backgroundColor: color,
+        WebkitMaskImage: `url(${option.src})`,
+        maskImage: `url(${option.src})`,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+      }}
+    />
+  )
+}
+
 export function ObituaryPreview({
   data,
   availableWidth,
@@ -150,15 +176,8 @@ export function ObituaryPreview({
   const showCeremony = !!(ceremonyDateFmt || data.ceremonyInfo)
 
   const blocks: Partial<Record<ContentBlockId, React.ReactNode>> = {
-    photo: (() => {
-      if (b.photo.displayMode === "sigil") {
-        return (
-          <div style={{ display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.photo.align] }}>
-            <div style={{ fontSize: b.photo.size, color: "#555" }}>{getSigilChar(template.sigilId)}</div>
-          </div>
-        )
-      }
-      return data.photo ? (
+    photo:
+      b.photo.enabled !== false && data.photo ? (
         <div style={{ display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.photo.align] }}>
           <img
             src={data.photo}
@@ -174,8 +193,12 @@ export function ObituaryPreview({
             }}
           />
         </div>
-      ) : null
-    })(),
+      ) : null,
+    sigil: b.sigil.enabled ? (
+      <div style={{ display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.sigil.align] }}>
+        {renderSigil(b.sigil.sigilId ?? DEFAULT_SIGIL_ID, b.sigil.size, b.sigil.color ?? DEFAULT_SIGIL_COLOR)}
+      </div>
+    ) : null,
     sp:
       b.sp.enabled && b.sp.text?.trim() ? (
         <p style={{ fontSize: b.sp.size, textAlign: b.sp.align, lineHeight: 1.4, ...fontStyleFor(b.sp) }}>{b.sp.text}</p>
@@ -285,7 +308,7 @@ export function ObituaryPreview({
           }}
         />
       ) : null,
-    sigil: g.sigil.enabled ? <div style={{ fontSize: g.sigil.size, color: "#555" }}>{getSigilChar(template.sigilId)}</div> : null,
+    sigil: g.sigil.enabled ? renderSigil(g.sigil.sigilId ?? DEFAULT_SIGIL_ID, g.sigil.size, g.sigil.color ?? DEFAULT_SIGIL_COLOR) : null,
     qr:
       g.qr.enabled && qrImageUrl ? (
         <div style={{ textAlign: "center" }}>

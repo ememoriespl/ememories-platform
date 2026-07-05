@@ -37,7 +37,8 @@ import {
   type VerticalAlign,
 } from "@/components/funeral-home/obituary-preview"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
-import { PRINT_SIGILS } from "@/lib/print-sigils"
+import { getSigilsFor, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
+import { ColorPicker } from "@/components/ui/color-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import type { ContentBlockId, GraphicItemId } from "@/components/funeral-home/obituary-preview"
 import { toast } from "sonner"
@@ -59,6 +60,7 @@ const WEIGHT_NAMES: Record<number, string> = {
 
 const BLOCK_LABELS: Record<ContentBlockId, string> = {
   photo: "Zdjęcie",
+  sigil: "Sygnet",
   sp: "Ś.P.",
   name: "Imię i nazwisko",
   dates: "Data",
@@ -73,11 +75,6 @@ const GRAPHIC_LABELS: Record<GraphicItemId, string> = {
   sigil: "Sygnet",
   qr: "Kod QR",
 }
-
-const PHOTO_MODE_OPTIONS = [
-  { id: "photo", label: "Zdjęcie" },
-  { id: "sigil", label: "Sygnet" },
-] as const
 
 const ALIGN_OPTIONS: { id: BlockAlign; label: string; icon: LucideIcon }[] = [
   { id: "left", label: "Lewo", icon: AlignLeft },
@@ -121,6 +118,47 @@ function IconToggleGroup<T extends string>({
           </button>
         )
       })}
+    </div>
+  )
+}
+
+function SigilPickerRow({
+  scope,
+  sigilId,
+  color,
+  onSigilChange,
+  onColorChange,
+}: {
+  scope: "graphic" | "content"
+  sigilId: string
+  color: string
+  onSigilChange: (id: string) => void
+  onColorChange: (hex: string) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-xs text-muted-foreground shrink-0">Symbol</span>
+      <div
+        className="flex flex-1 flex-wrap items-center justify-end gap-1.5"
+        onMouseDown={(e) => e.stopPropagation()}
+        draggable={false}
+      >
+        {getSigilsFor(scope).map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            title={s.label}
+            onClick={() => onSigilChange(s.id)}
+            className={cn(
+              "h-7 w-7 shrink-0 overflow-hidden flex items-center justify-center rounded-md border-2 text-sm transition-colors",
+              sigilId === s.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+            )}
+          >
+            {s.kind === "text" ? s.char : <img src={s.src} alt={s.label} className="h-4 w-4 object-contain" />}
+          </button>
+        ))}
+        <ColorPicker value={color} onChange={onColorChange} />
+      </div>
     </div>
   )
 }
@@ -191,16 +229,18 @@ function reconcileOrder<T extends string>(saved: unknown, defaultOrder: readonly
 function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_PRINT_TEMPLATE
   const p = raw as Partial<PrintTemplateSettings> & {
-    blocks?: Partial<Record<ContentBlockId, Partial<BlockSettings>>>
+    blocks?: Partial<Record<ContentBlockId, Partial<BlockSettings> & { displayMode?: "photo" | "sigil" }>>
     graphicItems?: Partial<Record<GraphicItemId, Partial<GraphicItemSettings>>>
     // legacy fields from earlier template versions, migrated below
+    sigilId?: string
     sigilSize?: number
     qrSize?: number
     qr?: { align?: BlockAlign; marginTop?: number; marginBottom?: number }
   }
   const blocks = { ...DEFAULT_PRINT_TEMPLATE.blocks }
   for (const id of DEFAULT_BLOCK_ORDER) {
-    blocks[id] = { ...DEFAULT_PRINT_TEMPLATE.blocks[id], ...p.blocks?.[id] }
+    const { displayMode: _displayMode, ...rest } = p.blocks?.[id] ?? {}
+    blocks[id] = { ...DEFAULT_PRINT_TEMPLATE.blocks[id], ...rest }
   }
   const graphicItems = { ...DEFAULT_PRINT_TEMPLATE.graphicItems }
   for (const id of DEFAULT_GRAPHIC_ORDER) {
@@ -216,11 +256,28 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
       marginBottom: p.qr.marginBottom ?? graphicItems.qr.marginBottom,
     }
   }
+  // legacy: a single global sigilId used to seed the graphic column's sigil
+  if (p.sigilId && !p.graphicItems?.sigil?.sigilId) {
+    graphicItems.sigil = { ...graphicItems.sigil, sigilId: p.sigilId }
+  }
+  // legacy: the content-column "photo" block used to double as photo-or-sigil via displayMode
+  const legacyPhoto = p.blocks?.photo
+  if (legacyPhoto?.displayMode === "sigil" && !p.blocks?.sigil) {
+    blocks.sigil = {
+      ...blocks.sigil,
+      enabled: true,
+      size: legacyPhoto.size ?? blocks.sigil.size,
+      align: legacyPhoto.align ?? blocks.sigil.align,
+      marginTop: legacyPhoto.marginTop ?? blocks.sigil.marginTop,
+      marginBottom: legacyPhoto.marginBottom ?? blocks.sigil.marginBottom,
+      sigilId: p.sigilId ?? blocks.sigil.sigilId,
+    }
+    blocks.photo = { ...blocks.photo, enabled: false }
+  }
 
   return {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
-    sigilId: p.sigilId ?? DEFAULT_PRINT_TEMPLATE.sigilId,
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
     blockOrder: reconcileOrder(p.blockOrder, DEFAULT_BLOCK_ORDER),
@@ -261,7 +318,7 @@ function parseLocationJSON(
 
 function serializeLocation(data: FormData): string {
   return JSON.stringify({
-    v: 4,
+    v: 5,
     obituaryHeadline: data.obituaryHeadline,
     ceremonyDate: data.ceremonyDate,
     ceremonyTime: data.ceremonyTime,
@@ -844,27 +901,13 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                         </div>
 
                         {itemId === "sigil" && (
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-muted-foreground shrink-0">Symbol</span>
-                            <div className="flex gap-1" onMouseDown={(e) => e.stopPropagation()} draggable={false}>
-                              {PRINT_SIGILS.map((s) => (
-                                <button
-                                  key={s.id}
-                                  type="button"
-                                  title={s.label}
-                                  onClick={() => updateTemplate("sigilId", s.id)}
-                                  className={cn(
-                                    "h-7 w-7 flex items-center justify-center rounded-md border-2 text-sm transition-colors",
-                                    data.printTemplate.sigilId === s.id
-                                      ? "border-primary bg-primary/5"
-                                      : "border-border hover:border-muted-foreground"
-                                  )}
-                                >
-                                  {s.char}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+                          <SigilPickerRow
+                            scope="graphic"
+                            sigilId={item.sigilId ?? DEFAULT_SIGIL_ID}
+                            color={item.color ?? DEFAULT_SIGIL_COLOR}
+                            onSigilChange={(id) => updateGraphicItem("sigil", "sigilId", id)}
+                            onColorChange={(hex) => updateGraphicItem("sigil", "color", hex)}
+                          />
                         )}
 
                         <div className="flex items-center justify-between gap-2">
@@ -935,7 +978,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                 <div className="space-y-2">
                   {data.printTemplate.blockOrder.map((blockId, i) => {
                     const block = data.printTemplate.blocks[blockId]
-                    const isTextBlock = blockId !== "photo"
+                    const isTextBlock = blockId !== "photo" && blockId !== "sigil"
                     const effectiveFontId = block.fontId ?? data.printTemplate.fontId
                     const weightOptions = PRINT_FONTS.find((f) => f.id === effectiveFontId)?.weights ?? []
                     return (
@@ -965,7 +1008,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                           <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
                           <span className="flex-1 text-sm font-medium truncate">{BLOCK_LABELS[blockId]}</span>
-                          {blockId === "sp" && (
+                          {(blockId === "sp" || blockId === "photo" || blockId === "sigil") && (
                             <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                               <Checkbox
                                 size="sm"
@@ -990,38 +1033,19 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                           </div>
                         )}
 
-                        {blockId === "photo" && (
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-muted-foreground shrink-0">Zawartość</span>
-                            <div className="flex gap-1">
-                              {PHOTO_MODE_OPTIONS.map((m) => (
-                                <button
-                                  key={m.id}
-                                  type="button"
-                                  onClick={() => updateBlock(blockId, "displayMode", m.id)}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                  className={cn(
-                                    "rounded-md border-2 px-2 py-1 text-[10px] font-medium transition-colors",
-                                    (block.displayMode ?? "photo") === m.id
-                                      ? "border-primary bg-primary/5"
-                                      : "border-border hover:border-muted-foreground"
-                                  )}
-                                >
-                                  {m.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+                        {blockId === "sigil" && (
+                          <SigilPickerRow
+                            scope="content"
+                            sigilId={block.sigilId ?? DEFAULT_SIGIL_ID}
+                            color={block.color ?? DEFAULT_SIGIL_COLOR}
+                            onSigilChange={(id) => updateBlock(blockId, "sigilId", id)}
+                            onColorChange={(hex) => updateBlock(blockId, "color", hex)}
+                          />
                         )}
 
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs text-muted-foreground shrink-0">
-                            {blockId === "photo"
-                              ? block.displayMode === "sigil"
-                                ? "Wielkość sygnetu"
-                                : "Wielkość zdjęcia"
-                              : "Rozmiar czcionki"}
+                            {blockId === "photo" ? "Wielkość zdjęcia" : blockId === "sigil" ? "Wielkość sygnetu" : "Rozmiar czcionki"}
                           </span>
                           <div className="flex items-center gap-1">
                             <Input
