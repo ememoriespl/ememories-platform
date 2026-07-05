@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" fill="#000">
-      <g><path d="M 84 40 H 100 V 52 H 123 V 68 H 100 V 136 H 84 V 68 H 61 V 52 H 84 Z"/>
-      <path d="M 100 134 C 132 138 150 118 188 128" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round"/>
-      <path d="M 0 -15 C 7.5 -6.75 7.5 6.75 0 15 C -7.5 6.75 -7.5 -6.75 0 -15 Z" transform="translate(126.00 140.00) rotate(20.00) translate(0 -15.00)"/>
-      <path d="M 0 -16 C 8 -7.2 8 7.2 0 16 C -8 7.2 -8 -7.2 0 -16 Z" transform="translate(154.00 128.00) rotate(-10.00) translate(0 -16.00)"/>
-      <path d="M 0 -13 C 6.5 -5.8500000000000005 6.5 5.8500000000000005 0 13 C -6.5 5.8500000000000005 -6.5 -5.8500000000000005 0 -13 Z" transform="translate(184.00 132.00) rotate(30.00) translate(0 -13.00)"/></g>
-    </svg>

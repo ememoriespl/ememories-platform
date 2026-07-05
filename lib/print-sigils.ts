@@ -16,11 +16,13 @@ export const PRINT_SIGILS: PrintSigilOption[] = [
   { id: "cross-outline", label: "Krzyż ozdobny", kind: "text", char: "✙" },
   { id: "star-of-david", label: "Gwiazda Dawida", kind: "text", char: "✡" },
   { id: "flower", label: "Kwiat", kind: "text", char: "❀" },
-  { id: "wreath-cross", label: "Wieniec z krzyżem", kind: "image", src: "/sigils/wreath-cross.svg", contentOnly: true },
-  { id: "cross-leaf", label: "Krzyż z liściem", kind: "image", src: "/sigils/cross-leaf.svg", aspect: 1.25, contentOnly: true },
-  { id: "sp-wreath", label: "Ś.P. z wieńcem", kind: "image", src: "/sigils/sp-wreath.svg", aspect: 1.33, contentOnly: true },
-  { id: "cross-leaves", label: "Krzyż z liśćmi", kind: "image", src: "/sigils/cross-leaves.svg", aspect: 1.18, contentOnly: true },
-  { id: "laurel-cross", label: "Gałązki laurowe z krzyżem", kind: "image", src: "/sigils/laurel-cross.svg", aspect: 3.5, contentOnly: true },
+  { id: "cross-outline-leaf", label: "Krzyż z liściem", kind: "image", src: "/sigils/cross-outline-leaf.svg", aspect: 0.734, contentOnly: true },
+  { id: "cross-branch", label: "Krzyż z gałązką", kind: "image", src: "/sigils/cross-branch.svg", aspect: 1.75, contentOnly: true },
+  { id: "wreath-cross", label: "Wieniec z krzyżem", kind: "image", src: "/sigils/wreath-cross.svg", aspect: 1.069, contentOnly: true },
+  { id: "wreath-cross-brush", label: "Wieniec z krzyżem (szkicowy)", kind: "image", src: "/sigils/wreath-cross-brush.svg", aspect: 1.043, contentOnly: true },
+  { id: "wreath-ribbon", label: "Wieniec ze wstążką", kind: "image", src: "/sigils/wreath-ribbon.svg", aspect: 1.13, contentOnly: true },
+  { id: "ribbon", label: "Wstążka", kind: "image", src: "/sigils/ribbon.svg", aspect: 0.577, contentOnly: true },
+  { id: "laurel-cross", label: "Gałązka z krzyżem", kind: "image", src: "/sigils/laurel-cross.svg", aspect: 1.756, contentOnly: true },
 ]
 
 export const DEFAULT_SIGIL_ID = "cross-latin"

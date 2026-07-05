@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 170" fill="#000">
-      <g transform="rotate(-16 100 90)"><path d="M 93 44 H 107 V 55 H 129 V 69 H 107 V 136 H 93 V 69 H 71 V 55 H 93 Z"/></g>
-      <g><path d="M 0 -20 C 9 -9 9 9 0 20 C -9 9 -9 -9 0 -20 Z" transform="translate(92.00 148.00) rotate(-55.00) translate(0 -20.00)"/>
-      <path d="M 0 -23 C 10 -10.35 10 10.35 0 23 C -10 10.35 -10 -10.35 0 -23 Z" transform="translate(106.00 152.00) rotate(-18.00) translate(0 -23.00)"/>
-      <path d="M 0 -21 C 9.5 -9.450000000000001 9.5 9.450000000000001 0 21 C -9.5 9.450000000000001 -9.5 -9.450000000000001 0 -21 Z" transform="translate(122.00 148.00) rotate(15.00) translate(0 -21.00)"/>
-      <path d="M 0 -17 C 8 -7.65 8 7.65 0 17 C -8 7.65 -8 -7.65 0 -17 Z" transform="translate(136.00 136.00) rotate(45.00) translate(0 -17.00)"/></g>
-    </svg>
