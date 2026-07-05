@@ -150,4 +150,15 @@
     size: A4 landscape;
     margin: 0;
   }
+  body * {
+    visibility: hidden;
+  }
+  .obituary-print-area,
+  .obituary-print-area * {
+    visibility: visible;
+  }
+  .obituary-print-area {
+    position: fixed;
+    inset: 0;
+  }
 }

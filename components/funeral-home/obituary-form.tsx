@@ -1272,7 +1272,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
       </div>
 
       {/* Print-only A4 page — hidden on screen, shown (and only this) when printing/exporting to PDF */}
-      <div className="hidden print:block">
+      <div className="hidden print:block obituary-print-area">
         <ObituaryPreview
           data={data}
           template={data.printTemplate}
