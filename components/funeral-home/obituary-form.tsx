@@ -327,6 +327,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
+    pagePadding: p.pagePadding ?? DEFAULT_PRINT_TEMPLATE.pagePadding,
     frame,
     blockOrder: reconcileOrder(p.blockOrder, DEFAULT_BLOCK_ORDER),
     blocks,
@@ -906,6 +907,16 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     onChange={(v) => updateTemplate("verticalAlign", v)}
                     options={VALIGN_OPTIONS}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Wewnętrzny padding (px)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={data.printTemplate.pagePadding}
+                    onChange={(e) => updateTemplate("pagePadding", Number(e.target.value) || 0)}
+                  />
+                  <p className="text-xs text-muted-foreground">Odsuwa całą treść od krawędzi kartki — przydatne przy wąskich ramkach.</p>
                 </div>
               </CardContent>
             </Card>

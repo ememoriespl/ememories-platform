@@ -81,6 +81,8 @@ export interface PrintTemplateSettings {
   fontWeight: number
   columnPosition: "left" | "right"
   verticalAlign: VerticalAlign
+  /** inset (px) applied to the whole two-column content area, on top of each column's own padding — pulls content in from the page edge to clear the frame */
+  pagePadding: number
   blockOrder: ContentBlockId[]
   blocks: Record<ContentBlockId, BlockSettings>
   graphicOrder: GraphicItemId[]
@@ -96,6 +98,7 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   fontWeight: 400,
   columnPosition: "left",
   verticalAlign: "center",
+  pagePadding: 0,
   blockOrder: DEFAULT_BLOCK_ORDER,
   blocks: {
     photo: { size: 130, align: "center", marginTop: 0, marginBottom: 20, enabled: true },
@@ -373,6 +376,8 @@ export function ObituaryPreview({
         style={{
           width: A4_W,
           height: A4_H,
+          boxSizing: "border-box",
+          padding: template.pagePadding,
           background: "#fff",
           display: "flex",
           flexDirection: template.columnPosition === "right" ? "row-reverse" : "row",
