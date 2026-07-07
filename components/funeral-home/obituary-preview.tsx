@@ -5,6 +5,7 @@ import { pl } from "date-fns/locale"
 import { PRINT_FONTS_CLASSNAME, getPrintFontFamily, DEFAULT_PRINT_FONT_ID } from "@/lib/print-fonts"
 import { getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 import { SIGIL_ICON_DATA } from "@/lib/sigil-icons"
+import { FRAME_ART_DATA } from "@/lib/frame-art"
 
 export interface PreviewData {
   firstName: string
@@ -49,7 +50,14 @@ export interface GraphicItemSettings {
   color?: string
 }
 
-export type FrameStyle = "none" | "simple" | "double" | "dashed" | "classic-thick" | "ornamental-corners"
+export type FrameStyle =
+  | "none"
+  | "cienka-linia"
+  | "gruba-linia"
+  | "podwojna-linia"
+  | "naroznik-otwarty"
+  | "rogi-ozdobne"
+  | "ozdobna-fala"
 
 export interface FrameSettings {
   style: FrameStyle
@@ -58,11 +66,12 @@ export interface FrameSettings {
 
 export const FRAME_STYLE_OPTIONS: { id: FrameStyle; label: string }[] = [
   { id: "none", label: "Brak" },
-  { id: "simple", label: "Cienka linia" },
-  { id: "double", label: "Podwójna linia" },
-  { id: "dashed", label: "Przerywana" },
-  { id: "classic-thick", label: "Gruba klasyczna" },
-  { id: "ornamental-corners", label: "Rogi ozdobne" },
+  { id: "cienka-linia", label: "Cienka linia" },
+  { id: "gruba-linia", label: "Gruba linia" },
+  { id: "podwojna-linia", label: "Podwójna linia" },
+  { id: "naroznik-otwarty", label: "Otwarte narożniki" },
+  { id: "rogi-ozdobne", label: "Rogi ozdobne" },
+  { id: "ozdobna-fala", label: "Ozdobna fala" },
 ]
 
 export const DEFAULT_FRAME_COLOR = "#333333"
@@ -124,67 +133,21 @@ const HORIZONTAL_ALIGN_MAP: Record<BlockAlign, string> = {
 const A4_W = 1123
 const A4_H = 794
 
-// A quarter-wreath spray for the "ornamental-corners" frame style, drawn for the
-// top-left corner; the other three corners reuse it via CSS mirroring.
-export function CornerOrnament({ color, size }: { color: string; size: number }) {
-  return (
-    <svg viewBox="0 0 90 90" width={size} height={size} fill={color}>
-      <path d="M 0 -7.8 C 4.2 -3.51 4.2 3.51 0 7.8 C -4.2 3.51 -4.2 -3.51 0 -7.8 Z" transform="translate(0.05 84.86) rotate(240.00) translate(0 -4.68)" />
-      <path d="M 0 -10.4 C 5.6 -4.68 5.6 4.68 0 10.4 C -5.6 4.68 -5.6 -4.68 0 -10.4 Z" transform="translate(2.32 62.63) rotate(255.67) translate(0 -6.24)" />
-      <path d="M 0 -12.3 C 6.62 -5.54 6.62 5.54 0 12.3 C -6.62 5.54 -6.62 -5.54 0 -12.3 Z" transform="translate(10.51 41.83) rotate(271.33) translate(0 -7.38)" />
-      <path d="M 0 -13 C 7 -5.85 7 5.85 0 13 C -7 5.85 -7 -5.85 0 -13 Z" transform="translate(24.02 24.02) rotate(287.00) translate(0 -7.80)" />
-      <path d="M 0 -12.3 C 6.62 -5.54 6.62 5.54 0 12.3 C -6.62 5.54 -6.62 -5.54 0 -12.3 Z" transform="translate(41.83 10.51) rotate(302.67) translate(0 -7.38)" />
-      <path d="M 0 -10.4 C 5.6 -4.68 5.6 4.68 0 10.4 C -5.6 4.68 -5.6 -4.68 0 -10.4 Z" transform="translate(62.63 2.32) rotate(318.33) translate(0 -6.24)" />
-      <path d="M 0 -7.8 C 4.2 -3.51 4.2 3.51 0 7.8 C -4.2 3.51 -4.2 -3.51 0 -7.8 Z" transform="translate(84.86 0.05) rotate(334.00) translate(0 -4.68)" />
-    </svg>
-  )
-}
-
-export function renderFrame(frame: FrameSettings, opts?: { margin?: number; cornerSize?: number }): React.ReactNode {
+export function renderFrame(frame: FrameSettings): React.ReactNode {
   const { color, style } = frame
-  const margin = opts?.margin ?? 16
   if (style === "none") return null
-  if (style === "simple") {
-    return <div style={{ position: "absolute", inset: margin, border: `1.5px solid ${color}` }} />
-  }
-  if (style === "dashed") {
-    return <div style={{ position: "absolute", inset: margin, border: `1.5px dashed ${color}` }} />
-  }
-  if (style === "double") {
-    return (
-      <>
-        <div style={{ position: "absolute", inset: margin, border: `1px solid ${color}` }} />
-        <div style={{ position: "absolute", inset: margin + 6, border: `1px solid ${color}` }} />
-      </>
-    )
-  }
-  if (style === "classic-thick") {
-    return (
-      <>
-        <div style={{ position: "absolute", inset: margin, border: `3px solid ${color}` }} />
-        <div style={{ position: "absolute", inset: margin + 8, border: `1px solid ${color}` }} />
-      </>
-    )
-  }
-  // ornamental-corners
-  const cornerSize = opts?.cornerSize ?? 90
-  const cornerOffset = margin - cornerSize * 0.07
+  const art = FRAME_ART_DATA[style]
+  if (!art) return null
   return (
-    <>
-      <div style={{ position: "absolute", inset: margin, border: `1px solid ${color}` }} />
-      <div style={{ position: "absolute", top: cornerOffset, left: cornerOffset }}>
-        <CornerOrnament color={color} size={cornerSize} />
-      </div>
-      <div style={{ position: "absolute", top: cornerOffset, right: cornerOffset, transform: "scaleX(-1)" }}>
-        <CornerOrnament color={color} size={cornerSize} />
-      </div>
-      <div style={{ position: "absolute", bottom: cornerOffset, left: cornerOffset, transform: "scaleY(-1)" }}>
-        <CornerOrnament color={color} size={cornerSize} />
-      </div>
-      <div style={{ position: "absolute", bottom: cornerOffset, right: cornerOffset, transform: "scaleX(-1) scaleY(-1)" }}>
-        <CornerOrnament color={color} size={cornerSize} />
-      </div>
-    </>
+    <svg
+      viewBox={art.viewBox}
+      width="100%"
+      height="100%"
+      style={{ position: "absolute", inset: 0 }}
+      fill={art.mode === "fill" ? color : "none"}
+      stroke={art.mode === "stroke" ? color : "none"}
+      dangerouslySetInnerHTML={{ __html: art.innerHTML }}
+    />
   )
 }
 

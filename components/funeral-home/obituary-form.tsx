@@ -38,6 +38,7 @@ import {
   type PrintTemplateSettings,
   type BlockSettings,
   type GraphicItemSettings,
+  type FrameStyle,
   type BlockAlign,
   type VerticalAlign,
 } from "@/components/funeral-home/obituary-preview"
@@ -308,13 +309,25 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     }
     blocks.photo = { ...blocks.photo, enabled: false }
   }
+  // legacy: frame styles from the procedural (pre-artwork) version of the frame picker
+  const LEGACY_FRAME_STYLES: Record<string, FrameStyle> = {
+    simple: "cienka-linia",
+    double: "podwojna-linia",
+    dashed: "cienka-linia",
+    "classic-thick": "gruba-linia",
+    "ornamental-corners": "rogi-ozdobne",
+  }
+  const frame = { ...DEFAULT_PRINT_TEMPLATE.frame, ...p.frame }
+  if (frame.style in LEGACY_FRAME_STYLES) {
+    frame.style = LEGACY_FRAME_STYLES[frame.style]
+  }
 
   return {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
-    frame: { ...DEFAULT_PRINT_TEMPLATE.frame, ...p.frame },
+    frame,
     blockOrder: reconcileOrder(p.blockOrder, DEFAULT_BLOCK_ORDER),
     blocks,
     graphicOrder: reconcileOrder(p.graphicOrder, DEFAULT_GRAPHIC_ORDER),
@@ -918,8 +931,8 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                         : "border-border hover:border-muted-foreground"
                     )}
                   >
-                    <div className="relative h-12 w-16 shrink-0 bg-white ring-1 ring-inset ring-border">
-                      {renderFrame({ style: f.id, color: data.printTemplate.frame.color }, { margin: 4, cornerSize: 16 })}
+                    <div className="relative h-12 w-16 shrink-0 overflow-hidden bg-white ring-1 ring-inset ring-border">
+                      {renderFrame({ style: f.id, color: data.printTemplate.frame.color })}
                     </div>
                     <span className="text-[10px] font-medium text-center leading-tight">{f.label}</span>
                   </button>
