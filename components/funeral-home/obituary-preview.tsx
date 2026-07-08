@@ -35,10 +35,15 @@ export interface BlockSettings {
   marginBottom: number
   fontId?: string
   fontWeight?: number
+  italic?: boolean
   enabled?: boolean
   text?: string
   sigilId?: string
   color?: string
+  /** "ceremony" block only: show the eNekrolog QR code inline, to the left of the ceremony text */
+  qrEnabled?: boolean
+  qrSize?: number
+  qrGap?: number
 }
 
 export interface GraphicItemSettings {
@@ -81,6 +86,7 @@ export interface PrintTemplateSettings {
   fontId: string
   fontWeight: number
   columnPosition: "left" | "right"
+  graphicColumnEnabled: boolean
   verticalAlign: VerticalAlign
   /** inset (px) applied to the whole two-column content area, on top of each column's own padding — pulls content in from the page edge to clear the frame */
   pagePadding: number
@@ -100,6 +106,7 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   fontId: DEFAULT_PRINT_FONT_ID,
   fontWeight: 400,
   columnPosition: "left",
+  graphicColumnEnabled: true,
   verticalAlign: "center",
   pagePadding: 0,
   columnGap: 0,
@@ -110,10 +117,10 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
     sp: { size: 14, align: "center", marginTop: 0, marginBottom: 8, enabled: true, text: "Ś.P." },
     name: { size: 22, align: "center", marginTop: 0, marginBottom: 8, fontWeight: 700 },
     dates: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
-    headline: { size: 13, align: "center", marginTop: 0, marginBottom: 24 },
+    headline: { size: 13, align: "center", marginTop: 0, marginBottom: 24, italic: true },
     body: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
     ceremonyLabel: { size: 9, align: "center", marginTop: 0, marginBottom: 6, fontWeight: 600 },
-    ceremony: { size: 11, align: "center", marginTop: 0, marginBottom: 0 },
+    ceremony: { size: 11, align: "center", marginTop: 0, marginBottom: 0, italic: true, qrEnabled: false, qrSize: 64, qrGap: 16 },
     ceremonyBy: { size: 9, align: "center", marginTop: 20, marginBottom: 0, enabled: true },
   },
   graphicOrder: DEFAULT_GRAPHIC_ORDER,
@@ -173,6 +180,7 @@ function fontStyleFor(block: BlockSettings): React.CSSProperties {
   const style: React.CSSProperties = {}
   if (block.fontId) style.fontFamily = getPrintFontFamily(block.fontId)
   if (block.fontWeight !== undefined) style.fontWeight = block.fontWeight
+  style.fontStyle = block.italic ? "italic" : "normal"
   return style
 }
 
@@ -228,6 +236,10 @@ export function ObituaryPreview({
 
   const b = template.blocks
   const showCeremony = !!(ceremonyDateFmt || data.ceremonyInfo)
+  const ceremonyQrSize = b.ceremony.qrSize ?? 64
+  const ceremonyQrImageUrl = publicUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=${ceremonyQrSize * 2}x${ceremonyQrSize * 2}&margin=8&data=${encodeURIComponent(publicUrl)}`
+    : null
 
   const blocks: Partial<Record<ContentBlockId, React.ReactNode>> = {
     photo:
@@ -278,7 +290,6 @@ export function ObituaryPreview({
       <p
         style={{
           fontSize: b.headline.size,
-          fontStyle: "italic",
           textAlign: b.headline.align,
           lineHeight: 1.75,
           color: "#333",
@@ -318,28 +329,45 @@ export function ObituaryPreview({
       </p>
     ) : null,
     ceremony: showCeremony ? (
-      <div>
-        {ceremonyDateFmt && (
-          <p style={{ fontSize: b.ceremony.size + 1, textAlign: b.ceremony.align, marginBottom: 4, color: "#222", ...fontStyleFor(b.ceremony) }}>
-            {ceremonyDateFmt}
-            {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
-          </p>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: b.ceremony.qrEnabled && ceremonyQrImageUrl ? (b.ceremony.qrGap ?? 16) : 0,
+        }}
+      >
+        {b.ceremony.qrEnabled && ceremonyQrImageUrl && (
+          <img
+            src={ceremonyQrImageUrl}
+            alt="Kod QR do eNekrologu"
+            width={ceremonyQrSize}
+            height={ceremonyQrSize}
+            style={{ flexShrink: 0 }}
+          />
         )}
-        {data.ceremonyInfo && (
-          <p
-            style={{
-              fontSize: b.ceremony.size,
-              textAlign: b.ceremony.align,
-              fontStyle: "italic",
-              lineHeight: 1.6,
-              color: "#555",
-              whiteSpace: "pre-wrap",
-              ...fontStyleFor(b.ceremony),
-            }}
-          >
-            {data.ceremonyInfo}
-          </p>
-        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {ceremonyDateFmt && (
+            <p style={{ fontSize: b.ceremony.size + 1, textAlign: b.ceremony.align, marginBottom: 4, color: "#222", ...fontStyleFor(b.ceremony) }}>
+              {ceremonyDateFmt}
+              {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
+            </p>
+          )}
+          {data.ceremonyInfo && (
+            <p
+              style={{
+                fontSize: b.ceremony.size,
+                textAlign: b.ceremony.align,
+                lineHeight: 1.6,
+                color: "#555",
+                whiteSpace: "pre-wrap",
+                ...fontStyleFor(b.ceremony),
+              }}
+            >
+              {data.ceremonyInfo}
+            </p>
+          )}
+        </div>
       </div>
     ) : null,
     ceremonyBy:
@@ -409,35 +437,37 @@ export function ObituaryPreview({
         }}
       >
         {/* Graphic column: photo, sigil, QR — order, alignment & margins configurable */}
-        <div
-          style={{
-            width: 340,
-            flexShrink: 0,
-            background: "#fff",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-start",
-            padding: "40px 36px",
-            overflow: "hidden",
-          }}
-        >
-          {orderedGraphic.map((item) => {
-            const settings = g[item.id]
-            return (
-              <div
-                key={item.id}
-                style={{
-                  display: "flex",
-                  justifyContent: HORIZONTAL_ALIGN_MAP[settings.align],
-                  marginTop: settings.marginTop,
-                  marginBottom: settings.marginBottom,
-                }}
-              >
-                {item.node}
-              </div>
-            )
-          })}
-        </div>
+        {template.graphicColumnEnabled && (
+          <div
+            style={{
+              width: 340,
+              flexShrink: 0,
+              background: "#fff",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-start",
+              padding: "40px 36px",
+              overflow: "hidden",
+            }}
+          >
+            {orderedGraphic.map((item) => {
+              const settings = g[item.id]
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: HORIZONTAL_ALIGN_MAP[settings.align],
+                    marginTop: settings.marginTop,
+                    marginBottom: settings.marginBottom,
+                  }}
+                >
+                  {item.node}
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* Content column: photo/sigil, name, dates, headline, body, ceremony — order & spacing configurable */}
         <div

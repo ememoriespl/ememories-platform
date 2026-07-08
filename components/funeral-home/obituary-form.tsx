@@ -27,6 +27,8 @@ import {
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
   ChevronDown,
+  Italic,
+  QrCode,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -363,6 +365,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
+    graphicColumnEnabled: p.graphicColumnEnabled ?? DEFAULT_PRINT_TEMPLATE.graphicColumnEnabled,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
     pagePadding: p.pagePadding ?? DEFAULT_PRINT_TEMPLATE.pagePadding,
     columnGap: p.columnGap ?? DEFAULT_PRINT_TEMPLATE.columnGap,
@@ -1072,27 +1075,39 @@ export function ObituaryForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Kolumna graficzna (sygnet, QR, zdjęcie)</Label>
-                  <div className="flex gap-2">
-                    {([
-                      { id: "left", label: "Lewo" },
-                      { id: "right", label: "Prawo" },
-                    ] as const).map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => updateTemplate("columnPosition", p.id)}
-                        className={cn(
-                          "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
-                          data.printTemplate.columnPosition === p.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-muted-foreground"
-                        )}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="shrink-0">Kolumna graficzna</Label>
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Checkbox
+                        size="sm"
+                        checked={data.printTemplate.graphicColumnEnabled}
+                        onCheckedChange={(checked) => updateTemplate("graphicColumnEnabled", !!checked)}
+                      />
+                      Widoczna
+                    </label>
                   </div>
+                  {data.printTemplate.graphicColumnEnabled && (
+                    <div className="flex gap-2">
+                      {([
+                        { id: "left", label: "Lewo" },
+                        { id: "right", label: "Prawo" },
+                      ] as const).map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => updateTemplate("columnPosition", p.id)}
+                          className={cn(
+                            "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
+                            data.printTemplate.columnPosition === p.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-muted-foreground"
+                          )}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Wyrównanie treści w pionie</Label>
@@ -1446,8 +1461,71 @@ export function ObituaryForm({
                                   ))}
                                 </SelectContent>
                               </Select>
+                              <Button
+                                type="button"
+                                color={block.italic ? "primary" : "secondary"}
+                                size="icon-sm"
+                                className="h-7 w-7 shrink-0"
+                                aria-pressed={!!block.italic}
+                                title="Kursywa"
+                                onClick={() => updateBlock(blockId, "italic", !block.italic)}
+                              >
+                                <Italic className="h-3.5 w-3.5" />
+                              </Button>
                             </div>
                           </div>
+                        )}
+
+                        {blockId === "ceremony" && (
+                          <>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
+                                <QrCode className="h-3.5 w-3.5" />
+                                Kod QR obok treści
+                              </span>
+                              <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                                <Checkbox
+                                  size="sm"
+                                  checked={!!block.qrEnabled}
+                                  onCheckedChange={(checked) => updateBlock(blockId, "qrEnabled", !!checked)}
+                                />
+                              </div>
+                            </div>
+                            {block.qrEnabled && (
+                              <>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-muted-foreground shrink-0">Wielkość QR</span>
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      value={block.qrSize ?? 64}
+                                      onChange={(e) => updateBlock(blockId, "qrSize", Number(e.target.value) || 1)}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                      className="w-16 h-7 text-right px-1.5 text-xs"
+                                    />
+                                    <span className="text-[10px] text-muted-foreground">px</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-muted-foreground shrink-0">Odstęp od treści</span>
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      value={block.qrGap ?? 16}
+                                      onChange={(e) => updateBlock(blockId, "qrGap", Number(e.target.value) || 0)}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                      className="w-16 h-7 text-right px-1.5 text-xs"
+                                    />
+                                    <span className="text-[10px] text-muted-foreground">px</span>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </>
                         )}
 
                         <div className="flex items-center justify-between gap-2">
