@@ -15,13 +15,11 @@ export interface PreviewData {
   obituaryHeadline: string
   obituaryText: string
   ceremonyInfo: string
+  preparedByText: string
   ceremonyDate: string
   ceremonyTime: string
   photo: string | null
   photoBw: boolean
-  funeralHomeName: string
-  funeralHomeAddress: string
-  funeralHomePhone: string
 }
 
 export type ContentBlockId = "photo" | "sigil" | "sp" | "name" | "dates" | "headline" | "body" | "ceremonyLabel" | "ceremony" | "ceremonyBy"
@@ -116,7 +114,7 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
     body: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
     ceremonyLabel: { size: 9, align: "center", marginTop: 0, marginBottom: 6, fontWeight: 600 },
     ceremony: { size: 11, align: "center", marginTop: 0, marginBottom: 0 },
-    ceremonyBy: { size: 9, align: "center", marginTop: 20, marginBottom: 0, enabled: true, text: "Ceremonia przygotowana przez:" },
+    ceremonyBy: { size: 9, align: "center", marginTop: 20, marginBottom: 0, enabled: true },
   },
   graphicOrder: DEFAULT_GRAPHIC_ORDER,
   graphicItems: {
@@ -284,6 +282,7 @@ export function ObituaryPreview({
           textAlign: b.headline.align,
           lineHeight: 1.75,
           color: "#333",
+          whiteSpace: "pre-wrap",
           ...fontStyleFor(b.headline),
         }}
       >
@@ -334,6 +333,7 @@ export function ObituaryPreview({
               fontStyle: "italic",
               lineHeight: 1.6,
               color: "#555",
+              whiteSpace: "pre-wrap",
               ...fontStyleFor(b.ceremony),
             }}
           >
@@ -343,19 +343,19 @@ export function ObituaryPreview({
       </div>
     ) : null,
     ceremonyBy:
-      b.ceremonyBy.enabled && (data.funeralHomeName || data.funeralHomeAddress || data.funeralHomePhone) ? (
-        <div>
-          {b.ceremonyBy.text?.trim() && (
-            <p style={{ fontSize: b.ceremonyBy.size, textAlign: b.ceremonyBy.align, color: "#999", ...fontStyleFor(b.ceremonyBy) }}>
-              {b.ceremonyBy.text}
-            </p>
-          )}
-          <p style={{ fontSize: b.ceremonyBy.size, textAlign: b.ceremonyBy.align, color: "#999", lineHeight: 1.5 }}>
-            {[data.funeralHomeName, data.funeralHomeAddress, data.funeralHomePhone && `tel. ${data.funeralHomePhone}`]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        </div>
+      b.ceremonyBy.enabled && data.preparedByText.trim() ? (
+        <p
+          style={{
+            fontSize: b.ceremonyBy.size,
+            textAlign: b.ceremonyBy.align,
+            color: "#999",
+            lineHeight: 1.5,
+            whiteSpace: "pre-wrap",
+            ...fontStyleFor(b.ceremonyBy),
+          }}
+        >
+          {data.preparedByText}
+        </p>
       ) : null,
   }
 

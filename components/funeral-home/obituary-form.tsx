@@ -261,6 +261,7 @@ interface FormData {
   obituaryHeadline: string
   obituaryText: string
   ceremonyInfo: string
+  preparedByText: string
   ceremonyDate: string
   ceremonyTime: string
   locations: Locations
@@ -376,7 +377,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
 function parseLocationJSON(
   raw: string,
   fhAddress: string
-): Pick<FormData, "locations" | "obituaryHeadline" | "ceremonyDate" | "ceremonyTime" | "printTemplate"> {
+): Pick<FormData, "locations" | "obituaryHeadline" | "preparedByText" | "ceremonyDate" | "ceremonyTime" | "printTemplate"> {
   try {
     const parsed = JSON.parse(raw)
     const locations: Locations = {
@@ -387,6 +388,7 @@ function parseLocationJSON(
     return {
       locations,
       obituaryHeadline: parsed.obituaryHeadline ?? "",
+      preparedByText: parsed.preparedByText ?? "",
       ceremonyDate: parsed.ceremonyDate ?? "",
       ceremonyTime: parsed.ceremonyTime ?? "",
       printTemplate: parsePrintTemplate(parsed.printTemplate),
@@ -395,6 +397,7 @@ function parseLocationJSON(
     return {
       locations: defaultLocations(fhAddress),
       obituaryHeadline: "",
+      preparedByText: "",
       ceremonyDate: "",
       ceremonyTime: "",
       printTemplate: DEFAULT_PRINT_TEMPLATE,
@@ -406,6 +409,7 @@ function serializeLocation(data: FormData): string {
   return JSON.stringify({
     v: 5,
     obituaryHeadline: data.obituaryHeadline,
+    preparedByText: data.preparedByText,
     ceremonyDate: data.ceremonyDate,
     ceremonyTime: data.ceremonyTime,
     funeralHome: data.locations.funeralHome,
@@ -487,7 +491,7 @@ export function ObituaryForm({
     return () => window.removeEventListener("resize", update)
   }, [])
   const [data, setData] = useState<FormData>(() => {
-    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE }
+    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE }
     const parsed = parseLocationJSON(initialRaw.location ?? "", fhAddress)
     return {
       firstName: initialRaw.first_name ?? "",
@@ -497,6 +501,7 @@ export function ObituaryForm({
       obituaryHeadline: parsed.obituaryHeadline,
       obituaryText: initialRaw.obituary_text ?? "",
       ceremonyInfo: initialRaw.ceremony_info ?? "",
+      preparedByText: parsed.preparedByText,
       ceremonyDate: parsed.ceremonyDate,
       ceremonyTime: parsed.ceremonyTime,
       locations: parsed.locations,
@@ -506,6 +511,11 @@ export function ObituaryForm({
       printTemplate: parsed.printTemplate,
     }
   })
+  const defaultPreparedByText = (() => {
+    const parts = [fhName, fhAddress, fhPhone && `tel. ${fhPhone}`].filter(Boolean).join(", ")
+    return parts ? `Ceremonia przygotowana przez: ${parts}` : ""
+  })()
+
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [draggedBlock, setDraggedBlock] = useState<ContentBlockId | null>(null)
@@ -623,7 +633,7 @@ export function ObituaryForm({
         death_date: data.deathDate || null,
         obituary_text: data.obituaryText,
         ceremony_info: data.ceremonyInfo,
-        location: serializeLocation(data),
+        location: serializeLocation({ ...data, preparedByText: data.preparedByText || defaultPreparedByText }),
         photo_url: data.photo,
         photo_bw: data.photoBw,
         status,
@@ -657,7 +667,7 @@ export function ObituaryForm({
     }
   }
 
-  const previewData = { ...data, funeralHomeName: fhName, funeralHomeAddress: fhAddress, funeralHomePhone: fhPhone }
+  const previewData = { ...data, preparedByText: data.preparedByText || defaultPreparedByText }
 
   return (
     <>
@@ -861,6 +871,19 @@ export function ObituaryForm({
                     value={data.ceremonyInfo}
                     onChange={(e) => update("ceremonyInfo", e.target.value)}
                   />
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label>Przygotowane przez</Label>
+                  <Textarea
+                    placeholder="Ceremonia przygotowana przez: ..."
+                    rows={2}
+                    value={data.preparedByText || defaultPreparedByText}
+                    onChange={(e) => update("preparedByText", e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Wyświetlane na dole nekrologu. Widoczność i wygląd ustawisz w zakładce &bdquo;Szablon druku&rdquo;.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -1335,7 +1358,7 @@ export function ObituaryForm({
                           )}
                         </div>
 
-                        {(blockId === "sp" || blockId === "ceremonyBy") && (
+                        {blockId === "sp" && (
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs text-muted-foreground shrink-0">Treść</span>
                             <Input
@@ -1343,7 +1366,7 @@ export function ObituaryForm({
                               onChange={(e) => updateBlock(blockId, "text", e.target.value)}
                               onMouseDown={(e) => e.stopPropagation()}
                               onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                              placeholder={blockId === "sp" ? "Ś.P." : "Ceremonia przygotowana przez:"}
+                              placeholder="Ś.P."
                               className="w-48 h-7 text-right px-1.5 text-xs"
                             />
                           </div>
