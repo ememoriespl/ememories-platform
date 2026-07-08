@@ -43,7 +43,8 @@ import {
   type VerticalAlign,
 } from "@/components/funeral-home/obituary-preview"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
-import { getSigilsFor, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
+import { PRINT_SIGILS, getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { ColorPicker } from "@/components/ui/color-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import type { ContentBlockId, GraphicItemId } from "@/components/funeral-home/obituary-preview"
@@ -157,41 +158,63 @@ function CollapsibleSectionCard({
   )
 }
 
+function SigilTile({ option, size = "h-4 w-4" }: { option: { kind: "text" | "image"; char?: string; src?: string; label: string }; size?: string }) {
+  return option.kind === "text" ? (
+    <span className="text-sm">{option.char}</span>
+  ) : (
+    <img src={option.src} alt={option.label} className={cn(size, "object-contain")} />
+  )
+}
+
 function SigilPickerRow({
-  scope,
   sigilId,
   color,
   onSigilChange,
   onColorChange,
 }: {
-  scope: "graphic" | "content"
   sigilId: string
   color: string
   onSigilChange: (id: string) => void
   onColorChange: (hex: string) => void
 }) {
+  const [open, setOpen] = useState(false)
+  const selected = getSigilOption(sigilId)
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-xs text-muted-foreground shrink-0">Symbol</span>
-      <div
-        className="flex flex-1 flex-wrap items-center justify-end gap-1.5"
-        onMouseDown={(e) => e.stopPropagation()}
-        draggable={false}
-      >
-        {getSigilsFor(scope).map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            title={s.label}
-            onClick={() => onSigilChange(s.id)}
-            className={cn(
-              "h-7 w-7 shrink-0 overflow-hidden flex items-center justify-center rounded-md border-2 text-sm transition-colors",
-              sigilId === s.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-            )}
+      <div className="flex items-center gap-1.5" onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger
+            title={selected.label}
+            className="flex h-7 items-center gap-1 rounded-md border-2 border-border px-1.5 transition-colors hover:border-muted-foreground"
           >
-            {s.kind === "text" ? s.char : <img src={s.src} alt={s.label} className="h-4 w-4 object-contain" />}
-          </button>
-        ))}
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden">
+              <SigilTile option={selected} />
+            </span>
+            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-64 p-2">
+            <div className="grid grid-cols-5 gap-1.5">
+              {PRINT_SIGILS.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  title={s.label}
+                  onClick={() => {
+                    onSigilChange(s.id)
+                    setOpen(false)
+                  }}
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border-2 transition-colors",
+                    sigilId === s.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                  )}
+                >
+                  <SigilTile option={s} size="h-5 w-5" />
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
         <ColorPicker value={color} onChange={onColorChange} />
       </div>
     </div>
@@ -1007,7 +1030,6 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
 
                         {itemId === "sigil" && (
                           <SigilPickerRow
-                            scope="graphic"
                             sigilId={item.sigilId ?? DEFAULT_SIGIL_ID}
                             color={item.color ?? DEFAULT_SIGIL_COLOR}
                             onSigilChange={(id) => updateGraphicItem("sigil", "sigilId", id)}
@@ -1135,7 +1157,6 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
 
                         {blockId === "sigil" && (
                           <SigilPickerRow
-                            scope="content"
                             sigilId={block.sigilId ?? DEFAULT_SIGIL_ID}
                             color={block.color ?? DEFAULT_SIGIL_COLOR}
                             onSigilChange={(id) => updateBlock(blockId, "sigilId", id)}
