@@ -429,9 +429,10 @@ export interface ObituaryFormProps {
   initialRaw?: ObituaryRaw
   fhAddress?: string
   backUrl?: string
+  isAdmin?: boolean
 }
 
-export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", backUrl = "/funeral-home/dashboard" }: ObituaryFormProps) {
+export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", backUrl = "/funeral-home/dashboard", isAdmin = false }: ObituaryFormProps) {
   const router = useRouter()
   const [recordId, setRecordId] = useState(obituaryId)
   const [templates, setTemplates] = useState<SavedPrintTemplate[]>([])
@@ -441,11 +442,12 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [deletingTemplate, setDeletingTemplate] = useState(false)
   useEffect(() => {
+    if (isAdmin) return
     fetch("/api/print-templates")
       .then((r) => (r.ok ? r.json() : []))
       .then((rows) => setTemplates(Array.isArray(rows) ? rows : []))
       .catch(() => {})
-  }, [])
+  }, [isAdmin])
   const [activeTab, setActiveTab] = useState<TabId>("dane")
   const previewSpacerRef = useRef<HTMLDivElement>(null)
   const [panelRect, setPanelRect] = useState<{ left: number; width: number } | null>(null)
@@ -922,50 +924,54 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                 <CardDescription>Czcionka, pozycja kolumny graficznej i wyrównanie treści w pionie</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label className="shrink-0">Szablon</Label>
-                    <Button
-                      type="button"
-                      color="secondary"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => setSaveDialogOpen(true)}
-                    >
-                      <Save className="h-3.5 w-3.5" />
-                      Zapisz jako szablon
-                    </Button>
-                  </div>
-                  {templates.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Select value={selectedTemplateId} onValueChange={(v) => v && applyTemplate(v)}>
-                        <SelectTrigger className="w-full">
-                          <span className="truncate">
-                            {selectedTemplateId ? templates.find((t) => t.id === selectedTemplateId)?.name : "Wybierz szablon…"}
-                          </span>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {templates.map((t) => (
-                            <SelectItem key={t.id} value={t.id}>
-                              {t.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        color="tertiary"
-                        size="icon-sm"
-                        disabled={!selectedTemplateId || deletingTemplate}
-                        onClick={deleteSelectedTemplate}
-                        title="Usuń szablon"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                {!isAdmin && (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <Label className="shrink-0">Szablon</Label>
+                        <Button
+                          type="button"
+                          color="secondary"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => setSaveDialogOpen(true)}
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                          Zapisz jako szablon
+                        </Button>
+                      </div>
+                      {templates.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Select value={selectedTemplateId} onValueChange={(v) => v && applyTemplate(v)}>
+                            <SelectTrigger className="w-full">
+                              <span className="truncate">
+                                {selectedTemplateId ? templates.find((t) => t.id === selectedTemplateId)?.name : "Wybierz szablon…"}
+                              </span>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {templates.map((t) => (
+                                <SelectItem key={t.id} value={t.id}>
+                                  {t.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            color="tertiary"
+                            size="icon-sm"
+                            disabled={!selectedTemplateId || deletingTemplate}
+                            onClick={deleteSelectedTemplate}
+                            title="Usuń szablon"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <Separator />
+                    <Separator />
+                  </>
+                )}
                 <div className="space-y-2">
                   <Label>Czcionka</Label>
                   <Select

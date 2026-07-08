@@ -6,18 +6,28 @@ import { ObituaryForm } from "@/components/funeral-home/obituary-form"
 
 export default function NewObituaryPage() {
   const [fhAddress, setFhAddress] = useState("")
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    fetch("/api/funeral-home/me")
+    fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((fh) => setFhAddress(fh?.address ?? ""))
+      .then((me) => {
+        if (me?.role === "admin") {
+          setIsAdmin(true)
+          return
+        }
+        fetch("/api/funeral-home/me")
+          .then((r) => r.json())
+          .then((fh) => setFhAddress(fh?.address ?? ""))
+          .catch(() => {})
+      })
       .catch(() => {})
   }, [])
 
   return (
     <>
       <Topbar title="Nowy nekrolog" subtitle="Wypełnij dane i opublikuj" />
-      <ObituaryForm mode="new" fhAddress={fhAddress} />
+      <ObituaryForm mode="new" fhAddress={fhAddress} isAdmin={isAdmin} />
     </>
   )
 }
