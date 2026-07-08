@@ -18,6 +18,7 @@ import {
   Send,
   Save,
   Download,
+  Trash2,
   GripVertical,
   AlignLeft,
   AlignCenter,
@@ -47,6 +48,7 @@ import { PRINT_SIGILS, getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } f
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { ColorPicker } from "@/components/ui/color-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import type { ContentBlockId, GraphicItemId } from "@/components/funeral-home/obituary-preview"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -415,6 +417,12 @@ export interface ObituaryRaw {
   status?: string
 }
 
+interface SavedPrintTemplate {
+  id: string
+  name: string
+  template: unknown
+}
+
 export interface ObituaryFormProps {
   mode: "new" | "edit"
   obituaryId?: string
@@ -426,6 +434,18 @@ export interface ObituaryFormProps {
 export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", backUrl = "/funeral-home/dashboard" }: ObituaryFormProps) {
   const router = useRouter()
   const [recordId, setRecordId] = useState(obituaryId)
+  const [templates, setTemplates] = useState<SavedPrintTemplate[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState("")
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [templateName, setTemplateName] = useState("")
+  const [savingTemplate, setSavingTemplate] = useState(false)
+  const [deletingTemplate, setDeletingTemplate] = useState(false)
+  useEffect(() => {
+    fetch("/api/print-templates")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => setTemplates(Array.isArray(rows) ? rows : []))
+      .catch(() => {})
+  }, [])
   const [activeTab, setActiveTab] = useState<TabId>("dane")
   const previewSpacerRef = useRef<HTMLDivElement>(null)
   const [panelRect, setPanelRect] = useState<{ left: number; width: number } | null>(null)
@@ -491,6 +511,51 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
         graphicItems: { ...prev.printTemplate.graphicItems, [itemId]: { ...prev.printTemplate.graphicItems[itemId], [field]: value } },
       },
     }))
+  }
+
+  function applyTemplate(id: string) {
+    const found = templates.find((t) => t.id === id)
+    if (!found) return
+    setSelectedTemplateId(id)
+    setData((prev) => ({ ...prev, printTemplate: parsePrintTemplate(found.template) }))
+  }
+
+  async function deleteSelectedTemplate() {
+    if (!selectedTemplateId) return
+    if (!window.confirm("Usunąć ten szablon?")) return
+    setDeletingTemplate(true)
+    try {
+      const res = await fetch(`/api/print-templates/${selectedTemplateId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error()
+      setTemplates((prev) => prev.filter((t) => t.id !== selectedTemplateId))
+      setSelectedTemplateId("")
+    } catch {
+      toast.error("Nie udało się usunąć szablonu")
+    } finally {
+      setDeletingTemplate(false)
+    }
+  }
+
+  async function saveAsTemplate() {
+    if (!templateName.trim()) return
+    setSavingTemplate(true)
+    try {
+      const res = await fetch("/api/print-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: templateName.trim(), template: data.printTemplate }),
+      })
+      if (!res.ok) throw new Error()
+      const created = await res.json()
+      setTemplates((prev) => [created, ...prev])
+      setSaveDialogOpen(false)
+      setTemplateName("")
+      toast.success("Zapisano szablon")
+    } catch {
+      toast.error("Nie udało się zapisać szablonu")
+    } finally {
+      setSavingTemplate(false)
+    }
   }
 
   async function handlePhotoUpload(file: File) {
@@ -852,6 +917,50 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="shrink-0">Szablon</Label>
+                    <Button
+                      type="button"
+                      color="secondary"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setSaveDialogOpen(true)}
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      Zapisz jako szablon
+                    </Button>
+                  </div>
+                  {templates.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Select value={selectedTemplateId} onValueChange={(v) => v && applyTemplate(v)}>
+                        <SelectTrigger className="w-full">
+                          <span className="truncate">
+                            {selectedTemplateId ? templates.find((t) => t.id === selectedTemplateId)?.name : "Wybierz szablon…"}
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        color="tertiary"
+                        size="icon-sm"
+                        disabled={!selectedTemplateId || deletingTemplate}
+                        onClick={deleteSelectedTemplate}
+                        title="Usuń szablon"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <Separator />
+                <div className="space-y-2">
                   <Label>Czcionka</Label>
                   <Select
                     value={data.printTemplate.fontId}
@@ -954,6 +1063,32 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                 </div>
               </CardContent>
             </Card>
+
+            <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Zapisz jako szablon</DialogTitle>
+                  <DialogDescription>Nadaj nazwę, żeby móc później zastosować ten układ w innym nekrologu.</DialogDescription>
+                </DialogHeader>
+                <Input
+                  autoFocus
+                  placeholder="np. Klasyczny ze złotą ramką"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveAsTemplate()
+                  }}
+                />
+                <DialogFooter>
+                  <Button color="secondary" onClick={() => setSaveDialogOpen(false)}>
+                    Anuluj
+                  </Button>
+                  <Button onClick={saveAsTemplate} disabled={!templateName.trim() || savingTemplate}>
+                    {savingTemplate ? "Zapisuję…" : "Zapisz"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <CollapsibleSectionCard title="Ramka" description="Dekoracyjna ramka wokół całej kartki A4.">
               <div className="flex items-center justify-between gap-2">
