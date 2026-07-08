@@ -49,6 +49,16 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { ColorPicker } from "@/components/ui/color-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { ContentBlockId, GraphicItemId } from "@/components/funeral-home/obituary-preview"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -455,6 +465,7 @@ export function ObituaryForm({
   const [templateName, setTemplateName] = useState("")
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [deletingTemplate, setDeletingTemplate] = useState(false)
+  const [deleteTemplateConfirmOpen, setDeleteTemplateConfirmOpen] = useState(false)
   useEffect(() => {
     fetch("/api/print-templates")
       .then((r) => (r.ok ? r.json() : []))
@@ -540,7 +551,7 @@ export function ObituaryForm({
 
   async function deleteSelectedTemplate() {
     if (!selectedTemplateId || !canDeleteSelected) return
-    if (!window.confirm("Usunąć ten szablon?")) return
+    setDeleteTemplateConfirmOpen(false)
     setDeletingTemplate(true)
     try {
       const res = await fetch(`/api/print-templates/${selectedTemplateId}`, { method: "DELETE" })
@@ -978,7 +989,7 @@ export function ObituaryForm({
                         color="tertiary"
                         size="icon-sm"
                         disabled={!canDeleteSelected || deletingTemplate}
-                        onClick={deleteSelectedTemplate}
+                        onClick={() => setDeleteTemplateConfirmOpen(true)}
                         title={canDeleteSelected ? "Usuń szablon" : "Domyślnego szablonu nie można usunąć"}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -1120,6 +1131,23 @@ export function ObituaryForm({
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
+            <AlertDialog open={deleteTemplateConfirmOpen} onOpenChange={setDeleteTemplateConfirmOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Usunąć ten szablon?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Szablon {selectedTemplate ? `„${selectedTemplate.name}” ` : ""}zostanie trwale usunięty. Tej operacji nie można cofnąć.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction color="error" onClick={deleteSelectedTemplate} disabled={deletingTemplate}>
+                    {deletingTemplate ? "Usuwam…" : "Usuń"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             <CollapsibleSectionCard title="Ramka" description="Dekoracyjna ramka wokół całej kartki A4.">
               <div className="flex items-center justify-between gap-2">

@@ -171,9 +171,9 @@ export default function AdminObituariesPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Zaznaczono: <strong>{selectedCount}</strong></span>
                   <Button
-                    color="secondary"
+                    color="error-secondary"
                     size="sm"
-                    className="h-8 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    className="h-8 gap-1.5"
                     onClick={() => setBulkDeleteOpen(true)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -331,10 +331,7 @@ export default function AdminObituariesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => { setBulkDeleteOpen(false); setSelected(new Set()) }}>Anuluj</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction color="error" onClick={handleBulkDelete}>
               Usuń
             </AlertDialogAction>
           </AlertDialogFooter>
