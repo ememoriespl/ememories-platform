@@ -77,6 +77,7 @@ const BLOCK_LABELS: Record<ContentBlockId, string> = {
   body: "Treść",
   ceremonyLabel: "Etykieta",
   ceremony: "Ceremonia",
+  ceremonyBy: "Przygotowane przez",
 }
 
 const GRAPHIC_LABELS: Record<GraphicItemId, string> = {
@@ -415,6 +416,7 @@ export interface ObituaryRaw {
   photo_url?: string | null
   photo_bw?: boolean
   status?: string
+  funeral_homes?: { name: string; address: string; phone: string } | null
 }
 
 interface SavedPrintTemplate {
@@ -429,11 +431,22 @@ export interface ObituaryFormProps {
   obituaryId?: string
   initialRaw?: ObituaryRaw
   fhAddress?: string
+  fhName?: string
+  fhPhone?: string
   backUrl?: string
   isAdmin?: boolean
 }
 
-export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", backUrl = "/funeral-home/dashboard", isAdmin = false }: ObituaryFormProps) {
+export function ObituaryForm({
+  mode,
+  obituaryId,
+  initialRaw,
+  fhAddress = "",
+  fhName = "",
+  fhPhone = "",
+  backUrl = "/funeral-home/dashboard",
+  isAdmin = false,
+}: ObituaryFormProps) {
   const router = useRouter()
   const [recordId, setRecordId] = useState(obituaryId)
   const [templates, setTemplates] = useState<SavedPrintTemplate[]>([])
@@ -632,6 +645,8 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
       setSaving(false)
     }
   }
+
+  const previewData = { ...data, funeralHomeName: fhName, funeralHomeAddress: fhAddress, funeralHomePhone: fhPhone }
 
   return (
     <>
@@ -1054,7 +1069,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Wewnętrzny padding (px)</Label>
+                  <Label>Wewnętrzny margines (px)</Label>
                   <Input
                     type="number"
                     min={0}
@@ -1281,7 +1296,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                           <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
                           <span className="flex-1 text-sm font-medium truncate">{BLOCK_LABELS[blockId]}</span>
-                          {(blockId === "sp" || blockId === "photo" || blockId === "sigil") && (
+                          {(blockId === "sp" || blockId === "photo" || blockId === "sigil" || blockId === "ceremonyBy") && (
                             <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                               <Checkbox
                                 size="sm"
@@ -1292,7 +1307,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                           )}
                         </div>
 
-                        {blockId === "sp" && (
+                        {(blockId === "sp" || blockId === "ceremonyBy") && (
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs text-muted-foreground shrink-0">Treść</span>
                             <Input
@@ -1300,8 +1315,8 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                               onChange={(e) => updateBlock(blockId, "text", e.target.value)}
                               onMouseDown={(e) => e.stopPropagation()}
                               onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                              placeholder="Ś.P."
-                              className="w-32 h-7 text-right px-1.5 text-xs"
+                              placeholder={blockId === "sp" ? "Ś.P." : "Ceremonia przygotowana przez:"}
+                              className="w-48 h-7 text-right px-1.5 text-xs"
                             />
                           </div>
                         )}
@@ -1452,7 +1467,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                 }}
               >
                 <ObituaryPreview
-                  data={data}
+                  data={previewData}
                   availableWidth={panelRect.width - 64}
                   template={data.printTemplate}
                   publicUrl={recordId ? `${BASE_URL}/obituary/${recordId}` : undefined}
@@ -1496,7 +1511,7 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
       {/* Print-only A4 page — hidden on screen, shown (and only this) when printing/exporting to PDF */}
       <div className="hidden print:block obituary-print-area">
         <ObituaryPreview
-          data={data}
+          data={previewData}
           template={data.printTemplate}
           publicUrl={recordId ? `${BASE_URL}/obituary/${recordId}` : undefined}
           bare

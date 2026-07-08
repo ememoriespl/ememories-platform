@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (session.role === "admin") {
     const { data, error } = await supabase
       .from("obituaries")
-      .select("*")
+      .select("*, funeral_homes(name, address, phone)")
       .eq("id", id)
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

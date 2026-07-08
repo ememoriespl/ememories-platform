@@ -19,9 +19,12 @@ export interface PreviewData {
   ceremonyTime: string
   photo: string | null
   photoBw: boolean
+  funeralHomeName: string
+  funeralHomeAddress: string
+  funeralHomePhone: string
 }
 
-export type ContentBlockId = "photo" | "sigil" | "sp" | "name" | "dates" | "headline" | "body" | "ceremonyLabel" | "ceremony"
+export type ContentBlockId = "photo" | "sigil" | "sp" | "name" | "dates" | "headline" | "body" | "ceremonyLabel" | "ceremony" | "ceremonyBy"
 export type GraphicItemId = "photo" | "sigil" | "qr"
 
 export type BlockAlign = "left" | "center" | "right"
@@ -92,7 +95,7 @@ export interface PrintTemplateSettings {
   frame: FrameSettings
 }
 
-export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sigil", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremony"]
+export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sigil", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremony", "ceremonyBy"]
 export const DEFAULT_GRAPHIC_ORDER: GraphicItemId[] = ["photo", "sigil", "qr"]
 
 export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
@@ -113,6 +116,7 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
     body: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
     ceremonyLabel: { size: 9, align: "center", marginTop: 0, marginBottom: 6, fontWeight: 600 },
     ceremony: { size: 11, align: "center", marginTop: 0, marginBottom: 0 },
+    ceremonyBy: { size: 9, align: "center", marginTop: 20, marginBottom: 0, enabled: true, text: "Ceremonia przygotowana przez:" },
   },
   graphicOrder: DEFAULT_GRAPHIC_ORDER,
   graphicItems: {
@@ -241,7 +245,6 @@ export function ObituaryPreview({
               objectFit: "cover",
               display: "block",
               filter: data.photoBw ? "grayscale(100%)" : "none",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
             }}
           />
         </div>
@@ -339,6 +342,21 @@ export function ObituaryPreview({
         )}
       </div>
     ) : null,
+    ceremonyBy:
+      b.ceremonyBy.enabled && (data.funeralHomeName || data.funeralHomeAddress || data.funeralHomePhone) ? (
+        <div>
+          {b.ceremonyBy.text?.trim() && (
+            <p style={{ fontSize: b.ceremonyBy.size, textAlign: b.ceremonyBy.align, color: "#999", ...fontStyleFor(b.ceremonyBy) }}>
+              {b.ceremonyBy.text}
+            </p>
+          )}
+          <p style={{ fontSize: b.ceremonyBy.size, textAlign: b.ceremonyBy.align, color: "#999", lineHeight: 1.5 }}>
+            {[data.funeralHomeName, data.funeralHomeAddress, data.funeralHomePhone && `tel. ${data.funeralHomePhone}`]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+      ) : null,
   }
 
   const orderedBlocks = template.blockOrder.map((id) => ({ id, node: blocks[id] })).filter((item) => item.node !== null)
@@ -356,7 +374,6 @@ export function ObituaryPreview({
             objectFit: "cover",
             display: "block",
             filter: data.photoBw ? "grayscale(100%)" : "none",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
           }}
         />
       ) : null,

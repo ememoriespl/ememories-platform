@@ -9,6 +9,8 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
   const { id } = use(params)
   const [raw, setRaw] = useState<ObituaryRaw | null>(null)
   const [fhAddress, setFhAddress] = useState("")
+  const [fhName, setFhName] = useState("")
+  const [fhPhone, setFhPhone] = useState("")
   const [backUrl, setBackUrl] = useState("/funeral-home/dashboard")
   const [isAdmin, setIsAdmin] = useState(false)
 
@@ -22,10 +24,17 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
         if (me?.role === "admin") {
           setIsAdmin(true)
           setBackUrl("/admin/obituaries")
+          setFhAddress(o?.funeral_homes?.address ?? "")
+          setFhName(o?.funeral_homes?.name ?? "")
+          setFhPhone(o?.funeral_homes?.phone ?? "")
         } else {
           fetch("/api/funeral-home/me")
             .then((r) => r.json())
-            .then((fh) => setFhAddress(fh?.address ?? ""))
+            .then((fh) => {
+              setFhAddress(fh?.address ?? "")
+              setFhName(fh?.name ?? "")
+              setFhPhone(fh?.phone ?? "")
+            })
             .catch(() => {})
         }
       })
@@ -38,7 +47,16 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
     <>
       <Topbar title="Edycja nekrologu" subtitle={subtitle} />
       {raw ? (
-        <ObituaryForm mode="edit" obituaryId={id} initialRaw={raw} fhAddress={fhAddress} backUrl={backUrl} isAdmin={isAdmin} />
+        <ObituaryForm
+          mode="edit"
+          obituaryId={id}
+          initialRaw={raw}
+          fhAddress={fhAddress}
+          fhName={fhName}
+          fhPhone={fhPhone}
+          backUrl={backUrl}
+          isAdmin={isAdmin}
+        />
       ) : (
         <div className="p-6 text-sm text-muted-foreground">Ładowanie…</div>
       )}
