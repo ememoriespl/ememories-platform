@@ -329,45 +329,27 @@ export function ObituaryPreview({
       </p>
     ) : null,
     ceremony: showCeremony ? (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: b.ceremony.qrEnabled && ceremonyQrImageUrl ? (b.ceremony.qrGap ?? 16) : 0,
-        }}
-      >
-        {b.ceremony.qrEnabled && ceremonyQrImageUrl && (
-          <img
-            src={ceremonyQrImageUrl}
-            alt="Kod QR do eNekrologu"
-            width={ceremonyQrSize}
-            height={ceremonyQrSize}
-            style={{ flexShrink: 0 }}
-          />
+      <div>
+        {ceremonyDateFmt && (
+          <p style={{ fontSize: b.ceremony.size + 1, textAlign: b.ceremony.align, marginBottom: 4, color: "#222", ...fontStyleFor(b.ceremony) }}>
+            {ceremonyDateFmt}
+            {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
+          </p>
         )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {ceremonyDateFmt && (
-            <p style={{ fontSize: b.ceremony.size + 1, textAlign: b.ceremony.align, marginBottom: 4, color: "#222", ...fontStyleFor(b.ceremony) }}>
-              {ceremonyDateFmt}
-              {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
-            </p>
-          )}
-          {data.ceremonyInfo && (
-            <p
-              style={{
-                fontSize: b.ceremony.size,
-                textAlign: b.ceremony.align,
-                lineHeight: 1.6,
-                color: "#555",
-                whiteSpace: "pre-wrap",
-                ...fontStyleFor(b.ceremony),
-              }}
-            >
-              {data.ceremonyInfo}
-            </p>
-          )}
-        </div>
+        {data.ceremonyInfo && (
+          <p
+            style={{
+              fontSize: b.ceremony.size,
+              textAlign: b.ceremony.align,
+              lineHeight: 1.6,
+              color: "#555",
+              whiteSpace: "pre-wrap",
+              ...fontStyleFor(b.ceremony),
+            }}
+          >
+            {data.ceremonyInfo}
+          </p>
+        )}
       </div>
     ) : null,
     ceremonyBy:
@@ -388,6 +370,56 @@ export function ObituaryPreview({
   }
 
   const orderedBlocks = template.blockOrder.map((id) => ({ id, node: blocks[id] })).filter((item) => item.node !== null)
+
+  // "Ceremonia" can show the eNekrolog QR code inline; when the "Etykieta" block directly precedes it,
+  // both are grouped into a single row so the QR forms one column and the label+ceremony text the other.
+  const ceremonyQrNode =
+    b.ceremony.qrEnabled && ceremonyQrImageUrl ? (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+        <img src={ceremonyQrImageUrl} alt="Kod QR do eNekrologu" width={ceremonyQrSize} height={ceremonyQrSize} />
+        <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
+      </div>
+    ) : null
+
+  const contentRows: { key: string; marginTop: number; marginBottom: number; node: React.ReactNode }[] = []
+  for (let i = 0; i < orderedBlocks.length; i++) {
+    const item = orderedBlocks[i]
+    const next = orderedBlocks[i + 1]
+    if (item.id === "ceremonyLabel" && next?.id === "ceremony" && ceremonyQrNode) {
+      contentRows.push({
+        key: "ceremony-group",
+        marginTop: b.ceremonyLabel.marginTop,
+        marginBottom: b.ceremony.marginBottom,
+        node: (
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: b.ceremony.qrGap ?? 16 }}>
+            {ceremonyQrNode}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ marginBottom: b.ceremonyLabel.marginBottom }}>{item.node}</div>
+              <div style={{ marginTop: b.ceremony.marginTop }}>{next.node}</div>
+            </div>
+          </div>
+        ),
+      })
+      i++
+      continue
+    }
+    if (item.id === "ceremony" && ceremonyQrNode) {
+      contentRows.push({
+        key: item.id,
+        marginTop: b.ceremony.marginTop,
+        marginBottom: b.ceremony.marginBottom,
+        node: (
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: b.ceremony.qrGap ?? 16 }}>
+            {ceremonyQrNode}
+            <div style={{ flex: 1, minWidth: 0 }}>{item.node}</div>
+          </div>
+        ),
+      })
+      continue
+    }
+    const margin = b[item.id]
+    contentRows.push({ key: item.id, marginTop: margin.marginTop, marginBottom: margin.marginBottom, node: item.node })
+  }
 
   const graphicNodes: Partial<Record<GraphicItemId, React.ReactNode>> = {
     photo:
@@ -480,14 +512,11 @@ export function ObituaryPreview({
             overflow: "hidden",
           }}
         >
-          {orderedBlocks.map((item) => {
-            const margin = b[item.id]
-            return (
-              <div key={item.id} style={{ marginTop: margin.marginTop, marginBottom: margin.marginBottom }}>
-                {item.node}
-              </div>
-            )
-          })}
+          {contentRows.map((row) => (
+            <div key={row.key} style={{ marginTop: row.marginTop, marginBottom: row.marginBottom }}>
+              {row.node}
+            </div>
+          ))}
         </div>
       </div>
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>{renderFrame(template.frame)}</div>
