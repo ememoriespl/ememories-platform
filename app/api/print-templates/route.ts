@@ -14,18 +14,31 @@ async function getFuneralHomeId(email: string) {
 
 export async function GET() {
   const session = await getSession()
-  if (!session || session.role !== "funeral-home") {
+  if (!session || (session.role !== "funeral-home" && session.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const supabase = createServerClient()
+
+  if (session.role === "admin") {
+    const { data, error } = await supabase
+      .from("print_templates")
+      .select("*")
+      .is("funeral_home_id", null)
+      .order("created_at", { ascending: false })
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(data)
   }
 
   const funeralHomeId = await getFuneralHomeId(session.email)
   if (!funeralHomeId) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const supabase = createServerClient()
+  // Own templates plus admin-provided global starter templates (funeral_home_id null)
   const { data, error } = await supabase
     .from("print_templates")
     .select("*")
-    .eq("funeral_home_id", funeralHomeId)
+    .or(`funeral_home_id.eq.${funeralHomeId},funeral_home_id.is.null`)
     .order("created_at", { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -34,12 +47,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await getSession()
-  if (!session || session.role !== "funeral-home") {
+  if (!session || (session.role !== "funeral-home" && session.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-
-  const funeralHomeId = await getFuneralHomeId(session.email)
-  if (!funeralHomeId) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const body = await req.json()
   const { name, template } = body
@@ -49,6 +59,12 @@ export async function POST(req: Request) {
   }
   if (!template || typeof template !== "object") {
     return NextResponse.json({ error: "Brak danych szablonu" }, { status: 400 })
+  }
+
+  let funeralHomeId: string | null = null
+  if (session.role === "funeral-home") {
+    funeralHomeId = await getFuneralHomeId(session.email)
+    if (!funeralHomeId) return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
   const supabase = createServerClient()

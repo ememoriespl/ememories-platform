@@ -421,6 +421,7 @@ interface SavedPrintTemplate {
   id: string
   name: string
   template: unknown
+  funeral_home_id: string | null
 }
 
 export interface ObituaryFormProps {
@@ -442,12 +443,11 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [deletingTemplate, setDeletingTemplate] = useState(false)
   useEffect(() => {
-    if (isAdmin) return
     fetch("/api/print-templates")
       .then((r) => (r.ok ? r.json() : []))
       .then((rows) => setTemplates(Array.isArray(rows) ? rows : []))
       .catch(() => {})
-  }, [isAdmin])
+  }, [])
   const [activeTab, setActiveTab] = useState<TabId>("dane")
   const previewSpacerRef = useRef<HTMLDivElement>(null)
   const [panelRect, setPanelRect] = useState<{ left: number; width: number } | null>(null)
@@ -522,8 +522,11 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
     setData((prev) => ({ ...prev, printTemplate: parsePrintTemplate(found.template) }))
   }
 
+  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId)
+  const canDeleteSelected = !!selectedTemplate && (isAdmin || selectedTemplate.funeral_home_id !== null)
+
   async function deleteSelectedTemplate() {
-    if (!selectedTemplateId) return
+    if (!selectedTemplateId || !canDeleteSelected) return
     if (!window.confirm("Usunąć ten szablon?")) return
     setDeletingTemplate(true)
     try {
@@ -924,54 +927,51 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                 <CardDescription>Czcionka, pozycja kolumny graficznej i wyrównanie treści w pionie</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!isAdmin && (
-                  <>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <Label className="shrink-0">Szablon</Label>
-                        <Button
-                          type="button"
-                          color="secondary"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={() => setSaveDialogOpen(true)}
-                        >
-                          <Save className="h-3.5 w-3.5" />
-                          Zapisz jako szablon
-                        </Button>
-                      </div>
-                      {templates.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <Select value={selectedTemplateId} onValueChange={(v) => v && applyTemplate(v)}>
-                            <SelectTrigger className="w-full">
-                              <span className="truncate">
-                                {selectedTemplateId ? templates.find((t) => t.id === selectedTemplateId)?.name : "Wybierz szablon…"}
-                              </span>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {templates.map((t) => (
-                                <SelectItem key={t.id} value={t.id}>
-                                  {t.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            type="button"
-                            color="tertiary"
-                            size="icon-sm"
-                            disabled={!selectedTemplateId || deletingTemplate}
-                            onClick={deleteSelectedTemplate}
-                            title="Usuń szablon"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="shrink-0">Szablon</Label>
+                    <Button
+                      type="button"
+                      color="secondary"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setSaveDialogOpen(true)}
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      Zapisz jako szablon
+                    </Button>
+                  </div>
+                  {templates.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Select value={selectedTemplateId} onValueChange={(v) => v && applyTemplate(v)}>
+                        <SelectTrigger className="w-full">
+                          <span className="truncate">
+                            {selectedTemplateId ? templates.find((t) => t.id === selectedTemplateId)?.name : "Wybierz szablon…"}
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.name}
+                              {!isAdmin && t.funeral_home_id === null ? " (domyślny)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        color="tertiary"
+                        size="icon-sm"
+                        disabled={!canDeleteSelected || deletingTemplate}
+                        onClick={deleteSelectedTemplate}
+                        title={canDeleteSelected ? "Usuń szablon" : "Domyślnego szablonu nie można usunąć"}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Separator />
-                  </>
-                )}
+                  )}
+                </div>
+                <Separator />
                 <div className="space-y-2">
                   <Label>Czcionka</Label>
                   <Select
@@ -1080,7 +1080,11 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Zapisz jako szablon</DialogTitle>
-                  <DialogDescription>Nadaj nazwę, żeby móc później zastosować ten układ w innym nekrologu.</DialogDescription>
+                  <DialogDescription>
+                    {isAdmin
+                      ? "Nadaj nazwę. Ten szablon pojawi się do wyboru u wszystkich zakładów pogrzebowych."
+                      : "Nadaj nazwę, żeby móc później zastosować ten układ w innym nekrologu."}
+                  </DialogDescription>
                 </DialogHeader>
                 <Input
                   autoFocus
