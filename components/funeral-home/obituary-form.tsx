@@ -526,11 +526,14 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
     setDeletingTemplate(true)
     try {
       const res = await fetch(`/api/print-templates/${selectedTemplateId}`, { method: "DELETE" })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error || `Błąd ${res.status}`)
+      }
       setTemplates((prev) => prev.filter((t) => t.id !== selectedTemplateId))
       setSelectedTemplateId("")
-    } catch {
-      toast.error("Nie udało się usunąć szablonu")
+    } catch (err) {
+      toast.error(`Nie udało się usunąć szablonu: ${err instanceof Error ? err.message : "nieznany błąd"}`)
     } finally {
       setDeletingTemplate(false)
     }
@@ -545,14 +548,17 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: templateName.trim(), template: data.printTemplate }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error || `Błąd ${res.status}`)
+      }
       const created = await res.json()
       setTemplates((prev) => [created, ...prev])
       setSaveDialogOpen(false)
       setTemplateName("")
       toast.success("Zapisano szablon")
-    } catch {
-      toast.error("Nie udało się zapisać szablonu")
+    } catch (err) {
+      toast.error(`Nie udało się zapisać szablonu: ${err instanceof Error ? err.message : "nieznany błąd"}`)
     } finally {
       setSavingTemplate(false)
     }
