@@ -11,7 +11,6 @@ export interface PrintSigilOption {
 
 export const PRINT_SIGILS: PrintSigilOption[] = [
   { id: "cross-latin", label: "Krzyż łaciński", kind: "text", char: "✝" },
-  { id: "cross-orthodox", label: "Krzyż prawosławny", kind: "text", char: "☦" },
   { id: "cross-outline-leaf", label: "Krzyż z liściem", kind: "image", src: "/sigils/cross-outline-leaf.svg", contentOnly: true },
   { id: "cross-branch", label: "Krzyż z gałązką", kind: "image", src: "/sigils/cross-branch.svg", contentOnly: true },
   { id: "wreath-cross", label: "Wieniec z krzyżem", kind: "image", src: "/sigils/wreath-cross.svg", contentOnly: true },
@@ -19,6 +18,16 @@ export const PRINT_SIGILS: PrintSigilOption[] = [
   { id: "wreath-ribbon", label: "Wieniec ze wstążką", kind: "image", src: "/sigils/wreath-ribbon.svg", contentOnly: true },
   { id: "ribbon", label: "Wstążka", kind: "image", src: "/sigils/ribbon.svg", contentOnly: true },
   { id: "laurel-cross", label: "Gałązka z krzyżem", kind: "image", src: "/sigils/laurel-cross.svg", contentOnly: true },
+  { id: "crucifix-sketch-spiral", label: "Ukrzyżowanie (szkic)", kind: "image", src: "/sigils/crucifix-sketch-spiral.svg", contentOnly: true },
+  { id: "crucifix-brush", label: "Ukrzyżowanie (pędzel)", kind: "image", src: "/sigils/crucifix-brush.svg", contentOnly: true },
+  { id: "christ-crown-thorns", label: "Chrystus w koronie cierniowej", kind: "image", src: "/sigils/christ-crown-thorns.svg", contentOnly: true },
+  { id: "christ-crown-thorns-outline", label: "Chrystus w koronie cierniowej (kontur)", kind: "image", src: "/sigils/christ-crown-thorns-outline.svg", contentOnly: true },
+  { id: "christ-crown-thorns-dramatic", label: "Chrystus w koronie cierniowej (ekspresyjny)", kind: "image", src: "/sigils/christ-crown-thorns-dramatic.svg", contentOnly: true },
+  { id: "christ-halo", label: "Chrystus z aureolą", kind: "image", src: "/sigils/christ-halo.svg", contentOnly: true },
+  { id: "cross-linear-square", label: "Krzyż linearny z kwadratem", kind: "image", src: "/sigils/cross-linear-square.svg", contentOnly: true },
+  { id: "cross-slim", label: "Krzyż smukły", kind: "image", src: "/sigils/cross-slim.svg", contentOnly: true },
+  { id: "cross-hatched", label: "Krzyż kreskowany", kind: "image", src: "/sigils/cross-hatched.svg", contentOnly: true },
+  { id: "cross-thin", label: "Krzyż cienki", kind: "image", src: "/sigils/cross-thin.svg", contentOnly: true },
 ]
 
 export const DEFAULT_SIGIL_ID = "cross-latin"

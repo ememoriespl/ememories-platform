@@ -328,6 +328,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
     pagePadding: p.pagePadding ?? DEFAULT_PRINT_TEMPLATE.pagePadding,
+    columnGap: p.columnGap ?? DEFAULT_PRINT_TEMPLATE.columnGap,
     frame,
     blockOrder: reconcileOrder(p.blockOrder, DEFAULT_BLOCK_ORDER),
     blocks,
@@ -917,6 +918,16 @@ export function ObituaryForm({ mode, obituaryId, initialRaw, fhAddress = "", bac
                     onChange={(e) => updateTemplate("pagePadding", Number(e.target.value) || 0)}
                   />
                   <p className="text-xs text-muted-foreground">Odsuwa całą treść od krawędzi kartki — przydatne przy wąskich ramkach.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Odstęp między kolumnami (px)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={data.printTemplate.columnGap}
+                    onChange={(e) => updateTemplate("columnGap", Number(e.target.value) || 0)}
+                  />
+                  <p className="text-xs text-muted-foreground">Odległość między kolumną graficzną a kolumną z treścią.</p>
                 </div>
               </CardContent>
             </Card>
