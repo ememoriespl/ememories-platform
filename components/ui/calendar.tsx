@@ -12,6 +12,9 @@ import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
 
+// date.getDay() indexed (0 = Sunday) — custom short Polish weekday abbreviations
+const WEEKDAY_ABBR_PL = ["Ndz", "Pn", "Wt", "Śr", "Cz", "Pt", "Sb"]
+
 function Calendar({
   className,
   classNames,
@@ -41,6 +44,7 @@ function Calendar({
       formatters={{
         formatMonthDropdown: (date) =>
           date.toLocaleString(locale?.code, { month: "short" }),
+        formatWeekdayName: (date) => WEEKDAY_ABBR_PL[date.getDay()],
         ...formatters,
       }}
       classNames={{
