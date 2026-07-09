@@ -17,6 +17,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "eMemories — Platforma Cyfrowych Nekrologów",
   description: "Profesjonalna platforma do tworzenia cyfrowych nekrologów z kodami QR dla zakładów pogrzebowych.",
+  icons: {
+    icon: [
+      { url: "/favicon-dark.svg", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-light.svg", media: "(prefers-color-scheme: dark)" },
+    ],
+  },
 }
 
 export default function RootLayout({
