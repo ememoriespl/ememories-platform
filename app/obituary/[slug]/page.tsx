@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
-import { Flower2 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { createServerClient } from "@/lib/supabase"
+import { LogoLight } from "@/components/logo"
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -40,9 +40,8 @@ export default async function PublicObituaryPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col">
       <header className="border-b bg-background px-6 py-4">
-        <div className="flex items-center gap-2 max-w-xl mx-auto">
-          <Flower2 className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm font-semibold">eMemories</span>
+        <div className="flex items-center max-w-xl mx-auto">
+          <LogoLight style={{ height: 24, width: "auto" }} />
         </div>
       </header>
 
