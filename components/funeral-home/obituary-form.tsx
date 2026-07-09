@@ -1439,7 +1439,7 @@ export function ObituaryForm({
                                   updateBlock(blockId, "fontId", fontId)
                                 }}
                               >
-                                <SelectTrigger className="h-7 text-xs w-32">
+                                <SelectTrigger size="sm" className="text-xs w-32">
                                   <span className="truncate">
                                     {block.fontId ? PRINT_FONTS.find((f) => f.id === block.fontId)?.label : "Domyślna"}
                                   </span>
@@ -1460,7 +1460,7 @@ export function ObituaryForm({
                                   updateBlock(blockId, "fontWeight", v === "__default__" ? undefined : Number(v))
                                 }}
                               >
-                                <SelectTrigger className="h-7 text-xs w-24">
+                                <SelectTrigger size="sm" className="text-xs w-24">
                                   <span className="truncate">
                                     {block.fontWeight !== undefined ? String(block.fontWeight) : "Domyślna"}
                                   </span>
