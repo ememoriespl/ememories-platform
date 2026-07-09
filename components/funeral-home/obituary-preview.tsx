@@ -9,6 +9,7 @@ import { getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/pri
 import { SIGIL_ICON_DATA } from "@/lib/sigil-icons"
 import { FRAME_ART_DATA } from "@/lib/frame-art"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
 export interface PreviewData {
   firstName: string
@@ -565,7 +566,7 @@ export function ObituaryPreview({
       </div>
 
       <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[min(92vw,1080px)] overflow-auto p-4">
+        <DialogContent className={cn(PRINT_FONTS_CLASSNAME, "max-w-[calc(100%-2rem)] sm:max-w-[min(92vw,1080px)] overflow-auto p-4")}>
           <div style={{ width: Math.ceil(A4_W * zoomScale), height: Math.ceil(A4_H * zoomScale), position: "relative", margin: "0 auto" }}>
             <div
               style={{
