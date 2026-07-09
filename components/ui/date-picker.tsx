@@ -171,6 +171,7 @@ export function DatePicker({
           captionLayout="dropdown"
           startMonth={new Date(1920, 0)}
           endMonth={new Date(2100, 11)}
+          locale={pl}
           className="w-full"
           disabled={(date) => {
             if (minDate && date < minDate) return true

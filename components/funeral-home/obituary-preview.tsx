@@ -1,11 +1,14 @@
 "use client"
 
+import { useState } from "react"
 import { format, isValid } from "date-fns"
 import { pl } from "date-fns/locale"
+import { ZoomIn } from "lucide-react"
 import { PRINT_FONTS_CLASSNAME, getPrintFontFamily, DEFAULT_PRINT_FONT_ID } from "@/lib/print-fonts"
 import { getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 import { SIGIL_ICON_DATA } from "@/lib/sigil-icons"
 import { FRAME_ART_DATA } from "@/lib/frame-art"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 export interface PreviewData {
   firstName: string
@@ -218,7 +221,9 @@ export function ObituaryPreview({
   /** Renders just the A4 page at natural size with no preview chrome (label, border, scaling) — used for printing. */
   bare?: boolean
 }) {
+  const [zoomOpen, setZoomOpen] = useState(false)
   const scale = availableWidth && availableWidth > 0 ? availableWidth / A4_W : 0.5
+  const zoomScale = Math.min(1000 / A4_W, 1)
 
   const hasName = data.firstName || data.lastName
   const name = hasName ? `${data.firstName} ${data.lastName}`.trim() : "Imię Nazwisko"
@@ -377,7 +382,7 @@ export function ObituaryPreview({
     b.ceremony.qrEnabled && ceremonyQrImageUrl ? (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         <img src={ceremonyQrImageUrl} alt="Kod QR do eNekrologu" width={ceremonyQrSize} height={ceremonyQrSize} />
-        <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
+        <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
       </div>
     ) : null
 
@@ -442,7 +447,7 @@ export function ObituaryPreview({
       g.qr.enabled && qrImageUrl ? (
         <div style={{ textAlign: "center" }}>
           <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={g.qr.size} height={g.qr.size} />
-          <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>eNekrolog</p>
+          <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
         </div>
       ) : null,
   }
@@ -532,7 +537,11 @@ export function ObituaryPreview({
       <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">
         Podgląd A4
       </p>
-      <div style={{ width: cardWidth, border: "1px solid var(--border)", overflow: "hidden" }}>
+      <div
+        className="group relative cursor-zoom-in"
+        style={{ width: cardWidth, border: "1px solid var(--border)", overflow: "hidden" }}
+        onClick={() => setZoomOpen(true)}
+      >
         <div style={{ height: Math.ceil(A4_H * scale), position: "relative" }}>
           <div
             style={{
@@ -548,7 +557,32 @@ export function ObituaryPreview({
             {pageContent}
           </div>
         </div>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-150 group-hover:bg-black/10 group-hover:opacity-100">
+          <div className="rounded-full bg-black/60 p-3 text-white">
+            <ZoomIn className="h-6 w-6" />
+          </div>
+        </div>
       </div>
+
+      <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[min(92vw,1080px)] overflow-auto p-4">
+          <div style={{ width: Math.ceil(A4_W * zoomScale), height: Math.ceil(A4_H * zoomScale), position: "relative", margin: "0 auto" }}>
+            <div
+              style={{
+                width: A4_W,
+                height: A4_H,
+                transform: `scale(${zoomScale})`,
+                transformOrigin: "top left",
+                position: "absolute",
+                top: 0,
+                left: 0,
+              }}
+            >
+              {pageContent}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
