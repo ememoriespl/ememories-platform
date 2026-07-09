@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BookOpen, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { LogoDark } from "@/components/logo"
+import { LogoDark, LogoMarkDark } from "@/components/logo"
 
 const navItems = [
   { href: "/funeral-home/dashboard", label: "Nekrologi", icon: BookOpen },
@@ -15,9 +15,10 @@ export function FhSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-screen w-60 flex-col bg-black">
-      <div className="flex h-[72px] items-center px-6 border-b border-white/10">
-        <LogoDark />
+    <aside className="group fixed inset-y-0 left-0 z-30 flex h-screen w-[72px] flex-col overflow-hidden bg-black transition-[width] duration-200 ease-in-out hover:w-60">
+      <div className="relative flex h-[72px] shrink-0 items-center border-b border-white/10 pl-6">
+        <LogoMarkDark className="absolute left-6 h-7 w-7 opacity-100 transition-opacity duration-150 group-hover:opacity-0" />
+        <LogoDark className="absolute left-6 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -31,14 +32,16 @@ export function FhSidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-[1rem] font-medium transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-[1rem] font-medium whitespace-nowrap transition-colors",
                     active
                       ? "bg-[#7331df]/20 text-white font-semibold"
                       : "text-white/60 hover:bg-white/10 hover:text-white"
                   )}
                 >
                   <Icon className={cn("h-5 w-5 shrink-0", active && "text-[#7331df]")} />
-                  {item.label}
+                  <span className="opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                    {item.label}
+                  </span>
                 </Link>
               </li>
             )

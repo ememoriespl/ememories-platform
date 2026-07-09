@@ -31,7 +31,7 @@ export default async function FuneralHomeLayout({ children }: { children: React.
   const isAdmin = session.role === "admin" && !isImpersonating
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden pl-[72px]">
       {isAdmin ? <AdminSidebar /> : <FhSidebar />}
       <div className="flex flex-1 flex-col overflow-hidden">
         {isImpersonating && <ImpersonationBanner />}
