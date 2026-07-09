@@ -33,11 +33,11 @@ export function FhSidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-[1rem] font-medium transition-colors",
                     active
-                      ? "bg-[#7331df] text-white font-semibold"
+                      ? "bg-[#7331df]/10 text-white font-semibold"
                       : "text-white/60 hover:bg-white/10 hover:text-white"
                   )}
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
+                  <Icon className={cn("h-5 w-5 shrink-0", active && "text-[#7331df]")} />
                   {item.label}
                 </Link>
               </li>
