@@ -473,12 +473,6 @@ export function ObituaryForm({
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [deletingTemplate, setDeletingTemplate] = useState(false)
   const [deleteTemplateConfirmOpen, setDeleteTemplateConfirmOpen] = useState(false)
-  useEffect(() => {
-    fetch("/api/print-templates")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((rows) => setTemplates(Array.isArray(rows) ? rows : []))
-      .catch(() => {})
-  }, [])
   const [activeTab, setActiveTab] = useState<TabId>("dane")
   const previewSpacerRef = useRef<HTMLDivElement>(null)
   const [panelRect, setPanelRect] = useState<{ left: number; width: number } | null>(null)
@@ -514,6 +508,25 @@ export function ObituaryForm({
       printTemplate: parsed.printTemplate,
     }
   })
+  useEffect(() => {
+    fetch("/api/print-templates")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => {
+        const list: SavedPrintTemplate[] = Array.isArray(rows) ? rows : []
+        setTemplates(list)
+        // New obituaries start from the most recently saved template instead of the bare default.
+        if (mode === "new" && list.length > 0) {
+          const latest = list[0]
+          setSelectedTemplateId(latest.id)
+          setData((prev) =>
+            prev.printTemplate === DEFAULT_PRINT_TEMPLATE
+              ? { ...prev, printTemplate: parsePrintTemplate(latest.template) }
+              : prev
+          )
+        }
+      })
+      .catch(() => {})
+  }, [mode])
   const defaultPreparedByText = (() => {
     const parts = [fhName, fhAddress, fhPhone && `tel. ${fhPhone}`].filter(Boolean).join(", ")
     return parts ? `Ceremonia przygotowana przez: ${parts}` : ""
