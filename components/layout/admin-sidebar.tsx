@@ -10,7 +10,7 @@ import {
   BookOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { LogoDark, LogoMarkDark } from "@/components/logo"
+import { LogoDark, LogoBirdDark } from "@/components/logo"
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -24,9 +24,14 @@ export function AdminSidebar() {
 
   return (
     <aside className="group fixed inset-y-0 left-0 z-30 flex h-screen w-[72px] flex-col overflow-hidden bg-black transition-[width] duration-200 ease-in-out hover:w-60">
-      <div className="relative flex h-[72px] shrink-0 items-center border-b border-white/10 pl-6">
-        <LogoMarkDark className="absolute left-6 h-7 w-7 opacity-100 transition-opacity duration-150 group-hover:opacity-0" />
-        <LogoDark className="absolute left-6 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+      <div className="flex h-[72px] shrink-0 items-center overflow-hidden border-b border-white/10 pl-6">
+        <div className="relative shrink-0" style={{ height: 28 }}>
+          <LogoBirdDark style={{ height: 28, width: "auto" }} className="block" />
+          <LogoDark
+            style={{ height: 28, width: "auto" }}
+            className="absolute top-0 left-0 block opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+          />
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
