@@ -33,7 +33,7 @@ export function FhSidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-[1rem] font-medium transition-colors",
                     active
-                      ? "bg-[#7331df]/10 text-white font-semibold"
+                      ? "bg-[#7331df]/50 text-white font-semibold"
                       : "text-white/60 hover:bg-white/10 hover:text-white"
                   )}
                 >
