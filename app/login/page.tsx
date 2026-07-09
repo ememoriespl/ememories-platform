@@ -76,7 +76,7 @@ export default function LoginPage() {
           }}
         >
           <div className="flex flex-col items-start gap-2">
-            <LogoLight style={{ height: 40, width: "auto" }} />
+            <LogoLight style={{ height: 32, width: "auto" }} />
             <p className="text-sm text-muted-foreground">Platforma do tworzenia eNekrologów</p>
           </div>
 
