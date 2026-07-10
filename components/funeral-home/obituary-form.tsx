@@ -17,7 +17,6 @@ import {
   X,
   Send,
   Save,
-  Tags,
   Download,
   Trash2,
   GripVertical,
@@ -50,7 +49,7 @@ import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/prin
 import { PRINT_SIGILS, getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { ColorPicker } from "@/components/ui/color-picker"
-import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -477,6 +476,7 @@ export function ObituaryForm({
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [deletingTemplate, setDeletingTemplate] = useState(false)
   const [deleteTemplateConfirmOpen, setDeleteTemplateConfirmOpen] = useState(false)
+  const [templateToDeleteId, setTemplateToDeleteId] = useState("")
   const [activeTab, setActiveTab] = useState<TabId>("dane")
   const previewSpacerRef = useRef<HTMLDivElement>(null)
   const [panelRect, setPanelRect] = useState<{ left: number; width: number } | null>(null)
@@ -576,21 +576,24 @@ export function ObituaryForm({
     setData((prev) => ({ ...prev, printTemplate: parsePrintTemplate(found.template) }))
   }
 
-  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId)
-  const canDeleteSelected = !!selectedTemplate && (isAdmin || selectedTemplate.funeral_home_id !== null)
+  function canDeleteTemplate(t: SavedPrintTemplate) {
+    return isAdmin || t.funeral_home_id !== null
+  }
+  const templateToDelete = templates.find((t) => t.id === templateToDeleteId)
 
-  async function deleteSelectedTemplate() {
-    if (!selectedTemplateId || !canDeleteSelected) return
+  async function deleteTemplate() {
+    if (!templateToDeleteId || !templateToDelete || !canDeleteTemplate(templateToDelete)) return
     setDeleteTemplateConfirmOpen(false)
     setDeletingTemplate(true)
     try {
-      const res = await fetch(`/api/print-templates/${selectedTemplateId}`, { method: "DELETE" })
+      const res = await fetch(`/api/print-templates/${templateToDeleteId}`, { method: "DELETE" })
       if (!res.ok) {
         const body = await res.json().catch(() => null)
         throw new Error(body?.error || `Błąd ${res.status}`)
       }
-      setTemplates((prev) => prev.filter((t) => t.id !== selectedTemplateId))
-      setSelectedTemplateId("")
+      setTemplates((prev) => prev.filter((t) => t.id !== templateToDeleteId))
+      if (selectedTemplateId === templateToDeleteId) setSelectedTemplateId("")
+      setTemplateToDeleteId("")
     } catch (err) {
       toast.error(`Nie udało się usunąć szablonu: ${err instanceof Error ? err.message : "nieznany błąd"}`)
     } finally {
@@ -1008,25 +1011,29 @@ export function ObituaryForm({
                         </SelectTrigger>
                         <SelectContent>
                           {templates.map((t) => (
-                            <SelectItem key={t.id} value={t.id}>
-                              {t.name}
-                              {!isAdmin && t.funeral_home_id === null ? " (domyślny)" : ""}
+                            <SelectItem key={t.id} value={t.id} className="group/template-item pr-1.5">
+                              <span className="flex-1 truncate">
+                                {t.name}
+                                {!isAdmin && t.funeral_home_id === null ? " (domyślny)" : ""}
+                              </span>
+                              {canDeleteTemplate(t) && (
+                                <button
+                                  type="button"
+                                  disabled={deletingTemplate}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setTemplateToDeleteId(t.id)
+                                    setDeleteTemplateConfirmOpen(true)
+                                  }}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  title="Usuń szablon"
+                                  className="ml-auto shrink-0 rounded p-1 text-destructive opacity-0 transition-opacity hover:bg-destructive/10 group-hover/template-item:opacity-100 disabled:pointer-events-none disabled:opacity-30"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                             </SelectItem>
                           ))}
-                          {selectedTemplateId && (
-                            <>
-                              <SelectSeparator />
-                              <button
-                                type="button"
-                                disabled={!canDeleteSelected || deletingTemplate}
-                                onClick={() => setDeleteTemplateConfirmOpen(true)}
-                                className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1.5 text-sm text-destructive hover:bg-destructive/5 disabled:pointer-events-none disabled:opacity-50"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                {canDeleteSelected ? "Usuń szablon" : "Domyślnego szablonu nie można usunąć"}
-                              </button>
-                            </>
-                          )}
                         </SelectContent>
                       </Select>
                     )}
@@ -1038,7 +1045,7 @@ export function ObituaryForm({
                       onClick={() => setSaveDialogOpen(true)}
                       title="Zapisz jako szablon"
                     >
-                      <Tags className="h-4 w-4" />
+                      <Save className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -1194,12 +1201,12 @@ export function ObituaryForm({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Usunąć ten szablon?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Szablon {selectedTemplate ? `„${selectedTemplate.name}” ` : ""}zostanie trwale usunięty. Tej operacji nie można cofnąć.
+                    Szablon {templateToDelete ? `„${templateToDelete.name}” ` : ""}zostanie trwale usunięty. Tej operacji nie można cofnąć.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                  <AlertDialogAction color="error" onClick={deleteSelectedTemplate} disabled={deletingTemplate}>
+                  <AlertDialogAction color="error" onClick={deleteTemplate} disabled={deletingTemplate}>
                     {deletingTemplate ? "Usuwam…" : "Usuń"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
