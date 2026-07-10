@@ -110,6 +110,9 @@ const VALIGN_OPTIONS: { id: VerticalAlign; label: string; icon: LucideIcon }[] =
   { id: "bottom", label: "Dół", icon: AlignVerticalJustifyEnd },
 ]
 
+/** Shared label/control grid for the setting rows in the "Kolumna graficzna" and "Kolumna z treścią" cards, so controls line up in a left-aligned settings column instead of hugging the right edge. */
+const SETTINGS_ROW = "grid grid-cols-[150px_1fr] items-center gap-2"
+
 function IconToggleGroup<T extends string>({
   value,
   onChange,
@@ -132,7 +135,7 @@ function IconToggleGroup<T extends string>({
             onMouseDown={(e) => e.stopPropagation()}
             onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
             className={cn(
-              "rounded-md border-2 p-1.5 transition-colors",
+              "flex h-7 w-7 items-center justify-center rounded-md border-2 transition-colors",
               value === o.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
             )}
           >
@@ -195,8 +198,8 @@ function SigilPickerRow({
   const [open, setOpen] = useState(false)
   const selected = getSigilOption(sigilId)
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-muted-foreground shrink-0">Symbol</span>
+    <div className={SETTINGS_ROW}>
+      <span className="text-xs text-muted-foreground">Symbol</span>
       <div className="flex items-center gap-1.5" onMouseDown={(e) => e.stopPropagation()} draggable={false}>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
@@ -1266,7 +1269,6 @@ export function ObituaryForm({
                           <span className="flex-1 text-sm font-medium truncate">{GRAPHIC_LABELS[itemId]}</span>
                           <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                             <Checkbox
-                              size="sm"
                               checked={item.enabled}
                               onCheckedChange={(checked) => updateGraphicItem(itemId, "enabled", !!checked)}
                             />
@@ -1282,8 +1284,8 @@ export function ObituaryForm({
                           />
                         )}
 
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground shrink-0">
+                        <div className={SETTINGS_ROW}>
+                          <span className="text-xs text-muted-foreground">
                             {itemId === "qr" ? "Wielkość QR kodu" : itemId === "sigil" ? "Wielkość sygnetu" : "Wielkość zdjęcia"}
                           </span>
                           <div className="flex items-center gap-1">
@@ -1294,20 +1296,20 @@ export function ObituaryForm({
                               onChange={(e) => updateGraphicItem(itemId, "size", Number(e.target.value) || 1)}
                               onMouseDown={(e) => e.stopPropagation()}
                               onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                              className="w-16 h-7 text-right px-1.5 text-xs"
+                              className="w-20 text-right"
                             />
                             <span className="text-[10px] text-muted-foreground">px</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground shrink-0">Wyrównanie</span>
+                        <div className={SETTINGS_ROW}>
+                          <span className="text-xs text-muted-foreground">Wyrównanie</span>
                           <IconToggleGroup value={item.align} onChange={(v) => updateGraphicItem(itemId, "align", v)} options={ALIGN_OPTIONS} />
                         </div>
 
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground shrink-0">Marginesy</span>
-                          <div className="flex items-center gap-2 shrink-0">
+                        <div className={SETTINGS_ROW}>
+                          <span className="text-xs text-muted-foreground">Marginesy</span>
+                          <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
                               <span className="text-[10px] text-muted-foreground">góra</span>
                               <Input
@@ -1316,7 +1318,7 @@ export function ObituaryForm({
                                 onChange={(e) => updateGraphicItem(itemId, "marginTop", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-14 h-7 text-right px-1.5 text-xs"
+                                className="w-16 text-right"
                               />
                             </div>
                             <div className="flex items-center gap-1">
@@ -1327,7 +1329,7 @@ export function ObituaryForm({
                                 onChange={(e) => updateGraphicItem(itemId, "marginBottom", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-14 h-7 text-right px-1.5 text-xs"
+                                className="w-16 text-right"
                               />
                             </div>
                           </div>
@@ -1378,7 +1380,6 @@ export function ObituaryForm({
                           {(blockId === "sp" || blockId === "photo" || blockId === "sigil" || blockId === "ceremonyBy") && (
                             <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                               <Checkbox
-                                size="sm"
                                 checked={block.enabled ?? true}
                                 onCheckedChange={(checked) => updateBlock(blockId, "enabled", !!checked)}
                               />
@@ -1387,15 +1388,15 @@ export function ObituaryForm({
                         </div>
 
                         {blockId === "sp" && (
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-muted-foreground shrink-0">Treść</span>
+                          <div className={SETTINGS_ROW}>
+                            <span className="text-xs text-muted-foreground">Treść</span>
                             <Input
                               value={block.text ?? ""}
                               onChange={(e) => updateBlock(blockId, "text", e.target.value)}
                               onMouseDown={(e) => e.stopPropagation()}
                               onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
                               placeholder="Ś.P."
-                              className="w-48 h-7 text-right px-1.5 text-xs"
+                              className="w-48 text-right"
                             />
                           </div>
                         )}
@@ -1409,8 +1410,8 @@ export function ObituaryForm({
                           />
                         )}
 
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground shrink-0">
+                        <div className={SETTINGS_ROW}>
+                          <span className="text-xs text-muted-foreground">
                             {blockId === "photo" ? "Wielkość zdjęcia" : blockId === "sigil" ? "Wielkość sygnetu" : "Rozmiar czcionki"}
                           </span>
                           <div className="flex items-center gap-1">
@@ -1421,15 +1422,15 @@ export function ObituaryForm({
                               onChange={(e) => updateBlock(blockId, "size", Number(e.target.value) || 1)}
                               onMouseDown={(e) => e.stopPropagation()}
                               onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                              className="w-16 h-7 text-right px-1.5 text-xs"
+                              className="w-20 text-right"
                             />
                             <span className="text-[10px] text-muted-foreground">px</span>
                           </div>
                         </div>
 
                         {isTextBlock && (
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-muted-foreground shrink-0">Czcionka</span>
+                          <div className={SETTINGS_ROW}>
+                            <span className="text-xs text-muted-foreground">Czcionka</span>
                             <div className="flex items-center gap-1.5" onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                               <Select
                                 value={block.fontId ?? "__default__"}
@@ -1439,7 +1440,7 @@ export function ObituaryForm({
                                   updateBlock(blockId, "fontId", fontId)
                                 }}
                               >
-                                <SelectTrigger size="sm" className="text-xs w-32">
+                                <SelectTrigger className="w-32">
                                   <span className="truncate">
                                     {block.fontId ? PRINT_FONTS.find((f) => f.id === block.fontId)?.label : "Domyślna"}
                                   </span>
@@ -1460,7 +1461,7 @@ export function ObituaryForm({
                                   updateBlock(blockId, "fontWeight", v === "__default__" ? undefined : Number(v))
                                 }}
                               >
-                                <SelectTrigger size="sm" className="text-xs w-24">
+                                <SelectTrigger className="w-24">
                                   <span className="truncate">
                                     {block.fontWeight !== undefined ? String(block.fontWeight) : "Domyślna"}
                                   </span>
@@ -1477,8 +1478,8 @@ export function ObituaryForm({
                               <Button
                                 type="button"
                                 color={block.italic ? "primary" : "secondary"}
-                                size="icon-sm"
-                                className="h-7 w-7 shrink-0"
+                                size="icon"
+                                className="shrink-0"
                                 aria-pressed={!!block.italic}
                                 title="Kursywa"
                                 onClick={() => updateBlock(blockId, "italic", !block.italic)}
@@ -1491,14 +1492,13 @@ export function ObituaryForm({
 
                         {blockId === "ceremony" && (
                           <>
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
+                            <div className={SETTINGS_ROW}>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 <QrCode className="h-3.5 w-3.5" />
                                 Kod QR obok treści
                               </span>
                               <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                                 <Checkbox
-                                  size="sm"
                                   checked={!!block.qrEnabled}
                                   onCheckedChange={(checked) => updateBlock(blockId, "qrEnabled", !!checked)}
                                 />
@@ -1506,8 +1506,8 @@ export function ObituaryForm({
                             </div>
                             {block.qrEnabled && (
                               <>
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="text-xs text-muted-foreground shrink-0">Wielkość QR</span>
+                                <div className={SETTINGS_ROW}>
+                                  <span className="text-xs text-muted-foreground">Wielkość QR</span>
                                   <div className="flex items-center gap-1">
                                     <Input
                                       type="number"
@@ -1516,13 +1516,13 @@ export function ObituaryForm({
                                       onChange={(e) => updateBlock(blockId, "qrSize", Number(e.target.value) || 1)}
                                       onMouseDown={(e) => e.stopPropagation()}
                                       onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                      className="w-16 h-7 text-right px-1.5 text-xs"
+                                      className="w-20 text-right"
                                     />
                                     <span className="text-[10px] text-muted-foreground">px</span>
                                   </div>
                                 </div>
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="text-xs text-muted-foreground shrink-0">Odstęp od treści</span>
+                                <div className={SETTINGS_ROW}>
+                                  <span className="text-xs text-muted-foreground">Odstęp od treści</span>
                                   <div className="flex items-center gap-1">
                                     <Input
                                       type="number"
@@ -1531,7 +1531,7 @@ export function ObituaryForm({
                                       onChange={(e) => updateBlock(blockId, "qrGap", Number(e.target.value) || 0)}
                                       onMouseDown={(e) => e.stopPropagation()}
                                       onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                      className="w-16 h-7 text-right px-1.5 text-xs"
+                                      className="w-20 text-right"
                                     />
                                     <span className="text-[10px] text-muted-foreground">px</span>
                                   </div>
@@ -1541,14 +1541,14 @@ export function ObituaryForm({
                           </>
                         )}
 
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground shrink-0">Wyrównanie</span>
+                        <div className={SETTINGS_ROW}>
+                          <span className="text-xs text-muted-foreground">Wyrównanie</span>
                           <IconToggleGroup value={block.align} onChange={(v) => updateBlock(blockId, "align", v)} options={ALIGN_OPTIONS} />
                         </div>
 
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground shrink-0">Marginesy</span>
-                          <div className="flex items-center gap-2 shrink-0">
+                        <div className={SETTINGS_ROW}>
+                          <span className="text-xs text-muted-foreground">Marginesy</span>
+                          <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
                               <span className="text-[10px] text-muted-foreground">góra</span>
                               <Input
@@ -1557,7 +1557,7 @@ export function ObituaryForm({
                                 onChange={(e) => updateBlock(blockId, "marginTop", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-14 h-7 text-right px-1.5 text-xs"
+                                className="w-16 text-right"
                               />
                             </div>
                             <div className="flex items-center gap-1">
@@ -1568,7 +1568,7 @@ export function ObituaryForm({
                                 onChange={(e) => updateBlock(blockId, "marginBottom", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-14 h-7 text-right px-1.5 text-xs"
+                                className="w-16 text-right"
                               />
                             </div>
                           </div>
@@ -1621,7 +1621,7 @@ export function ObituaryForm({
       </div>
 
       {/* Fixed bottom action bar */}
-      <div className="fixed bottom-0 left-60 right-0 z-10 border-t bg-background px-6 py-3 flex items-center justify-between print:hidden">
+      <div className="fixed bottom-0 left-[72px] right-0 z-10 border-t bg-background px-6 py-3 flex items-center justify-between print:hidden">
         <Button
           color="tertiary"
           onClick={() => router.push(backUrl)}
