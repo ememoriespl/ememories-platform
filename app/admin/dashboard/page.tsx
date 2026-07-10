@@ -157,7 +157,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3 items-stretch">
-          <Card className="lg:col-span-2 pt-0">
+          <Card className="lg:col-span-2 lg:h-[26rem] pt-0">
             <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
               <div className="grid flex-1 gap-1">
                 <CardTitle>Aktywność platformy</CardTitle>
@@ -232,11 +232,11 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-1 flex flex-col">
+          <Card className="lg:col-span-1 lg:h-[26rem] flex flex-col min-h-0">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Ostatnia aktywność</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 overflow-y-auto">
+            <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
               {!stats ? (
                 <p className="text-sm text-muted-foreground px-4 py-8 text-center">Ładowanie…</p>
               ) : stats.activityLog.length === 0 ? (

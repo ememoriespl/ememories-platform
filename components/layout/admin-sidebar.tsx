@@ -50,7 +50,7 @@ export function AdminSidebar() {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
-                  <Icon className={cn("h-5 w-5 shrink-0", active && "text-[#7331df]")} />
+                  <Icon className="h-5 w-5 shrink-0" />
                   <span className="opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                     {item.label}
                   </span>
