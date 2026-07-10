@@ -135,7 +135,7 @@ function IconToggleGroup<T extends string>({
             onMouseDown={(e) => e.stopPropagation()}
             onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md border-2 transition-colors",
+              "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-colors",
               value === o.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
             )}
           >
@@ -204,7 +204,7 @@ function SigilPickerRow({
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
             title={selected.label}
-            className="flex h-7 items-center gap-1 rounded-md border-2 border-border px-1.5 transition-colors hover:border-muted-foreground"
+            className="flex h-10 items-center gap-1 rounded-md border-2 border-border px-2.5 transition-colors hover:border-muted-foreground"
           >
             <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden">
               <SigilTile option={selected} />
@@ -1479,7 +1479,7 @@ export function ObituaryForm({
                                 type="button"
                                 color={block.italic ? "primary" : "secondary"}
                                 size="icon"
-                                className="shrink-0"
+                                className="h-10 w-10 shrink-0"
                                 aria-pressed={!!block.italic}
                                 title="Kursywa"
                                 onClick={() => updateBlock(blockId, "italic", !block.italic)}
