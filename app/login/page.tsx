@@ -64,9 +64,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex justify-center bg-background">
+    <div className="flex w-full max-w-[1440px]">
       {/* Left — form */}
-      <div className="flex flex-1 flex-col items-center justify-center p-8 bg-background">
+      <div className="flex flex-1 flex-col items-center justify-center p-8">
         <div
           className="w-full max-w-sm space-y-8"
           style={{
@@ -168,6 +169,7 @@ export default function LoginPage() {
           />
         </div>
       </div>
+    </div>
     </div>
   )
 }

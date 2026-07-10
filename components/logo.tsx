@@ -49,3 +49,8 @@ export function LogoDark({ className, style }: { className?: string; style?: Rea
 export function LogoBirdDark({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return <LogoSvg className={className} style={style} color="#FFFFFF" path={LOGO_BIRD_PATH} />
 }
+
+/** Just the bird, dark — same as LogoBirdDark but for light backgrounds. */
+export function LogoBirdLight({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <LogoSvg className={className} style={style} color="#0F0F0F" path={LOGO_BIRD_PATH} />
+}
