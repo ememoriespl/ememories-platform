@@ -1296,7 +1296,7 @@ export function ObituaryForm({
                               onChange={(e) => updateGraphicItem(itemId, "size", Number(e.target.value) || 1)}
                               onMouseDown={(e) => e.stopPropagation()}
                               onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                              className="w-20 text-right"
+                              className="w-20"
                             />
                             <span className="text-[10px] text-muted-foreground">px</span>
                           </div>
@@ -1318,7 +1318,7 @@ export function ObituaryForm({
                                 onChange={(e) => updateGraphicItem(itemId, "marginTop", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-16 text-right"
+                                className="w-16"
                               />
                             </div>
                             <div className="flex items-center gap-1">
@@ -1329,7 +1329,7 @@ export function ObituaryForm({
                                 onChange={(e) => updateGraphicItem(itemId, "marginBottom", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-16 text-right"
+                                className="w-16"
                               />
                             </div>
                           </div>
@@ -1396,7 +1396,7 @@ export function ObituaryForm({
                               onMouseDown={(e) => e.stopPropagation()}
                               onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
                               placeholder="Ś.P."
-                              className="w-48 text-right"
+                              className="w-48"
                             />
                           </div>
                         )}
@@ -1422,7 +1422,7 @@ export function ObituaryForm({
                               onChange={(e) => updateBlock(blockId, "size", Number(e.target.value) || 1)}
                               onMouseDown={(e) => e.stopPropagation()}
                               onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                              className="w-20 text-right"
+                              className="w-20"
                             />
                             <span className="text-[10px] text-muted-foreground">px</span>
                           </div>
@@ -1516,7 +1516,7 @@ export function ObituaryForm({
                                       onChange={(e) => updateBlock(blockId, "qrSize", Number(e.target.value) || 1)}
                                       onMouseDown={(e) => e.stopPropagation()}
                                       onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                      className="w-20 text-right"
+                                      className="w-20"
                                     />
                                     <span className="text-[10px] text-muted-foreground">px</span>
                                   </div>
@@ -1531,7 +1531,7 @@ export function ObituaryForm({
                                       onChange={(e) => updateBlock(blockId, "qrGap", Number(e.target.value) || 0)}
                                       onMouseDown={(e) => e.stopPropagation()}
                                       onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                      className="w-20 text-right"
+                                      className="w-20"
                                     />
                                     <span className="text-[10px] text-muted-foreground">px</span>
                                   </div>
@@ -1557,7 +1557,7 @@ export function ObituaryForm({
                                 onChange={(e) => updateBlock(blockId, "marginTop", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-16 text-right"
+                                className="w-16"
                               />
                             </div>
                             <div className="flex items-center gap-1">
@@ -1568,7 +1568,7 @@ export function ObituaryForm({
                                 onChange={(e) => updateBlock(blockId, "marginBottom", Number(e.target.value) || 0)}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-16 text-right"
+                                className="w-16"
                               />
                             </div>
                           </div>
