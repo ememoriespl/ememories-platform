@@ -75,7 +75,7 @@ export default function LoginPage() {
             transition: "opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s",
           }}
         >
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-col items-center gap-2 text-center">
             <LogoLight style={{ height: 32, width: "auto" }} />
             <p className="text-sm text-muted-foreground">Platforma do tworzenia eNekrologów</p>
           </div>
@@ -139,11 +139,11 @@ export default function LoginPage() {
             )}
           </div>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground text-center">
             Logując się do eMemories, potwierdzasz zapoznanie się z Regulaminem oraz Polityką Prywatności, w tym zasadami przetwarzania danych osobowych.
           </p>
 
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground text-center">
             © 2026 eMemories.pl — wszelkie prawa zastrzeżone
           </p>
         </div>
