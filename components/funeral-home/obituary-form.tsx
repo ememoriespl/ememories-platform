@@ -17,6 +17,7 @@ import {
   X,
   Send,
   Save,
+  Tags,
   Download,
   Trash2,
   GripVertical,
@@ -49,7 +50,7 @@ import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/prin
 import { PRINT_SIGILS, getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { ColorPicker } from "@/components/ui/color-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -996,21 +997,9 @@ export function ObituaryForm({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label className="shrink-0">Szablon</Label>
-                    <Button
-                      type="button"
-                      color="secondary"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => setSaveDialogOpen(true)}
-                    >
-                      <Save className="h-3.5 w-3.5" />
-                      Zapisz jako szablon
-                    </Button>
-                  </div>
-                  {templates.length > 0 && (
-                    <div className="flex items-center gap-2">
+                  <Label className="shrink-0">Szablon</Label>
+                  <div className="flex items-center gap-2">
+                    {templates.length > 0 && (
                       <Select value={selectedTemplateId} onValueChange={(v) => v && applyTemplate(v)}>
                         <SelectTrigger className="w-full">
                           <span className="truncate">
@@ -1024,20 +1013,34 @@ export function ObituaryForm({
                               {!isAdmin && t.funeral_home_id === null ? " (domyślny)" : ""}
                             </SelectItem>
                           ))}
+                          {selectedTemplateId && (
+                            <>
+                              <SelectSeparator />
+                              <button
+                                type="button"
+                                disabled={!canDeleteSelected || deletingTemplate}
+                                onClick={() => setDeleteTemplateConfirmOpen(true)}
+                                className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1.5 text-sm text-destructive hover:bg-destructive/5 disabled:pointer-events-none disabled:opacity-50"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                {canDeleteSelected ? "Usuń szablon" : "Domyślnego szablonu nie można usunąć"}
+                              </button>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
-                      <Button
-                        type="button"
-                        color="tertiary"
-                        size="icon-sm"
-                        disabled={!canDeleteSelected || deletingTemplate}
-                        onClick={() => setDeleteTemplateConfirmOpen(true)}
-                        title={canDeleteSelected ? "Usuń szablon" : "Domyślnego szablonu nie można usunąć"}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                    <Button
+                      type="button"
+                      color="secondary"
+                      size="icon"
+                      className="h-10 w-10 shrink-0"
+                      onClick={() => setSaveDialogOpen(true)}
+                      title="Zapisz jako szablon"
+                    >
+                      <Tags className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <Separator />
                 <div className="space-y-2">
