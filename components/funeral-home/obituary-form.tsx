@@ -28,7 +28,6 @@ import {
   AlignVerticalJustifyEnd,
   ChevronDown,
   Italic,
-  QrCode,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -1503,8 +1502,7 @@ export function ObituaryForm({
                         {blockId === "ceremony" && (
                           <>
                             <div className={SETTINGS_ROW}>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <QrCode className="h-3.5 w-3.5" />
+                              <span className="text-xs text-muted-foreground">
                                 Kod QR obok treści
                               </span>
                               <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
