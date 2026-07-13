@@ -1018,27 +1018,9 @@ export function ObituaryForm({
                         </SelectTrigger>
                         <SelectContent>
                           {templates.map((t) => (
-                            <SelectItem key={t.id} value={t.id} className="group/template-item pr-1.5">
-                              <span className="flex-1 truncate">
-                                {t.name}
-                                {!isAdmin && t.funeral_home_id === null ? " (domyślny)" : ""}
-                              </span>
-                              {canDeleteTemplate(t) && (
-                                <button
-                                  type="button"
-                                  disabled={deletingTemplate}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setTemplateToDeleteId(t.id)
-                                    setDeleteTemplateConfirmOpen(true)
-                                  }}
-                                  onPointerDown={(e) => e.stopPropagation()}
-                                  title="Usuń szablon"
-                                  className="ml-auto shrink-0 rounded p-1 text-destructive opacity-0 transition-opacity hover:bg-destructive/10 group-hover/template-item:opacity-100 disabled:pointer-events-none disabled:opacity-30"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.name}
+                              {!isAdmin && t.funeral_home_id === null ? " (domyślny)" : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
