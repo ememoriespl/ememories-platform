@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     html: `
       <div style="font-family:sans-serif;max-width:420px;margin:0 auto;padding:32px 24px">
         <div style="margin-bottom:28px">
-          <img src="https://ememoriespl.vercel.app/logo-light-2x.png" alt="eMemories" width="143" height="35" style="display:block;border:0;text-decoration:none;outline:none"/>
+          <img src="https://ememoriespl.vercel.app/logo-light-2x-v2.png" alt="eMemories" width="143" height="35" style="display:block;border:0;text-decoration:none;outline:none"/>
         </div>
         <h2 style="margin:0 0 8px;font-size:20px;color:#111">Kod logowania</h2>
         <p style="color:#666;margin:0 0 24px;font-size:14px">
