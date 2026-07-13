@@ -167,7 +167,7 @@ function CollapsibleSectionCard({
             <CardTitle className="text-base">{title}</CardTitle>
             {description && <CardDescription>{description}</CardDescription>}
             <CardAction>
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[panel-open]/collapsible-trigger:rotate-180" />
+              <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform group-data-[panel-open]/collapsible-trigger:rotate-180" />
             </CardAction>
           </CardHeader>
         </CollapsibleTrigger>
@@ -1069,6 +1069,7 @@ export function ObituaryForm({
         {activeTab === "szablon" && (
           <div className={cn("space-y-6", PRINT_FONTS_CLASSNAME)}>
             <CollapsibleSectionCard title="Ustawienia ogólne" description="Czcionka, pozycja kolumny graficznej i wyrównanie treści w pionie">
+              <div className="space-y-5">
                 <div className="space-y-2">
                   <Label className="shrink-0">Szablon</Label>
                   <div className="flex items-center gap-2">
@@ -1094,7 +1095,7 @@ export function ObituaryForm({
                         type="button"
                         color="secondary"
                         size="icon"
-                        className="h-10 w-10 shrink-0"
+                        className="h-10 w-10 shrink-0 disabled:text-muted-foreground disabled:opacity-40"
                         disabled={
                           !data.printTemplateId ||
                           deletingTemplate ||
@@ -1134,7 +1135,7 @@ export function ObituaryForm({
                   </div>
                 </div>
                 <Separator />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Czcionka</Label>
                     <Select
@@ -1197,7 +1198,7 @@ export function ObituaryForm({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="shrink-0">Kolumna graficzna</Label>
                     <ButtonGroup className="w-full">
@@ -1258,7 +1259,7 @@ export function ObituaryForm({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Wyrównanie kolumny z treścią w pionie</Label>
                     <IconToggleGroup
@@ -1277,7 +1278,7 @@ export function ObituaryForm({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Wewnętrzny margines (px)</Label>
                     <Input
@@ -1298,6 +1299,7 @@ export function ObituaryForm({
                     <p className="text-xs text-muted-foreground">Odległość między kolumną graficzną a kolumną z treścią.</p>
                   </div>
                 </div>
+              </div>
             </CollapsibleSectionCard>
 
             <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
@@ -1451,7 +1453,7 @@ export function ObituaryForm({
             </Dialog>
 
             <CollapsibleSectionCard title="Ramka" description="Dekoracyjna ramka wokół całej kartki A4.">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <Label className="shrink-0">Kolor</Label>
                 <ColorPicker
                   value={data.printTemplate.frame.color}
@@ -1467,7 +1469,7 @@ export function ObituaryForm({
                     className={cn(
                       "flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-colors",
                       data.printTemplate.frame.style === f.id
-                        ? "border-primary bg-primary/5"
+                        ? "border-border bg-foreground/10"
                         : "border-border hover:border-muted-foreground"
                     )}
                   >
@@ -1487,7 +1489,7 @@ export function ObituaryForm({
                 <div className="space-y-2">
                   {data.printTemplate.graphicOrder
                     .filter((itemId) => itemId !== "qr" || data.printTemplate.qrLocation === "graphic")
-                    .map((itemId, i) => {
+                    .map((itemId) => {
                     const item = data.printTemplate.graphicItems[itemId]
                     return (
                       <div
@@ -1514,14 +1516,13 @@ export function ObituaryForm({
                       >
                         <div className="flex items-center gap-2">
                           <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
-                          <span className="flex-1 text-sm font-medium truncate">{GRAPHIC_LABELS[itemId]}</span>
                           <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                             <Checkbox
                               checked={item.enabled}
                               onCheckedChange={(checked) => updateGraphicItem(itemId, "enabled", !!checked)}
                             />
                           </div>
+                          <span className="flex-1 text-sm font-medium truncate">{GRAPHIC_LABELS[itemId]}</span>
                         </div>
 
                         {itemId === "sigil" && (
@@ -1594,7 +1595,7 @@ export function ObituaryForm({
               description="Przeciągnij za uchwyt, aby zmienić kolejność. Każdy blok ma własny rozmiar, czcionkę, wyrównanie i marginesy."
             >
                 <div className="space-y-2">
-                  {data.printTemplate.blockOrder.map((blockId, i) => {
+                  {data.printTemplate.blockOrder.map((blockId) => {
                     const block = data.printTemplate.blocks[blockId]
                     const isTextBlock = blockId !== "photo" && blockId !== "sigil"
                     const effectiveFontId = block.fontId ?? data.printTemplate.fontId
@@ -1624,16 +1625,17 @@ export function ObituaryForm({
                       >
                         <div className="flex items-center gap-2">
                           <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground w-4">{i + 1}.</span>
-                          <span className="flex-1 text-sm font-medium truncate">{BLOCK_LABELS[blockId]}</span>
-                          {(blockId === "sp" || blockId === "photo" || blockId === "sigil" || blockId === "ceremonyBy") && (
+                          {(blockId === "sp" || blockId === "photo" || blockId === "sigil" || blockId === "ceremonyBy") ? (
                             <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                               <Checkbox
                                 checked={block.enabled ?? true}
                                 onCheckedChange={(checked) => updateBlock(blockId, "enabled", !!checked)}
                               />
                             </div>
+                          ) : (
+                            <div className="h-5 w-5 shrink-0" />
                           )}
+                          <span className="flex-1 text-sm font-medium truncate">{BLOCK_LABELS[blockId]}</span>
                         </div>
 
                         {blockId === "sp" && (
@@ -1726,9 +1728,9 @@ export function ObituaryForm({
                               </Select>
                               <Button
                                 type="button"
-                                color={block.italic ? "primary" : "secondary"}
+                                color="secondary"
                                 size="icon"
-                                className="h-10 w-10 shrink-0"
+                                className={cn("h-10 w-10 shrink-0", block.italic && "bg-foreground/10 text-foreground hover:bg-foreground/10")}
                                 aria-pressed={!!block.italic}
                                 title="Kursywa"
                                 onClick={() => updateBlock(blockId, "italic", !block.italic)}
