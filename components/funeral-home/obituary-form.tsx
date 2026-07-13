@@ -140,7 +140,7 @@ function IconToggleGroup<T extends string>({
             onClick={() => onChange(o.id)}
             onMouseDown={(e) => e.stopPropagation()}
             onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-            className={cn("h-10 w-10", active && "border-primary bg-primary/5 text-primary hover:bg-primary/5")}
+            className={cn("h-10 w-10", active && "border-primary bg-primary text-primary-foreground hover:bg-primary/90")}
           >
             <Icon className="h-3.5 w-3.5" />
           </Button>
@@ -1225,7 +1225,7 @@ export function ObituaryForm({
                             }}
                             className={cn(
                               "flex-1 h-auto py-2 px-2 text-xs font-medium",
-                              active && "border-primary bg-primary/5 text-primary hover:bg-primary/5"
+                              active && "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                             )}
                           >
                             {p.label}
@@ -1248,7 +1248,7 @@ export function ObituaryForm({
                           onClick={() => updateTemplate("qrLocation", p.id)}
                           className={cn(
                             "flex-1 h-auto py-2 px-2 text-xs font-medium",
-                            data.printTemplate.qrLocation === p.id && "border-primary bg-primary/5 text-primary hover:bg-primary/5"
+                            data.printTemplate.qrLocation === p.id && "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                           )}
                         >
                           {p.label}
