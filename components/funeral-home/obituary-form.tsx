@@ -49,7 +49,7 @@ import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/prin
 import { PRINT_SIGILS, getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { ColorPicker } from "@/components/ui/color-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectGroup, SelectLabel } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -275,6 +275,7 @@ interface FormData {
   photoBw: boolean
   status: string
   printTemplate: PrintTemplateSettings
+  printTemplateId: string
 }
 
 function defaultLocations(fhAddress = ""): Locations {
@@ -390,7 +391,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
 function parseLocationJSON(
   raw: string,
   fhAddress: string
-): Pick<FormData, "locations" | "obituaryHeadline" | "preparedByText" | "ceremonyDate" | "ceremonyTime" | "printTemplate"> {
+): Pick<FormData, "locations" | "obituaryHeadline" | "preparedByText" | "ceremonyDate" | "ceremonyTime" | "printTemplate" | "printTemplateId"> {
   try {
     const parsed = JSON.parse(raw)
     const locations: Locations = {
@@ -405,6 +406,7 @@ function parseLocationJSON(
       ceremonyDate: parsed.ceremonyDate ?? "",
       ceremonyTime: parsed.ceremonyTime ?? "",
       printTemplate: parsePrintTemplate(parsed.printTemplate),
+      printTemplateId: parsed.printTemplateId ?? "",
     }
   } catch {
     return {
@@ -414,13 +416,14 @@ function parseLocationJSON(
       ceremonyDate: "",
       ceremonyTime: "",
       printTemplate: DEFAULT_PRINT_TEMPLATE,
+      printTemplateId: "",
     }
   }
 }
 
 function serializeLocation(data: FormData): string {
   return JSON.stringify({
-    v: 5,
+    v: 6,
     obituaryHeadline: data.obituaryHeadline,
     preparedByText: data.preparedByText,
     ceremonyDate: data.ceremonyDate,
@@ -429,6 +432,7 @@ function serializeLocation(data: FormData): string {
     church: data.locations.church,
     cemetery: data.locations.cemetery,
     printTemplate: data.printTemplate,
+    printTemplateId: data.printTemplateId,
   })
 }
 
@@ -477,7 +481,6 @@ export function ObituaryForm({
   const router = useRouter()
   const [recordId, setRecordId] = useState(obituaryId)
   const [templates, setTemplates] = useState<SavedPrintTemplate[]>([])
-  const [selectedTemplateId, setSelectedTemplateId] = useState("")
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [templateName, setTemplateName] = useState("")
   const [savingTemplate, setSavingTemplate] = useState(false)
@@ -499,7 +502,7 @@ export function ObituaryForm({
     return () => window.removeEventListener("resize", update)
   }, [])
   const [data, setData] = useState<FormData>(() => {
-    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE }
+    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
     const parsed = parseLocationJSON(initialRaw.location ?? "", fhAddress)
     return {
       firstName: initialRaw.first_name ?? "",
@@ -517,6 +520,7 @@ export function ObituaryForm({
       photoBw: initialRaw.photo_bw ?? false,
       status: initialRaw.status ?? "draft",
       printTemplate: parsed.printTemplate,
+      printTemplateId: parsed.printTemplateId,
     }
   })
   useEffect(() => {
@@ -528,10 +532,16 @@ export function ObituaryForm({
         // New obituaries start from the most recently saved template instead of the bare default.
         if (mode === "new" && list.length > 0) {
           const latest = list[0]
-          setSelectedTemplateId(latest.id)
           setData((prev) =>
             prev.printTemplate === DEFAULT_PRINT_TEMPLATE
-              ? { ...prev, printTemplate: parsePrintTemplate(latest.template) }
+              ? { ...prev, printTemplate: parsePrintTemplate(latest.template), printTemplateId: latest.id }
+              : prev
+          )
+        } else if (mode === "edit") {
+          // Drop a stale reference if the previously-applied template was since deleted.
+          setData((prev) =>
+            prev.printTemplateId && !list.some((t) => t.id === prev.printTemplateId)
+              ? { ...prev, printTemplateId: "" }
               : prev
           )
         }
@@ -579,8 +589,7 @@ export function ObituaryForm({
   function applyTemplate(id: string) {
     const found = templates.find((t) => t.id === id)
     if (!found) return
-    setSelectedTemplateId(id)
-    setData((prev) => ({ ...prev, printTemplate: parsePrintTemplate(found.template) }))
+    setData((prev) => ({ ...prev, printTemplate: parsePrintTemplate(found.template), printTemplateId: id }))
   }
 
   function canDeleteTemplate(t: SavedPrintTemplate) {
@@ -599,7 +608,7 @@ export function ObituaryForm({
         throw new Error(body?.error || `Błąd ${res.status}`)
       }
       setTemplates((prev) => prev.filter((t) => t.id !== templateToDeleteId))
-      if (selectedTemplateId === templateToDeleteId) setSelectedTemplateId("")
+      if (data.printTemplateId === templateToDeleteId) update("printTemplateId", "")
       setTemplateToDeleteId("")
     } catch (err) {
       toast.error(`Nie udało się usunąć szablonu: ${err instanceof Error ? err.message : "nieznany błąd"}`)
@@ -1000,20 +1009,15 @@ export function ObituaryForm({
 
         {activeTab === "szablon" && (
           <div className={cn("space-y-6", PRINT_FONTS_CLASSNAME)}>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Ustawienia ogólne</CardTitle>
-                <CardDescription>Czcionka, pozycja kolumny graficznej i wyrównanie treści w pionie</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <CollapsibleSectionCard title="Ustawienia ogólne" description="Czcionka, pozycja kolumny graficznej i wyrównanie treści w pionie">
                 <div className="space-y-2">
                   <Label className="shrink-0">Szablon</Label>
                   <div className="flex items-center gap-2">
                     {templates.length > 0 && (
-                      <Select value={selectedTemplateId} onValueChange={(v) => v && applyTemplate(v)}>
+                      <Select value={data.printTemplateId} onValueChange={(v) => v && applyTemplate(v)}>
                         <SelectTrigger className="w-full">
                           <span className="truncate">
-                            {selectedTemplateId ? templates.find((t) => t.id === selectedTemplateId)?.name : "Wybierz szablon…"}
+                            {data.printTemplateId ? templates.find((t) => t.id === data.printTemplateId)?.name : "Wybierz szablon…"}
                           </span>
                         </SelectTrigger>
                         <SelectContent>
@@ -1033,12 +1037,12 @@ export function ObituaryForm({
                         size="icon"
                         className="h-10 w-10 shrink-0"
                         disabled={
-                          !selectedTemplateId ||
+                          !data.printTemplateId ||
                           deletingTemplate ||
-                          !templates.find((t) => t.id === selectedTemplateId && canDeleteTemplate(t))
+                          !templates.find((t) => t.id === data.printTemplateId && canDeleteTemplate(t))
                         }
                         onClick={() => {
-                          setTemplateToDeleteId(selectedTemplateId)
+                          setTemplateToDeleteId(data.printTemplateId)
                           setDeleteTemplateConfirmOpen(true)
                         }}
                         title="Usuń szablon"
@@ -1081,11 +1085,22 @@ export function ObituaryForm({
                       </span>
                     </SelectTrigger>
                     <SelectContent className={PRINT_FONTS_CLASSNAME}>
-                      {PRINT_FONTS.map((f) => (
-                        <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
-                          {f.label}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        <SelectLabel>Szeryfowe</SelectLabel>
+                        {PRINT_FONTS.filter((f) => f.category === "serif").map((f) => (
+                          <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
+                            {f.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Bezszeryfowe</SelectLabel>
+                        {PRINT_FONTS.filter((f) => f.category === "sans-serif").map((f) => (
+                          <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
+                            {f.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1202,8 +1217,7 @@ export function ObituaryForm({
                   />
                   <p className="text-xs text-muted-foreground">Odległość między kolumną graficzną a kolumną z treścią.</p>
                 </div>
-              </CardContent>
-            </Card>
+            </CollapsibleSectionCard>
 
             <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
               <DialogContent>
