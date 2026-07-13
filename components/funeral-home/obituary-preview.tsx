@@ -30,7 +30,7 @@ export type ContentBlockId = "photo" | "sigil" | "sp" | "name" | "dates" | "head
 export type GraphicItemId = "photo" | "sigil" | "qr"
 
 export type BlockAlign = "left" | "center" | "right"
-export type VerticalAlign = "top" | "center" | "bottom"
+export type VerticalAlign = "top" | "center" | "bottom" | "distribute"
 
 export interface BlockSettings {
   size: number
@@ -92,6 +92,10 @@ export interface PrintTemplateSettings {
   columnPosition: "left" | "right"
   graphicColumnEnabled: boolean
   verticalAlign: VerticalAlign
+  /** vertical alignment of the graphic column's own items, independent of the content column's */
+  graphicVerticalAlign: VerticalAlign
+  /** where the eNekrolog QR code renders: at the bottom of the graphic column, or inline next to the ceremony text in the content column */
+  qrLocation: "graphic" | "content"
   /** inset (px) applied to the whole two-column content area, on top of each column's own padding — pulls content in from the page edge to clear the frame */
   pagePadding: number
   /** gap (px) between the graphic column and the content column */
@@ -112,6 +116,8 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   columnPosition: "left",
   graphicColumnEnabled: true,
   verticalAlign: "center",
+  graphicVerticalAlign: "top",
+  qrLocation: "graphic",
   pagePadding: 0,
   columnGap: 0,
   blockOrder: DEFAULT_BLOCK_ORDER,
@@ -140,6 +146,7 @@ const VERTICAL_ALIGN_MAP: Record<VerticalAlign, string> = {
   top: "flex-start",
   center: "center",
   bottom: "flex-end",
+  distribute: "space-between",
 }
 
 const HORIZONTAL_ALIGN_MAP: Record<BlockAlign, string> = {
@@ -380,7 +387,7 @@ export function ObituaryPreview({
   // "Ceremonia" can show the eNekrolog QR code inline; when the "Etykieta" block directly precedes it,
   // both are grouped into a single row so the QR forms one column and the label+ceremony text the other.
   const ceremonyQrNode =
-    b.ceremony.qrEnabled && ceremonyQrImageUrl ? (
+    template.qrLocation === "content" && b.ceremony.qrEnabled && ceremonyQrImageUrl ? (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         <img src={ceremonyQrImageUrl} alt="Kod QR do eNekrologu" width={ceremonyQrSize} height={ceremonyQrSize} />
         <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
@@ -445,7 +452,7 @@ export function ObituaryPreview({
       ) : null,
     sigil: g.sigil.enabled ? renderSigil(g.sigil.sigilId ?? DEFAULT_SIGIL_ID, g.sigil.size, g.sigil.color ?? DEFAULT_SIGIL_COLOR) : null,
     qr:
-      g.qr.enabled && qrImageUrl ? (
+      template.qrLocation === "graphic" && g.qr.enabled && qrImageUrl ? (
         <div style={{ textAlign: "center" }}>
           <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={g.qr.size} height={g.qr.size} />
           <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
@@ -483,7 +490,7 @@ export function ObituaryPreview({
               background: "#fff",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "flex-start",
+              justifyContent: VERTICAL_ALIGN_MAP[template.graphicVerticalAlign],
               padding: "40px 36px",
               overflow: "hidden",
             }}

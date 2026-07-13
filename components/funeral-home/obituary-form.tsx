@@ -26,6 +26,7 @@ import {
   AlignVerticalJustifyStart,
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
+  AlignVerticalSpaceBetween,
   ChevronDown,
   Italic,
   type LucideIcon,
@@ -107,6 +108,7 @@ const VALIGN_OPTIONS: { id: VerticalAlign; label: string; icon: LucideIcon }[] =
   { id: "top", label: "Góra", icon: AlignVerticalJustifyStart },
   { id: "center", label: "Środek", icon: AlignVerticalJustifyCenter },
   { id: "bottom", label: "Dół", icon: AlignVerticalJustifyEnd },
+  { id: "distribute", label: "Rozłóż równomiernie", icon: AlignVerticalSpaceBetween },
 ]
 
 /** Shared label/control grid for the setting rows in the "Kolumna graficzna" and "Kolumna z treścią" cards, so controls line up in a left-aligned settings column instead of hugging the right edge. */
@@ -362,6 +364,10 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
   if (frame.style in LEGACY_FRAME_STYLES) {
     frame.style = LEGACY_FRAME_STYLES[frame.style]
   }
+  // legacy: templates saved before qrLocation existed had both QR placements independently
+  // toggleable; prefer "content" if that was explicitly turned on, since it was the deliberate
+  // (non-default) choice, otherwise fall back to "graphic" (the graphic column QR defaults to on).
+  const qrLocation = p.qrLocation ?? (p.blocks?.ceremony?.qrEnabled ? "content" : "graphic")
 
   return {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
@@ -369,6 +375,8 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
     graphicColumnEnabled: p.graphicColumnEnabled ?? DEFAULT_PRINT_TEMPLATE.graphicColumnEnabled,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
+    graphicVerticalAlign: p.graphicVerticalAlign ?? DEFAULT_PRINT_TEMPLATE.graphicVerticalAlign,
+    qrLocation,
     pagePadding: p.pagePadding ?? DEFAULT_PRINT_TEMPLATE.pagePadding,
     columnGap: p.columnGap ?? DEFAULT_PRINT_TEMPLATE.columnGap,
     frame,
@@ -1036,16 +1044,36 @@ export function ObituaryForm({
                         </SelectContent>
                       </Select>
                     )}
-                    <Button
-                      type="button"
-                      color="secondary"
-                      size="icon"
-                      className="h-10 w-10 shrink-0"
-                      onClick={() => setSaveDialogOpen(true)}
-                      title="Zapisz jako szablon"
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        type="button"
+                        color="secondary"
+                        size="icon"
+                        className="h-10 w-10 shrink-0"
+                        disabled={
+                          !selectedTemplateId ||
+                          deletingTemplate ||
+                          !templates.find((t) => t.id === selectedTemplateId && canDeleteTemplate(t))
+                        }
+                        onClick={() => {
+                          setTemplateToDeleteId(selectedTemplateId)
+                          setDeleteTemplateConfirmOpen(true)
+                        }}
+                        title="Usuń szablon"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        color="secondary"
+                        size="icon"
+                        className="h-10 w-10 shrink-0"
+                        onClick={() => setSaveDialogOpen(true)}
+                        title="Zapisz jako szablon"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 <Separator />
@@ -1100,45 +1128,76 @@ export function ObituaryForm({
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label className="shrink-0">Kolumna graficzna</Label>
-                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Checkbox
-                        size="sm"
-                        checked={data.printTemplate.graphicColumnEnabled}
-                        onCheckedChange={(checked) => updateTemplate("graphicColumnEnabled", !!checked)}
-                      />
-                      Widoczna
-                    </label>
-                  </div>
-                  {data.printTemplate.graphicColumnEnabled && (
-                    <div className="flex gap-2">
-                      {([
-                        { id: "left", label: "Lewo" },
-                        { id: "right", label: "Prawo" },
-                      ] as const).map((p) => (
+                  <Label className="shrink-0">Kolumna graficzna</Label>
+                  <div className="flex gap-2">
+                    {([
+                      { id: "none", label: "Brak" },
+                      { id: "left", label: "Lewo" },
+                      { id: "right", label: "Prawo" },
+                    ] as const).map((p) => {
+                      const active =
+                        p.id === "none"
+                          ? !data.printTemplate.graphicColumnEnabled
+                          : data.printTemplate.graphicColumnEnabled && data.printTemplate.columnPosition === p.id
+                      return (
                         <button
                           key={p.id}
                           type="button"
-                          onClick={() => updateTemplate("columnPosition", p.id)}
+                          onClick={() => {
+                            if (p.id === "none") {
+                              updateTemplate("graphicColumnEnabled", false)
+                            } else {
+                              updateTemplate("graphicColumnEnabled", true)
+                              updateTemplate("columnPosition", p.id)
+                            }
+                          }}
                           className={cn(
                             "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
-                            data.printTemplate.columnPosition === p.id
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-muted-foreground"
+                            active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
                           )}
                         >
                           {p.label}
                         </button>
-                      ))}
-                    </div>
-                  )}
+                      )
+                    })}
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Wyrównanie treści w pionie</Label>
+                  <Label>QR kod do eNekrologu</Label>
+                  <div className="flex gap-2">
+                    {([
+                      { id: "graphic", label: "Kolumna graficzna" },
+                      { id: "content", label: "Kolumna z treścią" },
+                    ] as const).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => updateTemplate("qrLocation", p.id)}
+                        className={cn(
+                          "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
+                          data.printTemplate.qrLocation === p.id
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-muted-foreground"
+                        )}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Wyrównanie kolumny z treścią w pionie</Label>
                   <IconToggleGroup
                     value={data.printTemplate.verticalAlign}
                     onChange={(v) => updateTemplate("verticalAlign", v)}
+                    options={VALIGN_OPTIONS}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Wyrównanie kolumny graficznej w pionie</Label>
+                  <IconToggleGroup
+                    value={data.printTemplate.graphicVerticalAlign}
+                    onChange={(v) => updateTemplate("graphicVerticalAlign", v)}
                     options={VALIGN_OPTIONS}
                   />
                 </div>
@@ -1247,7 +1306,9 @@ export function ObituaryForm({
               description="Przeciągnij za uchwyt, aby zmienić kolejność w pionie. Włącz/wyłącz, wyrównaj i ustaw marginesy dla zdjęcia, sygnetu i kodu QR."
             >
                 <div className="space-y-2">
-                  {data.printTemplate.graphicOrder.map((itemId, i) => {
+                  {data.printTemplate.graphicOrder
+                    .filter((itemId) => itemId !== "qr" || data.printTemplate.qrLocation === "graphic")
+                    .map((itemId, i) => {
                     const item = data.printTemplate.graphicItems[itemId]
                     return (
                       <div
@@ -1499,7 +1560,7 @@ export function ObituaryForm({
                           </div>
                         )}
 
-                        {blockId === "ceremony" && (
+                        {blockId === "ceremony" && data.printTemplate.qrLocation === "content" && (
                           <>
                             <div className={SETTINGS_ROW}>
                               <span className="text-xs text-muted-foreground">
