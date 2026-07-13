@@ -1197,7 +1197,6 @@ export function ObituaryForm({
                   <Label>Odstęp między kolumnami (px)</Label>
                   <Input
                     type="number"
-                    min={0}
                     value={data.printTemplate.columnGap}
                     onChange={(e) => updateTemplate("columnGap", Number(e.target.value) || 0)}
                   />

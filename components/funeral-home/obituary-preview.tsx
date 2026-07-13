@@ -471,7 +471,10 @@ export function ObituaryPreview({
           height: A4_H,
           boxSizing: "border-box",
           padding: template.pagePadding,
-          gap: template.columnGap,
+          // CSS `gap` can't go negative; a negative columnGap instead pulls the columns
+          // together via a margin on the graphic column, on whichever physical side faces
+          // the content column (flipped when the graphic column is on the right).
+          gap: Math.max(0, template.columnGap),
           background: "#fff",
           display: "flex",
           flexDirection: template.columnPosition === "right" ? "row-reverse" : "row",
@@ -493,6 +496,9 @@ export function ObituaryPreview({
               justifyContent: VERTICAL_ALIGN_MAP[template.graphicVerticalAlign],
               padding: "40px 36px",
               overflow: "hidden",
+              ...(template.columnGap < 0
+                ? { [template.columnPosition === "right" ? "marginLeft" : "marginRight"]: template.columnGap }
+                : null),
             }}
           >
             {orderedGraphic.map((item) => {
