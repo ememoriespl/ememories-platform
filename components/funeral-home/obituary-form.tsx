@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardAction } from "@/components/ui/card"
 import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -125,27 +126,27 @@ function IconToggleGroup<T extends string>({
   options: { id: T; label: string; icon: LucideIcon }[]
 }) {
   return (
-    <div className="flex gap-1">
+    <ButtonGroup>
       {options.map((o) => {
         const Icon = o.icon
+        const active = value === o.id
         return (
-          <button
+          <Button
             key={o.id}
             type="button"
+            color="secondary"
+            size="icon"
             title={o.label}
             onClick={() => onChange(o.id)}
             onMouseDown={(e) => e.stopPropagation()}
             onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-            className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-md border-2 transition-colors",
-              value === o.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-            )}
+            className={cn("h-10 w-10", active && "border-primary bg-primary/5 text-primary hover:bg-primary/5")}
           >
             <Icon className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         )
       })}
-    </div>
+    </ButtonGroup>
   )
 }
 
@@ -1088,7 +1089,7 @@ export function ObituaryForm({
                         </SelectContent>
                       </Select>
                     )}
-                    <div className="flex items-center gap-1 shrink-0">
+                    <ButtonGroup className="shrink-0">
                       <Button
                         type="button"
                         color="secondary"
@@ -1129,163 +1130,173 @@ export function ObituaryForm({
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
-                    </div>
+                    </ButtonGroup>
                   </div>
                 </div>
                 <Separator />
-                <div className="space-y-2">
-                  <Label>Czcionka</Label>
-                  <Select
-                    value={data.printTemplate.fontId}
-                    onValueChange={(v) => {
-                      if (!v) return
-                      setData((prev) => ({
-                        ...prev,
-                        printTemplate: {
-                          ...prev.printTemplate,
-                          fontId: v as string,
-                          fontWeight: getClosestWeight(v as string, prev.printTemplate.fontWeight),
-                        },
-                      }))
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <span style={{ fontFamily: `var(${PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.cssVar})` }}>
-                        {PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.label}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent className={PRINT_FONTS_CLASSNAME}>
-                      <SelectGroup>
-                        <SelectLabel>Szeryfowe</SelectLabel>
-                        {PRINT_FONTS.filter((f) => f.category === "serif").map((f) => (
-                          <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
-                            {f.label}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Czcionka</Label>
+                    <Select
+                      value={data.printTemplate.fontId}
+                      onValueChange={(v) => {
+                        if (!v) return
+                        setData((prev) => ({
+                          ...prev,
+                          printTemplate: {
+                            ...prev.printTemplate,
+                            fontId: v as string,
+                            fontWeight: getClosestWeight(v as string, prev.printTemplate.fontWeight),
+                          },
+                        }))
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <span style={{ fontFamily: `var(${PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.cssVar})` }}>
+                          {PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.label}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent className={PRINT_FONTS_CLASSNAME}>
+                        <SelectGroup>
+                          <SelectLabel>Szeryfowe</SelectLabel>
+                          {PRINT_FONTS.filter((f) => f.category === "serif").map((f) => (
+                            <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
+                              {f.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel>Bezszeryfowe</SelectLabel>
+                          {PRINT_FONTS.filter((f) => f.category === "sans-serif").map((f) => (
+                            <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
+                              {f.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Grubość</Label>
+                    <Select
+                      value={String(data.printTemplate.fontWeight)}
+                      onValueChange={(v) => v && updateTemplate("fontWeight", Number(v))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <span>{data.printTemplate.fontWeight} — {WEIGHT_NAMES[data.printTemplate.fontWeight] ?? ""}</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.weights.map((w) => (
+                          <SelectItem key={w} value={String(w)}>
+                            {w} — {WEIGHT_NAMES[w] ?? ""}
                           </SelectItem>
                         ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel>Bezszeryfowe</SelectLabel>
-                        {PRINT_FONTS.filter((f) => f.category === "sans-serif").map((f) => (
-                          <SelectItem key={f.id} value={f.id} style={{ fontFamily: `var(${f.cssVar})` }}>
-                            {f.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Grubość</Label>
-                  <Select
-                    value={String(data.printTemplate.fontWeight)}
-                    onValueChange={(v) => v && updateTemplate("fontWeight", Number(v))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <span>{data.printTemplate.fontWeight} — {WEIGHT_NAMES[data.printTemplate.fontWeight] ?? ""}</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRINT_FONTS.find((f) => f.id === data.printTemplate.fontId)?.weights.map((w) => (
-                        <SelectItem key={w} value={String(w)}>
-                          {w} — {WEIGHT_NAMES[w] ?? ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="shrink-0">Kolumna graficzna</Label>
-                  <div className="flex gap-2">
-                    {([
-                      { id: "none", label: "Brak" },
-                      { id: "left", label: "Lewo" },
-                      { id: "right", label: "Prawo" },
-                    ] as const).map((p) => {
-                      const active =
-                        p.id === "none"
-                          ? !data.printTemplate.graphicColumnEnabled
-                          : data.printTemplate.graphicColumnEnabled && data.printTemplate.columnPosition === p.id
-                      return (
-                        <button
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="shrink-0">Kolumna graficzna</Label>
+                    <ButtonGroup className="w-full">
+                      {([
+                        { id: "none", label: "Brak" },
+                        { id: "left", label: "Lewo" },
+                        { id: "right", label: "Prawo" },
+                      ] as const).map((p) => {
+                        const active =
+                          p.id === "none"
+                            ? !data.printTemplate.graphicColumnEnabled
+                            : data.printTemplate.graphicColumnEnabled && data.printTemplate.columnPosition === p.id
+                        return (
+                          <Button
+                            key={p.id}
+                            type="button"
+                            color="secondary"
+                            onClick={() => {
+                              if (p.id === "none") {
+                                updateTemplate("graphicColumnEnabled", false)
+                              } else {
+                                updateTemplate("graphicColumnEnabled", true)
+                                updateTemplate("columnPosition", p.id)
+                              }
+                            }}
+                            className={cn(
+                              "flex-1 h-auto py-2 px-2 text-xs font-medium",
+                              active && "border-primary bg-primary/5 text-primary hover:bg-primary/5"
+                            )}
+                          >
+                            {p.label}
+                          </Button>
+                        )
+                      })}
+                    </ButtonGroup>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>QR kod do eNekrologu</Label>
+                    <ButtonGroup className="w-full">
+                      {([
+                        { id: "graphic", label: "Kolumna graficzna" },
+                        { id: "content", label: "Kolumna z treścią" },
+                      ] as const).map((p) => (
+                        <Button
                           key={p.id}
                           type="button"
-                          onClick={() => {
-                            if (p.id === "none") {
-                              updateTemplate("graphicColumnEnabled", false)
-                            } else {
-                              updateTemplate("graphicColumnEnabled", true)
-                              updateTemplate("columnPosition", p.id)
-                            }
-                          }}
+                          color="secondary"
+                          onClick={() => updateTemplate("qrLocation", p.id)}
                           className={cn(
-                            "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
-                            active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                            "flex-1 h-auto py-2 px-2 text-xs font-medium",
+                            data.printTemplate.qrLocation === p.id && "border-primary bg-primary/5 text-primary hover:bg-primary/5"
                           )}
                         >
                           {p.label}
-                        </button>
-                      )
-                    })}
+                        </Button>
+                      ))}
+                    </ButtonGroup>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>QR kod do eNekrologu</Label>
-                  <div className="flex gap-2">
-                    {([
-                      { id: "graphic", label: "Kolumna graficzna" },
-                      { id: "content", label: "Kolumna z treścią" },
-                    ] as const).map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => updateTemplate("qrLocation", p.id)}
-                        className={cn(
-                          "flex-1 rounded-lg border-2 py-2 text-xs font-medium transition-colors",
-                          data.printTemplate.qrLocation === p.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-muted-foreground"
-                        )}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Wyrównanie kolumny z treścią w pionie</Label>
+                    <IconToggleGroup
+                      value={data.printTemplate.verticalAlign}
+                      onChange={(v) => updateTemplate("verticalAlign", v)}
+                      options={VALIGN_OPTIONS}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Wyrównanie kolumny graficznej w pionie</Label>
+                    <IconToggleGroup
+                      value={data.printTemplate.graphicVerticalAlign}
+                      onChange={(v) => updateTemplate("graphicVerticalAlign", v)}
+                      options={VALIGN_OPTIONS}
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Wyrównanie kolumny z treścią w pionie</Label>
-                  <IconToggleGroup
-                    value={data.printTemplate.verticalAlign}
-                    onChange={(v) => updateTemplate("verticalAlign", v)}
-                    options={VALIGN_OPTIONS}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Wyrównanie kolumny graficznej w pionie</Label>
-                  <IconToggleGroup
-                    value={data.printTemplate.graphicVerticalAlign}
-                    onChange={(v) => updateTemplate("graphicVerticalAlign", v)}
-                    options={VALIGN_OPTIONS}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Wewnętrzny margines (px)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={data.printTemplate.pagePadding}
-                    onChange={(e) => updateTemplate("pagePadding", Number(e.target.value) || 0)}
-                  />
-                  <p className="text-xs text-muted-foreground">Odsuwa całą treść od krawędzi kartki — przydatne przy wąskich ramkach.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Odstęp między kolumnami (px)</Label>
-                  <Input
-                    type="number"
-                    value={data.printTemplate.columnGap}
-                    onChange={(e) => updateTemplate("columnGap", Number(e.target.value) || 0)}
-                  />
-                  <p className="text-xs text-muted-foreground">Odległość między kolumną graficzną a kolumną z treścią.</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Wewnętrzny margines (px)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={data.printTemplate.pagePadding}
+                      onChange={(e) => updateTemplate("pagePadding", Number(e.target.value) || 0)}
+                    />
+                    <p className="text-xs text-muted-foreground">Odsuwa całą treść od krawędzi kartki — przydatne przy wąskich ramkach.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Odstęp między kolumnami (px)</Label>
+                    <Input
+                      type="number"
+                      value={data.printTemplate.columnGap}
+                      onChange={(e) => updateTemplate("columnGap", Number(e.target.value) || 0)}
+                    />
+                    <p className="text-xs text-muted-foreground">Odległość między kolumną graficzną a kolumną z treścią.</p>
+                  </div>
                 </div>
             </CollapsibleSectionCard>
 
