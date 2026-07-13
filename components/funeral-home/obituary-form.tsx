@@ -19,6 +19,7 @@ import {
   Save,
   Download,
   Trash2,
+  Pencil,
   GripVertical,
   AlignLeft,
   AlignCenter,
@@ -455,6 +456,8 @@ interface SavedPrintTemplate {
   name: string
   template: unknown
   funeral_home_id: string | null
+  is_default: boolean
+  sort_order: number
 }
 
 export interface ObituaryFormProps {
@@ -485,6 +488,9 @@ export function ObituaryForm({
   const [templateName, setTemplateName] = useState("")
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [deletingTemplate, setDeletingTemplate] = useState(false)
+  const [manageDialogOpen, setManageDialogOpen] = useState(false)
+  const [draggedManageId, setDraggedManageId] = useState<string | null>(null)
+  const renameOriginalRef = useRef<Record<string, string>>({})
   const [deleteTemplateConfirmOpen, setDeleteTemplateConfirmOpen] = useState(false)
   const [templateToDeleteId, setTemplateToDeleteId] = useState("")
   const [activeTab, setActiveTab] = useState<TabId>("dane")
@@ -639,6 +645,58 @@ export function ObituaryForm({
       toast.error(`Nie udało się zapisać szablonu: ${err instanceof Error ? err.message : "nieznany błąd"}`)
     } finally {
       setSavingTemplate(false)
+    }
+  }
+
+  async function renameTemplate(id: string, name: string, original: string) {
+    try {
+      const res = await fetch(`/api/print-templates/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error || `Błąd ${res.status}`)
+      }
+    } catch (err) {
+      setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, name: original } : t)))
+      toast.error(`Nie udało się zmienić nazwy: ${err instanceof Error ? err.message : "nieznany błąd"}`)
+    }
+  }
+
+  async function toggleTemplateDefault(id: string, value: boolean) {
+    setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, is_default: value } : t)))
+    try {
+      const res = await fetch(`/api/print-templates/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDefault: value }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error || `Błąd ${res.status}`)
+      }
+    } catch (err) {
+      setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, is_default: !value } : t)))
+      toast.error(`Nie udało się ustawić szablonu domyślnego: ${err instanceof Error ? err.message : "nieznany błąd"}`)
+    }
+  }
+
+  async function persistTemplateOrder(ordered: SavedPrintTemplate[]) {
+    const order = ordered.filter((t) => canDeleteTemplate(t)).map((t) => t.id)
+    try {
+      const res = await fetch("/api/print-templates", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error || `Błąd ${res.status}`)
+      }
+    } catch (err) {
+      toast.error(`Nie udało się zapisać kolejności: ${err instanceof Error ? err.message : "nieznany błąd"}`)
     }
   }
 
@@ -1024,7 +1082,7 @@ export function ObituaryForm({
                           {templates.map((t) => (
                             <SelectItem key={t.id} value={t.id}>
                               {t.name}
-                              {!isAdmin && t.funeral_home_id === null ? " (domyślny)" : ""}
+                              {!isAdmin && t.is_default ? " (domyślny)" : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1059,6 +1117,18 @@ export function ObituaryForm({
                       >
                         <Save className="h-4 w-4" />
                       </Button>
+                      {templates.length > 0 && (
+                        <Button
+                          type="button"
+                          color="secondary"
+                          size="icon"
+                          className="h-10 w-10 shrink-0"
+                          onClick={() => setManageDialogOpen(true)}
+                          title="Zarządzaj szablonami"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1265,6 +1335,109 @@ export function ObituaryForm({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+
+            <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Zarządzaj szablonami</DialogTitle>
+                  <DialogDescription>
+                    Zmień nazwę, przeciągnij za uchwyt, aby zmienić kolejność, lub usuń szablon.
+                    {isAdmin && " Szablony oznaczone jako domyślne są dostępne wszystkim zakładom pogrzebowym."}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                  {templates.map((t) => {
+                    const editable = canDeleteTemplate(t)
+                    return (
+                      <div
+                        key={t.id}
+                        draggable={editable}
+                        onDragStart={() => editable && setDraggedManageId(t.id)}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          if (!draggedManageId || draggedManageId === t.id) return
+                          const from = templates.findIndex((x) => x.id === draggedManageId)
+                          const to = templates.findIndex((x) => x.id === t.id)
+                          if (from === -1 || to === -1 || from === to) return
+                          const reordered = [...templates]
+                          const [moved] = reordered.splice(from, 1)
+                          reordered.splice(to, 0, moved)
+                          setTemplates(reordered)
+                        }}
+                        onDrop={(e) => e.preventDefault()}
+                        onDragEnd={() => {
+                          setDraggedManageId(null)
+                          persistTemplateOrder(templates)
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg border bg-muted/30 p-2 transition-opacity",
+                          editable && "cursor-grab active:cursor-grabbing",
+                          draggedManageId === t.id && "opacity-40"
+                        )}
+                      >
+                        {editable ? (
+                          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                        ) : (
+                          <span className="w-4 shrink-0" />
+                        )}
+                        <Input
+                          value={t.name}
+                          disabled={!editable}
+                          className="h-9"
+                          onFocus={() => {
+                            renameOriginalRef.current[t.id] = t.name
+                          }}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setTemplates((prev) => prev.map((x) => (x.id === t.id ? { ...x, name: value } : x)))
+                          }}
+                          onBlur={(e) => {
+                            const original = renameOriginalRef.current[t.id]
+                            const value = e.target.value.trim()
+                            if (!editable || !value || value === original) return
+                            renameTemplate(t.id, value, original)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.currentTarget.blur()
+                          }}
+                        />
+                        {isAdmin && t.funeral_home_id === null && (
+                          <label className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 px-1">
+                            <Checkbox
+                              checked={t.is_default}
+                              onCheckedChange={(checked) => toggleTemplateDefault(t.id, !!checked)}
+                            />
+                            Domyślny
+                          </label>
+                        )}
+                        {!isAdmin && t.funeral_home_id === null && (
+                          <span className="text-xs text-muted-foreground shrink-0 px-1">Domyślny</span>
+                        )}
+                        <Button
+                          type="button"
+                          color="secondary"
+                          size="icon"
+                          className="h-9 w-9 shrink-0"
+                          disabled={!editable}
+                          onClick={() => {
+                            setTemplateToDeleteId(t.id)
+                            setDeleteTemplateConfirmOpen(true)
+                          }}
+                          title="Usuń szablon"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+                <DialogFooter>
+                  <Button color="secondary" onClick={() => setManageDialogOpen(false)}>
+                    Zamknij
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <CollapsibleSectionCard title="Ramka" description="Dekoracyjna ramka wokół całej kartki A4.">
               <div className="flex items-center justify-between gap-2">
