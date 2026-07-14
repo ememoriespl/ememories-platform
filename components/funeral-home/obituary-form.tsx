@@ -154,14 +154,16 @@ function CollapsibleSectionCard({
   title,
   description,
   children,
+  defaultOpen = false,
 }: {
   title: string
   description?: string
   children: React.ReactNode
+  defaultOpen?: boolean
 }) {
   return (
     <Card>
-      <Collapsible>
+      <Collapsible defaultOpen={defaultOpen}>
         <CollapsibleTrigger className="group/collapsible-trigger cursor-pointer">
           <CardHeader>
             <CardTitle className="text-base">{title}</CardTitle>
@@ -796,12 +798,7 @@ export function ObituaryForm({
         {activeTab === "dane" && (
           <>
             {/* Dane podstawowe */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Dane podstawowe</CardTitle>
-                <CardDescription>Imię, nazwisko i daty</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <CollapsibleSectionCard title="Dane podstawowe" description="Imię, nazwisko i daty" defaultOpen>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Imię <span className="text-destructive">*</span></Label>
@@ -841,16 +838,10 @@ export function ObituaryForm({
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+            </CollapsibleSectionCard>
 
             {/* Data i godzina ceremonii */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Data i godzina ceremonii</CardTitle>
-                <CardDescription>Kiedy odbędzie się ceremonia pogrzebowa</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <CollapsibleSectionCard title="Data i godzina ceremonii" description="Kiedy odbędzie się ceremonia pogrzebowa" defaultOpen>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Data ceremonii</Label>
@@ -919,16 +910,10 @@ export function ObituaryForm({
                     )
                   })}
                 </div>
-              </CardContent>
-            </Card>
+            </CollapsibleSectionCard>
 
             {/* Zdjęcie portretowe */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Zdjęcie portretowe</CardTitle>
-                <CardDescription>Opcjonalne. Zostanie wyświetlone w nekrologu.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <CollapsibleSectionCard title="Zdjęcie portretowe" description="Opcjonalne. Zostanie wyświetlone w nekrologu." defaultOpen>
                 {data.photo ? (
                   <div className="flex items-center gap-6">
                     <img
@@ -1008,15 +993,10 @@ export function ObituaryForm({
                     </div>
                   </label>
                 )}
-              </CardContent>
-            </Card>
+            </CollapsibleSectionCard>
 
             {/* Treść nekrologu */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Treść nekrologu</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <CollapsibleSectionCard title="Treść nekrologu" defaultOpen>
                 <div className="space-y-2">
                   <Label>Treść nekrologu</Label>
                   <Textarea
@@ -1050,8 +1030,7 @@ export function ObituaryForm({
                     Wyświetlane na dole nekrologu. Widoczność i wygląd ustawisz w zakładce &bdquo;Szablon druku&rdquo;.
                   </p>
                 </div>
-              </CardContent>
-            </Card>
+            </CollapsibleSectionCard>
           </>
         )}
 
