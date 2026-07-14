@@ -1036,7 +1036,7 @@ export function ObituaryForm({
 
         {activeTab === "szablon" && (
           <div className={cn("space-y-6", PRINT_FONTS_CLASSNAME)}>
-            <CollapsibleSectionCard title="Ustawienia ogólne" description="Czcionka, pozycja kolumny graficznej i wyrównanie treści w pionie">
+            <CollapsibleSectionCard title="Ustawienia ogólne" description="Czcionka, pozycja kolumny graficznej i wyrównanie treści w pionie" defaultOpen>
               <div className="space-y-5">
                 <div className="space-y-2">
                   <Label className="shrink-0">Szablon</Label>
