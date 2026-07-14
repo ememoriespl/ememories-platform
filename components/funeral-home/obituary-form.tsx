@@ -86,11 +86,11 @@ const BLOCK_LABELS: Record<ContentBlockId, string> = {
   sigil: "Sygnet",
   sp: "Ś.P.",
   name: "Imię i nazwisko",
-  dates: "Data",
+  dates: "Data urodzenia - Data śmierci",
   headline: "Nagłówek",
-  body: "Treść",
-  ceremonyLabel: "Etykieta",
-  ceremony: "Ceremonia",
+  body: "Treść nekrologu",
+  ceremonyLabel: "Informacje o ceremonii - etykieta",
+  ceremony: "Informacja o ceremonii - treść",
   ceremonyBy: "Przygotowane przez",
 }
 
@@ -844,6 +844,84 @@ export function ObituaryForm({
               </CardContent>
             </Card>
 
+            {/* Data i godzina ceremonii */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Data i godzina ceremonii</CardTitle>
+                <CardDescription>Kiedy odbędzie się ceremonia pogrzebowa</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Data ceremonii</Label>
+                    <DatePicker
+                      value={data.ceremonyDate}
+                      onChange={(v) => update("ceremonyDate", v)}
+                      placeholder="Wybierz datę"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Godzina ceremonii</Label>
+                    <TimePicker
+                      value={data.ceremonyTime}
+                      onChange={(v) => update("ceremonyTime", v)}
+                    />
+                  </div>
+                </div>
+                <Separator />
+                <div className="space-y-3">
+                  <Label>Lokalizacje nawigacji</Label>
+                  {(["funeralHome", "church", "cemetery"] as const).map((key) => {
+                    const labels = {
+                      funeralHome: "Dom pogrzebowy",
+                      church: "Kościół",
+                      cemetery: "Cmentarz",
+                    }
+                    const entry = data.locations[key]
+                    return (
+                      <div key={key} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            size="sm"
+                            checked={entry.enabled}
+                            onCheckedChange={(checked) =>
+                              update("locations", {
+                                ...data.locations,
+                                [key]: { ...entry, enabled: checked },
+                              })
+                            }
+                          />
+                          <span
+                            className="text-sm font-medium cursor-pointer select-none"
+                            onClick={() =>
+                              update("locations", {
+                                ...data.locations,
+                                [key]: { ...entry, enabled: !entry.enabled },
+                              })
+                            }
+                          >
+                            {labels[key]}
+                          </span>
+                        </div>
+                        {entry.enabled && (
+                          <Input
+                            placeholder="Wpisz adres..."
+                            value={entry.address}
+                            onChange={(e) =>
+                              update("locations", {
+                                ...data.locations,
+                                [key]: { ...entry, address: e.target.value },
+                              })
+                            }
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Zdjęcie portretowe */}
             <Card>
               <CardHeader>
@@ -940,7 +1018,7 @@ export function ObituaryForm({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Treść</Label>
+                  <Label>Treść nekrologu</Label>
                   <Textarea
                     placeholder="Treść wspomnienia..."
                     rows={6}
@@ -971,84 +1049,6 @@ export function ObituaryForm({
                   <p className="text-xs text-muted-foreground">
                     Wyświetlane na dole nekrologu. Widoczność i wygląd ustawisz w zakładce &bdquo;Szablon druku&rdquo;.
                   </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Data i godzina ceremonii */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Data i godzina ceremonii</CardTitle>
-                <CardDescription>Kiedy odbędzie się ceremonia pogrzebowa</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Data ceremonii</Label>
-                    <DatePicker
-                      value={data.ceremonyDate}
-                      onChange={(v) => update("ceremonyDate", v)}
-                      placeholder="Wybierz datę"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Godzina ceremonii</Label>
-                    <TimePicker
-                      value={data.ceremonyTime}
-                      onChange={(v) => update("ceremonyTime", v)}
-                    />
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-3">
-                  <Label>Lokalizacje nawigacji</Label>
-                  {(["funeralHome", "church", "cemetery"] as const).map((key) => {
-                    const labels = {
-                      funeralHome: "Dom pogrzebowy",
-                      church: "Kościół",
-                      cemetery: "Cmentarz",
-                    }
-                    const entry = data.locations[key]
-                    return (
-                      <div key={key} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            size="sm"
-                            checked={entry.enabled}
-                            onCheckedChange={(checked) =>
-                              update("locations", {
-                                ...data.locations,
-                                [key]: { ...entry, enabled: checked },
-                              })
-                            }
-                          />
-                          <span
-                            className="text-sm font-medium cursor-pointer select-none"
-                            onClick={() =>
-                              update("locations", {
-                                ...data.locations,
-                                [key]: { ...entry, enabled: !entry.enabled },
-                              })
-                            }
-                          >
-                            {labels[key]}
-                          </span>
-                        </div>
-                        {entry.enabled && (
-                          <Input
-                            placeholder="Wpisz adres..."
-                            value={entry.address}
-                            onChange={(e) =>
-                              update("locations", {
-                                ...data.locations,
-                                [key]: { ...entry, address: e.target.value },
-                              })
-                            }
-                          />
-                        )}
-                      </div>
-                    )
-                  })}
                 </div>
               </CardContent>
             </Card>
