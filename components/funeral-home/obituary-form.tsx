@@ -940,17 +940,6 @@ export function ObituaryForm({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Nagłówek nekrologu</Label>
-                  <Textarea
-                    placeholder="Z głębokim żalem zawiadomiamy, że w wieku X lat odszedł/odeszła..."
-                    rows={2}
-                    value={data.obituaryHeadline}
-                    onChange={(e) => update("obituaryHeadline", e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">Krótki nagłówek wyświetlany na początku nekrologu</p>
-                </div>
-                <Separator />
-                <div className="space-y-2">
                   <Label>Treść</Label>
                   <Textarea
                     placeholder="Treść wspomnienia..."
@@ -1595,7 +1584,7 @@ export function ObituaryForm({
               description="Przeciągnij za uchwyt, aby zmienić kolejność. Każdy blok ma własny rozmiar, czcionkę, wyrównanie i marginesy."
             >
                 <div className="space-y-2">
-                  {data.printTemplate.blockOrder.map((blockId) => {
+                  {data.printTemplate.blockOrder.filter((blockId) => blockId !== "headline").map((blockId) => {
                     const block = data.printTemplate.blocks[blockId]
                     const isTextBlock = blockId !== "photo" && blockId !== "sigil"
                     const effectiveFontId = block.fontId ?? data.printTemplate.fontId
