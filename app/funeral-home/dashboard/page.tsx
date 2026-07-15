@@ -21,34 +21,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Search, QrCode, MoreHorizontal, Pencil, Archive, ExternalLink, Plus, Eye } from "lucide-react"
+import { Search, QrCode, MoreHorizontal, Pencil, ExternalLink, Plus, Eye } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { BookOpen, Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
 import { ObituaryStatus } from "@/lib/types"
+import { STATUS_META, effectiveStatusFromRow } from "@/lib/obituary-status"
 import { toast } from "sonner"
-
-const statusLabel: Record<ObituaryStatus, string> = {
-  draft: "Szkic",
-  published: "Opublikowany",
-  archived: "Archiwalny",
-}
-
-const statusVariant: Record<ObituaryStatus, "success" | "gray" | "outline"> = {
-  draft: "outline",
-  published: "success",
-  archived: "gray",
-}
 
 interface FhData {
   name: string
@@ -64,6 +43,7 @@ interface DbObituary {
   birth_date: string
   death_date: string
   status: ObituaryStatus
+  location: string | null
   views: number
   created_at: string
   published_at: string | null
@@ -78,7 +58,6 @@ export default function FhDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [archiveTarget, setArchiveTarget] = useState<DbObituary | null>(null)
   const { sort, toggleSort, sortData, paginate, page, setPage } = useTableState(10)
 
   useEffect(() => {
@@ -90,42 +69,28 @@ export default function FhDashboardPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const qrUsed = fh?.obituaries?.total ?? 0
+  // Limit counts published obituaries (published + finished); drafts don't count.
+  const qrUsed = fh?.obituaries?.published ?? 0
   const qrLimit = fh?.qr_limit ?? 1
   const pct = Math.round((qrUsed / qrLimit) * 100)
   const published = fh?.obituaries?.published ?? 0
-  const draft = fh?.obituaries?.draft ?? 0
+  const draft = (fh?.obituaries?.total ?? 0) - (fh?.obituaries?.published ?? 0)
 
   const filtered = obituaries.filter((o) => {
     const matchSearch = `${o.first_name} ${o.last_name}`.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === "all" || o.status === statusFilter
+    const matchStatus = statusFilter === "all" || effectiveStatusFromRow(o) === statusFilter
     return matchSearch && matchStatus
   })
 
   const sorted = sortData(filtered, (o, col) => {
     if (col === "name") return `${o.first_name} ${o.last_name}`
-    if (col === "status") return o.status
+    if (col === "status") return effectiveStatusFromRow(o)
     if (col === "death_date") return o.death_date ?? ""
     if (col === "views") return o.views
     if (col === "created") return o.created_at
     return ""
   })
   const { items: paged, ...pagination } = paginate(sorted)
-
-  async function handleArchive(id: string) {
-    try {
-      await fetch(`/api/obituaries/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "archived" }),
-      })
-      setObituaries((prev) => prev.map((o) => (o.id === id ? { ...o, status: "archived" as ObituaryStatus } : o)))
-      setArchiveTarget(null)
-      toast.success("Nekrolog zarchiwizowany")
-    } catch {
-      toast.error("Błąd podczas archiwizacji")
-    }
-  }
 
   async function handlePublish(id: string) {
     try {
@@ -214,13 +179,13 @@ export default function FhDashboardPage() {
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
               <SelectTrigger className="!h-9 w-40">
-                <span>{{ all: "Wszystkie", published: "Opublikowane", draft: "Szkice", archived: "Archiwalne" }[statusFilter] ?? "Wszystkie"}</span>
+                <span>{{ all: "Wszystkie", published: "Opublikowane", finished: "Zakończone", draft: "Szkice" }[statusFilter] ?? "Wszystkie"}</span>
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false}>
                 <SelectItem value="all">Wszystkie</SelectItem>
                 <SelectItem value="published">Opublikowane</SelectItem>
+                <SelectItem value="finished">Zakończone</SelectItem>
                 <SelectItem value="draft">Szkice</SelectItem>
-                <SelectItem value="archived">Archiwalne</SelectItem>
               </SelectContent>
             </Select>
             <div className="ml-auto">
@@ -293,13 +258,13 @@ export default function FhDashboardPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant={statusVariant[obit.status]}>{statusLabel[obit.status]}</Badge>
+                          {(() => { const s = effectiveStatusFromRow(obit); return <Badge variant={STATUS_META[s].variant}>{STATUS_META[s].label}</Badge> })()}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {obit.death_date ? new Date(obit.death_date).toLocaleDateString("pl-PL") : "—"}
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          {obit.status !== "draft" ? obit.views : <span className="text-muted-foreground">—</span>}
+                          {effectiveStatusFromRow(obit) !== "draft" ? obit.views : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {new Date(obit.created_at).toLocaleDateString("pl-PL")}
@@ -325,21 +290,12 @@ export default function FhDashboardPage() {
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edytuj
                               </DropdownMenuItem>
-                              {(obit.status === "draft" || obit.status === "archived") && (
+                              {effectiveStatusFromRow(obit) === "draft" && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => handlePublish(obit.id)}>
                                     <Eye className="mr-2 h-4 w-4" />
                                     Opublikuj
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {obit.status !== "archived" && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => setArchiveTarget(obit)}>
-                                    <Archive className="mr-2 h-4 w-4" />
-                                    Archiwizuj
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -369,23 +325,6 @@ export default function FhDashboardPage() {
           </Card>
         </div>
       </div>
-
-      <AlertDialog open={!!archiveTarget} onOpenChange={(o) => !o && setArchiveTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archiwizować nekrolog?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Nekrolog zostanie przeniesiony do archiwum. Publiczny URL przestanie działać.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={() => archiveTarget && handleArchive(archiveTarget.id)}>
-              Archiwizuj
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   )
 }
