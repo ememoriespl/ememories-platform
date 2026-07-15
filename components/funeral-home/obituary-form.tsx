@@ -92,6 +92,10 @@ const CREATOR_STATUS_BADGE: Record<EffectiveStatus, { label: string; variant: "s
   finished: { label: "Zakończony", variant: "gray" },
 }
 
+// Pre-filled body text for a brand-new obituary — a fill-in-the-blanks template.
+const DEFAULT_OBITUARY_TEXT =
+  "Msza święta żałobna odbędzie się w kościele .......... w ........... Następnie ostatnia droga poprowadzi na cmentarz parafialny w .......... przy ul. ........... Ze smutkiem zawiadamiają ..........."
+
 const BLOCK_LABELS: Record<ContentBlockId, string> = {
   photo: "Zdjęcie",
   sigil: "Sygnet",
@@ -526,7 +530,7 @@ export function ObituaryForm({
     return () => window.removeEventListener("resize", update)
   }, [])
   const [data, setData] = useState<FormData>(() => {
-    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: "", ceremonyInfo: "", preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
+    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: DEFAULT_OBITUARY_TEXT, ceremonyInfo: "", preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
     const parsed = parseLocationJSON(initialRaw.location ?? "", fhAddress)
     return {
       firstName: initialRaw.first_name ?? "",
