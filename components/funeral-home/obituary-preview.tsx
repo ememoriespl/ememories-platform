@@ -420,7 +420,11 @@ export function ObituaryPreview({
       ) : null,
   }
 
-  const orderedBlocks = template.blockOrder.map((id) => ({ id, node: blocks[id] })).filter((item) => item.node !== null)
+  // The "headline" block is a removed feature; never render it, even for older
+  // obituaries that still carry a saved headline value.
+  const orderedBlocks = template.blockOrder
+    .map((id) => ({ id, node: blocks[id] }))
+    .filter((item) => item.id !== "headline" && item.node !== null)
 
   // "Ceremonia" can show the eNekrolog QR code inline; when the "Etykieta" block directly precedes it,
   // both are grouped into a single row so the QR forms one column and the label+ceremony text the other.
