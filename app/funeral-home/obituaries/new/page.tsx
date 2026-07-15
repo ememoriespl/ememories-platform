@@ -9,6 +9,7 @@ export default function NewObituaryPage() {
   const [fhName, setFhName] = useState("")
   const [fhPhone, setFhPhone] = useState("")
   const [isAdmin, setIsAdmin] = useState(false)
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null)
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -24,6 +25,9 @@ export default function NewObituaryPage() {
             setFhAddress(fh?.address ?? "")
             setFhName(fh?.name ?? "")
             setFhPhone(fh?.phone ?? "")
+            if (typeof fh?.qr_limit === "number" && typeof fh?.qr_used === "number") {
+              setCreditsRemaining(fh.qr_limit - fh.qr_used)
+            }
           })
           .catch(() => {})
       })
@@ -33,7 +37,7 @@ export default function NewObituaryPage() {
   return (
     <>
       <Topbar title="Nowy nekrolog" subtitle="Wypełnij dane i opublikuj" />
-      <ObituaryForm mode="new" fhAddress={fhAddress} fhName={fhName} fhPhone={fhPhone} isAdmin={isAdmin} />
+      <ObituaryForm mode="new" fhAddress={fhAddress} fhName={fhName} fhPhone={fhPhone} isAdmin={isAdmin} creditsRemaining={creditsRemaining} />
     </>
   )
 }

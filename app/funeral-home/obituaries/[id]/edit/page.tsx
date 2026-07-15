@@ -13,6 +13,7 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
   const [fhPhone, setFhPhone] = useState("")
   const [backUrl, setBackUrl] = useState("/funeral-home/dashboard")
   const [isAdmin, setIsAdmin] = useState(false)
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null)
 
   useEffect(() => {
     const meReq = fetch("/api/auth/me").then((r) => r.json())
@@ -34,6 +35,9 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
               setFhAddress(fh?.address ?? "")
               setFhName(fh?.name ?? "")
               setFhPhone(fh?.phone ?? "")
+              if (typeof fh?.qr_limit === "number" && typeof fh?.qr_used === "number") {
+                setCreditsRemaining(fh.qr_limit - fh.qr_used)
+              }
             })
             .catch(() => {})
         }
@@ -56,6 +60,7 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
           fhPhone={fhPhone}
           backUrl={backUrl}
           isAdmin={isAdmin}
+          creditsRemaining={creditsRemaining}
         />
       ) : (
         <div className="p-6 text-sm text-muted-foreground">Ładowanie…</div>

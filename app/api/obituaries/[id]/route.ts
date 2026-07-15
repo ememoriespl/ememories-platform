@@ -56,11 +56,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json()
   const patch: Record<string, unknown> = { ...body }
 
-  if (body.status === "published") {
-    patch.published_at = new Date().toISOString()
-  }
-
   if (session.role === "admin") {
+    if (body.status === "published") {
+      patch.published_at = new Date().toISOString()
+    }
     const { data, error } = await supabase
       .from("obituaries")
       .update(patch)
@@ -74,16 +73,35 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const funeralHomeId = await getFuneralHomeId(session.email)
   if (!funeralHomeId) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  if (body.status === "published") {
-    const { data: existing } = await supabase
-      .from("obituaries")
-      .select("status")
-      .eq("id", id)
-      .eq("funeral_home_id", funeralHomeId)
+  const { data: existing } = await supabase
+    .from("obituaries")
+    .select("status")
+    .eq("id", id)
+    .eq("funeral_home_id", funeralHomeId)
+    .single()
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  const wasPublished = existing.status === "published"
+  const publishing = body.status === "published" && !wasPublished
+
+  // Name is locked once published.
+  if (wasPublished) {
+    delete patch.first_name
+    delete patch.last_name
+  }
+
+  if (publishing) {
+    // Publishing consumes a credit — block if none left.
+    const { data: fh } = await supabase
+      .from("funeral_homes")
+      .select("qr_limit, qr_used")
+      .eq("id", funeralHomeId)
       .single()
-    if (existing?.status !== "published") {
-      await supabase.rpc("increment_qr_used", { fh_id: funeralHomeId })
+    if (fh && (fh.qr_used ?? 0) >= (fh.qr_limit ?? 0)) {
+      return NextResponse.json({ error: "Brak kredytów. Skontaktuj się z administratorem." }, { status: 403 })
     }
+    patch.published_at = new Date().toISOString()
+    await supabase.rpc("increment_qr_used", { fh_id: funeralHomeId })
   }
 
   const { data, error } = await supabase

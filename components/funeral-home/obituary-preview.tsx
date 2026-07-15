@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import { format, isValid } from "date-fns"
 import { pl } from "date-fns/locale"
 import { ZoomIn } from "lucide-react"
@@ -8,6 +8,7 @@ import { PRINT_FONTS_CLASSNAME, getPrintFontFamily, DEFAULT_PRINT_FONT_ID } from
 import { getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 import { SIGIL_ICON_DATA } from "@/lib/sigil-icons"
 import { FRAME_ART_DATA } from "@/lib/frame-art"
+import { WATERMARK_VIEWBOX, WATERMARK_INNER_HTML } from "@/lib/watermark"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
@@ -177,6 +178,39 @@ export function renderFrame(frame: FrameSettings): React.ReactNode {
   )
 }
 
+// Repeating "eMemories" watermark tiled across the whole A4 page, shown on drafts.
+// Uses a native SVG <pattern> fill (same approach as renderFrame) so it survives
+// Chromium's print/PDF export, unlike a CSS background-image. `id` must be unique
+// per rendered instance (pass a useId()).
+export function renderWatermark(id: string): React.ReactNode {
+  const clipId = `${id}-clip`
+  const inner = WATERMARK_INNER_HTML.replaceAll("ememories_wm_clip", clipId)
+  const tileW = 210
+  const tileH = 186
+  return (
+    <svg
+      viewBox={`0 0 ${A4_W} ${A4_H}`}
+      width="100%"
+      height="100%"
+      preserveAspectRatio="none"
+      style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+    >
+      <defs>
+        <pattern
+          id={id}
+          patternUnits="userSpaceOnUse"
+          width={tileW}
+          height={tileH}
+          viewBox={WATERMARK_VIEWBOX}
+          preserveAspectRatio="xMidYMid meet"
+          dangerouslySetInnerHTML={{ __html: inner }}
+        />
+      </defs>
+      <rect width={A4_W} height={A4_H} fill={`url(#${id})`} />
+    </svg>
+  )
+}
+
 function safeFormat(dateStr: string, fmt: string): string {
   try {
     const d = new Date(dateStr + "T12:00:00")
@@ -221,6 +255,7 @@ export function ObituaryPreview({
   template = DEFAULT_PRINT_TEMPLATE,
   publicUrl,
   bare = false,
+  watermarked = false,
 }: {
   data: PreviewData
   availableWidth?: number
@@ -228,8 +263,11 @@ export function ObituaryPreview({
   publicUrl?: string
   /** Renders just the A4 page at natural size with no preview chrome (label, border, scaling) — used for printing. */
   bare?: boolean
+  /** Overlays the repeating draft watermark across the page (preview + print). */
+  watermarked?: boolean
 }) {
   const [zoomOpen, setZoomOpen] = useState(false)
+  const watermarkId = useId()
   const scale = availableWidth && availableWidth > 0 ? availableWidth / A4_W : 0.5
   const zoomScale = Math.min(1000 / A4_W, 1)
 
@@ -539,6 +577,7 @@ export function ObituaryPreview({
         </div>
       </div>
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>{renderFrame(template.frame)}</div>
+      {watermarked && renderWatermark(watermarkId)}
     </div>
   )
 

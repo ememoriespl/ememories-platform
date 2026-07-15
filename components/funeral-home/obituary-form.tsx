@@ -53,6 +53,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { ColorPicker } from "@/components/ui/color-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectGroup, SelectLabel } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,6 +80,12 @@ const WEIGHT_NAMES: Record<number, string> = {
   700: "Pogrubiona",
   800: "Extra Bold",
   900: "Black",
+}
+
+const STATUS_BADGE: Record<string, { label: string; variant: "success" | "gray" | "outline" }> = {
+  draft: { label: "Szkic", variant: "outline" },
+  published: { label: "Opublikowany", variant: "success" },
+  archived: { label: "Archiwalny", variant: "gray" },
 }
 
 const BLOCK_LABELS: Record<ContentBlockId, string> = {
@@ -472,6 +479,8 @@ export interface ObituaryFormProps {
   fhPhone?: string
   backUrl?: string
   isAdmin?: boolean
+  /** Remaining publish credits for the funeral home; null = no limit (admin). */
+  creditsRemaining?: number | null
 }
 
 export function ObituaryForm({
@@ -483,9 +492,11 @@ export function ObituaryForm({
   fhPhone = "",
   backUrl = "/funeral-home/dashboard",
   isAdmin = false,
+  creditsRemaining = null,
 }: ObituaryFormProps) {
   const router = useRouter()
   const [recordId, setRecordId] = useState(obituaryId)
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false)
   const [templates, setTemplates] = useState<SavedPrintTemplate[]>([])
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [templateName, setTemplateName] = useState("")
@@ -719,11 +730,12 @@ export function ObituaryForm({
     }
   }
 
-  async function save(status: "draft" | "published") {
+  async function save(status: "draft" | "published", opts?: { navigate?: boolean }) {
     if (!data.firstName || !data.lastName) {
       toast.error("Wypełnij imię i nazwisko")
       return
     }
+    const alreadyPublished = data.status === "published"
     setSaving(true)
     try {
       const body = {
@@ -750,30 +762,41 @@ export function ObituaryForm({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           })
-      if (!res.ok) throw new Error()
-      if (isCreate) {
-        const created = await res.json()
-        setRecordId(created.id)
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null)
+        throw new Error(errBody?.error || "")
       }
-      toast.success(status === "published" ? "Opublikowano!" : "Zapisano szkic")
-      if (status === "published") {
+      const saved = await res.json()
+      if (isCreate) setRecordId(saved.id)
+      // Reflect the persisted status locally so the badge, name-lock and watermark update.
+      setData((prev) => ({ ...prev, status: saved.status ?? status }))
+      toast.success(
+        status !== "published"
+          ? "Zapisano szkic"
+          : alreadyPublished
+            ? "Zapisano zmiany"
+            : "Opublikowano!"
+      )
+      if (opts?.navigate) {
         router.push(backUrl)
         return
       }
       setSaving(false)
-    } catch {
-      toast.error("Błąd podczas zapisywania")
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Błąd podczas zapisywania")
       setSaving(false)
     }
   }
 
+  const isPublished = data.status === "published"
+  const noCredits = creditsRemaining !== null && creditsRemaining <= 0
   const previewData = { ...data, preparedByText: data.preparedByText || defaultPreparedByText }
 
   return (
     <>
       {/* Tab bar — button minimal horizontal */}
       <div className="sticky top-[72px] z-10 border-b bg-background print:hidden">
-        <div className="flex px-6">
+        <div className="flex items-center px-6">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -788,6 +811,9 @@ export function ObituaryForm({
               {tab.label}
             </button>
           ))}
+          <Badge variant={(STATUS_BADGE[data.status] ?? STATUS_BADGE.draft).variant} className="ml-auto">
+            {(STATUS_BADGE[data.status] ?? STATUS_BADGE.draft).label}
+          </Badge>
         </div>
       </div>
 
@@ -805,6 +831,7 @@ export function ObituaryForm({
                     <Input
                       placeholder="np. Jan"
                       value={data.firstName}
+                      disabled={isPublished}
                       onChange={(e) => update("firstName", e.target.value)}
                     />
                   </div>
@@ -813,10 +840,14 @@ export function ObituaryForm({
                     <Input
                       placeholder="np. Kowalski"
                       value={data.lastName}
+                      disabled={isPublished}
                       onChange={(e) => update("lastName", e.target.value)}
                     />
                   </div>
                 </div>
+                {isPublished && (
+                  <p className="text-xs text-muted-foreground">Imienia i nazwiska nie można zmienić po opublikowaniu.</p>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Data urodzenia</Label>
@@ -1831,6 +1862,7 @@ export function ObituaryForm({
                   availableWidth={panelRect.width - 64}
                   template={data.printTemplate}
                   publicUrl={recordId ? `${BASE_URL}/obituary/${recordId}` : undefined}
+                  watermarked={!isPublished}
                 />
               </div>
             )}
@@ -1850,23 +1882,52 @@ export function ObituaryForm({
         <div className="flex items-center gap-2">
           <Button
             color="secondary"
-
-            onClick={() => save("draft")}
+            onClick={() => save(isPublished ? "published" : "draft", { navigate: false })}
             disabled={saving}
           >
             <Save className="h-4 w-4" />
-            {saving ? "Zapisuję…" : "Zapisz szkic"}
+            {saving ? "Zapisuję…" : isPublished ? "Zapisz zmiany" : "Zapisz szkic"}
           </Button>
           <Button color="secondary" onClick={() => window.print()}>
             <Download className="h-4 w-4" />
             Pobierz .pdf
           </Button>
-          <Button onClick={() => save("published")} disabled={saving}>
-            <Send className="h-4 w-4" />
-            {saving ? "Zapisuję…" : "Opublikuj"}
-          </Button>
+          {!isPublished && (
+            <Button
+              onClick={() => setPublishConfirmOpen(true)}
+              disabled={saving || noCredits}
+              title={noCredits ? "Brak kredytów" : undefined}
+            >
+              <Send className="h-4 w-4" />
+              {noCredits ? "Brak kredytów" : "Opublikuj"}
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Publish confirmation */}
+      <AlertDialog open={publishConfirmOpen} onOpenChange={setPublishConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Opublikować nekrolog?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Publikacja zużyje 1 kredyt, zablokuje zmianę imienia i nazwiska oraz aktywuje kod QR do eNekrologu. Tej operacji nie można cofnąć.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setPublishConfirmOpen(false)
+                save("published", { navigate: true })
+              }}
+              disabled={saving}
+            >
+              Opublikuj
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Print-only A4 page — hidden on screen, shown (and only this) when printing/exporting to PDF */}
       <div className="hidden print:block obituary-print-area">
@@ -1874,6 +1935,7 @@ export function ObituaryForm({
           data={previewData}
           template={data.printTemplate}
           publicUrl={recordId ? `${BASE_URL}/obituary/${recordId}` : undefined}
+          watermarked={!isPublished}
           bare
         />
       </div>

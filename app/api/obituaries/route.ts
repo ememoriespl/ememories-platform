@@ -49,6 +49,19 @@ export async function POST(req: Request) {
   }
 
   const supabase = createServerClient()
+
+  // Publishing consumes a credit — block if the funeral home has none left.
+  if (status === "published") {
+    const { data: fh } = await supabase
+      .from("funeral_homes")
+      .select("qr_limit, qr_used")
+      .eq("id", funeralHomeId)
+      .single()
+    if (fh && (fh.qr_used ?? 0) >= (fh.qr_limit ?? 0)) {
+      return NextResponse.json({ error: "Brak kredytów. Skontaktuj się z administratorem." }, { status: 403 })
+    }
+  }
+
   const { data, error } = await supabase
     .from("obituaries")
     .insert({
