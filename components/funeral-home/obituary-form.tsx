@@ -1790,6 +1790,17 @@ export function ObituaryForm({
                               >
                                 <Italic className="h-3.5 w-3.5" />
                               </Button>
+                              <Button
+                                type="button"
+                                color="secondary"
+                                size="icon"
+                                className={cn("h-10 w-10 shrink-0", block.smallCaps && "bg-foreground/10 text-foreground hover:bg-foreground/10")}
+                                aria-pressed={!!block.smallCaps}
+                                title="Kapitaliki"
+                                onClick={() => updateBlock(blockId, "smallCaps", !block.smallCaps)}
+                              >
+                                <span className="text-sm font-semibold leading-none" style={{ fontVariantCaps: "small-caps" }}>Aa</span>
+                              </Button>
                             </div>
                           </div>
                         )}
