@@ -55,6 +55,7 @@ import { ColorPicker } from "@/components/ui/color-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectGroup, SelectLabel } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -507,6 +508,9 @@ export function ObituaryForm({
   const [recordId, setRecordId] = useState(obituaryId)
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false)
   const [templates, setTemplates] = useState<SavedPrintTemplate[]>([])
+  // New obituaries apply the latest saved template only after this fetch resolves;
+  // until then show a skeleton so the preview doesn't flash the bare default.
+  const [templatesLoaded, setTemplatesLoaded] = useState(mode === "edit")
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [templateName, setTemplateName] = useState("")
   const [savingTemplate, setSavingTemplate] = useState(false)
@@ -576,6 +580,7 @@ export function ObituaryForm({
         }
       })
       .catch(() => {})
+      .finally(() => setTemplatesLoaded(true))
   }, [mode])
   const defaultPreparedByText = (() => {
     const parts = [fhName, fhAddress, fhPhone && `tel. ${fhPhone}`].filter(Boolean).join(", ")
@@ -1923,13 +1928,23 @@ export function ObituaryForm({
                   padding: 32,
                 }}
               >
-                <ObituaryPreview
-                  data={previewData}
-                  availableWidth={panelRect.width - 64}
-                  template={data.printTemplate}
-                  publicUrl={recordId ? `${BASE_URL}/obituary/${recordId}` : undefined}
-                  watermarked={!isPublished}
-                />
+                {templatesLoaded ? (
+                  <ObituaryPreview
+                    data={previewData}
+                    availableWidth={panelRect.width - 64}
+                    template={data.printTemplate}
+                    publicUrl={recordId ? `${BASE_URL}/obituary/${recordId}` : undefined}
+                    watermarked={!isPublished}
+                  />
+                ) : (
+                  <div style={{ width: panelRect.width - 64 }}>
+                    <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground text-center">Podgląd A4</p>
+                    <Skeleton
+                      className="w-full rounded-none"
+                      style={{ height: Math.round((panelRect.width - 64) * (794 / 1123)) }}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </>
