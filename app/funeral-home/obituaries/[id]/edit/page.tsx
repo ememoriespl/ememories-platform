@@ -3,6 +3,8 @@
 import { useState, useEffect, use } from "react"
 import { Topbar } from "@/components/layout/topbar"
 import { ObituaryForm, type ObituaryRaw } from "@/components/funeral-home/obituary-form"
+import { Badge } from "@/components/ui/badge"
+import { effectiveStatusFromRow, STATUS_META } from "@/lib/obituary-status"
 import { toast } from "sonner"
 
 export default function EditObituaryPage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,10 +48,15 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
   }, [id])
 
   const subtitle = raw ? `${raw.first_name ?? ""} ${raw.last_name ?? ""}`.trim() : ""
+  const statusMeta = raw ? STATUS_META[effectiveStatusFromRow(raw)] : null
 
   return (
     <>
-      <Topbar title="Edycja nekrologu" subtitle={subtitle} />
+      <Topbar
+        title="Edycja nekrologu"
+        subtitle={subtitle}
+        badge={statusMeta && <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>}
+      />
       {raw ? (
         <ObituaryForm
           mode="edit"

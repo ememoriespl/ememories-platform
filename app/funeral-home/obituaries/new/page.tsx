@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { Topbar } from "@/components/layout/topbar"
 import { ObituaryForm } from "@/components/funeral-home/obituary-form"
+import { Badge } from "@/components/ui/badge"
+import { STATUS_META } from "@/lib/obituary-status"
 
 export default function NewObituaryPage() {
   const [fhAddress, setFhAddress] = useState("")
@@ -36,7 +38,11 @@ export default function NewObituaryPage() {
 
   return (
     <>
-      <Topbar title="Nowy nekrolog" subtitle="Wypełnij dane i opublikuj" />
+      <Topbar
+        title="Nowy nekrolog"
+        subtitle="Wypełnij dane i opublikuj"
+        badge={<Badge variant={STATUS_META.draft.variant}>{STATUS_META.draft.label}</Badge>}
+      />
       <ObituaryForm mode="new" fhAddress={fhAddress} fhName={fhName} fhPhone={fhPhone} isAdmin={isAdmin} creditsRemaining={creditsRemaining} />
     </>
   )

@@ -54,7 +54,6 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { ColorPicker } from "@/components/ui/color-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectGroup, SelectLabel } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   AlertDialog,
@@ -67,7 +66,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import type { ContentBlockId, GraphicItemId } from "@/components/funeral-home/obituary-preview"
-import { effectiveStatus, type EffectiveStatus } from "@/lib/obituary-status"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -85,14 +83,6 @@ const WEIGHT_NAMES: Record<number, string> = {
   900: "Black",
 }
 
-// Status badge shown inside the creator. A not-yet-published obituary reads
-// "Nowy nekrolog" here (it auto-saves as a draft in the background); once the
-// ceremony is over it reads "Zakończony" (see lib/obituary-status).
-const CREATOR_STATUS_BADGE: Record<EffectiveStatus, { label: string; variant: "success" | "gray" | "outline" }> = {
-  draft: { label: "Nowy nekrolog", variant: "outline" },
-  published: { label: "Opublikowany", variant: "success" },
-  finished: { label: "Zakończony", variant: "gray" },
-}
 
 // Pre-filled body text for a brand-new obituary — a fill-in-the-blanks template.
 const DEFAULT_OBITUARY_TEXT =
@@ -848,7 +838,6 @@ export function ObituaryForm({
   }, [data, saving])
 
   const isPublished = data.status === "published"
-  const creatorStatus = effectiveStatus(data.status, data.ceremonyDate, data.ceremonyTime)
   const noCredits = creditsRemaining !== null && creditsRemaining <= 0
   const previewData = { ...data, preparedByText: data.preparedByText || defaultPreparedByText }
 
@@ -871,9 +860,6 @@ export function ObituaryForm({
               {tab.label}
             </button>
           ))}
-          <Badge variant={CREATOR_STATUS_BADGE[creatorStatus].variant} className="ml-auto">
-            {CREATOR_STATUS_BADGE[creatorStatus].label}
-          </Badge>
         </div>
       </div>
 

@@ -16,6 +16,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 interface TopbarProps {
   title: string
   subtitle?: string
+  /** Optional status chip rendered to the right of the subtitle (e.g. obituary status). */
+  badge?: React.ReactNode
 }
 
 interface MeData {
@@ -33,7 +35,7 @@ function getInitials(email: string, name?: string): string {
   return email.slice(0, 2).toUpperCase()
 }
 
-export function Topbar({ title, subtitle }: TopbarProps) {
+export function Topbar({ title, subtitle, badge }: TopbarProps) {
   const router = useRouter()
   const [me, setMe] = useState<MeData | null>(null)
 
@@ -53,8 +55,11 @@ export function Topbar({ title, subtitle }: TopbarProps) {
     <header className="sticky top-0 z-10 flex h-[72px] items-center gap-4 border-b bg-background px-6">
       <div className="flex-1 min-w-0">
         <h1 className="text-[18px] font-semibold leading-none">{title}</h1>
-        {subtitle && (
-          <p className="text-[14px] text-muted-foreground mt-1">{subtitle}</p>
+        {(subtitle || badge) && (
+          <div className="mt-1 flex items-center gap-2">
+            {subtitle && <p className="text-[14px] text-muted-foreground">{subtitle}</p>}
+            {badge}
+          </div>
         )}
       </div>
 
