@@ -446,7 +446,7 @@ export function ObituaryPreview({
         marginTop: b.ceremonyLabel.marginTop,
         marginBottom: b.ceremony.marginBottom,
         node: (
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: b.ceremony.qrGap ?? 16 }}>
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: b.ceremony.qrGap ?? 16 }}>
             {ceremonyQrNode}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ marginBottom: b.ceremonyLabel.marginBottom }}>{item.node}</div>
@@ -464,7 +464,7 @@ export function ObituaryPreview({
         marginTop: b.ceremony.marginTop,
         marginBottom: b.ceremony.marginBottom,
         node: (
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: b.ceremony.qrGap ?? 16 }}>
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: b.ceremony.qrGap ?? 16 }}>
             {ceremonyQrNode}
             <div style={{ flex: 1, minWidth: 0 }}>{item.node}</div>
           </div>
