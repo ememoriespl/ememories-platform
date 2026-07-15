@@ -82,8 +82,10 @@ const WEIGHT_NAMES: Record<number, string> = {
   900: "Black",
 }
 
+// Status badge shown inside the creator. A not-yet-published obituary reads
+// "Nowy nekrolog" here (it auto-saves as a draft in the background).
 const STATUS_BADGE: Record<string, { label: string; variant: "success" | "gray" | "outline" }> = {
-  draft: { label: "Szkic", variant: "outline" },
+  draft: { label: "Nowy nekrolog", variant: "outline" },
   published: { label: "Opublikowany", variant: "success" },
   archived: { label: "Archiwalny", variant: "gray" },
 }
@@ -575,6 +577,9 @@ export function ObituaryForm({
 
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved">("idle")
+  const persistingRef = useRef(false)
+  const lastSavedRef = useRef<string>("")
   const [draggedBlock, setDraggedBlock] = useState<ContentBlockId | null>(null)
   const [draggedGraphicItem, setDraggedGraphicItem] = useState<GraphicItemId | null>(null)
 
@@ -730,6 +735,46 @@ export function ObituaryForm({
     }
   }
 
+  function buildBody(status: "draft" | "published") {
+    return {
+      first_name: data.firstName,
+      last_name: data.lastName,
+      birth_date: data.birthDate || null,
+      death_date: data.deathDate || null,
+      obituary_text: data.obituaryText,
+      ceremony_info: data.ceremonyInfo,
+      location: serializeLocation({ ...data, preparedByText: data.preparedByText || defaultPreparedByText }),
+      photo_url: data.photo,
+      photo_bw: data.photoBw,
+      status,
+    }
+  }
+
+  /** Create-or-update the obituary. Throws on error; returns the saved record. */
+  async function persist(status: "draft" | "published") {
+    const isCreate = !recordId
+    const res = isCreate
+      ? await fetch("/api/obituaries", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildBody(status)),
+        })
+      : await fetch(`/api/obituaries/${recordId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildBody(status)),
+        })
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => null)
+      throw new Error(errBody?.error || "")
+    }
+    const saved = await res.json()
+    if (isCreate) setRecordId(saved.id)
+    // Reflect the persisted status locally so the badge, name-lock and watermark update.
+    setData((prev) => ({ ...prev, status: saved.status ?? status }))
+    return saved
+  }
+
   async function save(status: "draft" | "published", opts?: { navigate?: boolean }) {
     if (!data.firstName || !data.lastName) {
       toast.error("Wypełnij imię i nazwisko")
@@ -738,38 +783,8 @@ export function ObituaryForm({
     const alreadyPublished = data.status === "published"
     setSaving(true)
     try {
-      const body = {
-        first_name: data.firstName,
-        last_name: data.lastName,
-        birth_date: data.birthDate || null,
-        death_date: data.deathDate || null,
-        obituary_text: data.obituaryText,
-        ceremony_info: data.ceremonyInfo,
-        location: serializeLocation({ ...data, preparedByText: data.preparedByText || defaultPreparedByText }),
-        photo_url: data.photo,
-        photo_bw: data.photoBw,
-        status,
-      }
-      const isCreate = !recordId
-      const res = isCreate
-        ? await fetch("/api/obituaries", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          })
-        : await fetch(`/api/obituaries/${recordId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          })
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => null)
-        throw new Error(errBody?.error || "")
-      }
-      const saved = await res.json()
-      if (isCreate) setRecordId(saved.id)
-      // Reflect the persisted status locally so the badge, name-lock and watermark update.
-      setData((prev) => ({ ...prev, status: saved.status ?? status }))
+      await persist(status)
+      lastSavedRef.current = JSON.stringify(buildBody(status === "published" ? "published" : "draft"))
       toast.success(
         status !== "published"
           ? "Zapisano szkic"
@@ -787,6 +802,38 @@ export function ObituaryForm({
       setSaving(false)
     }
   }
+
+  // Seed the auto-save baseline so opening an existing record doesn't immediately re-save.
+  useEffect(() => {
+    lastSavedRef.current = JSON.stringify(buildBody(data.status === "published" ? "published" : "draft"))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Auto-save drafts in the background so "Zapisz szkic" is never needed. The record
+  // is created once a first and last name are present (so we don't spam empty rows),
+  // then debounced-updated on every change. Published obituaries save explicitly.
+  useEffect(() => {
+    if (data.status === "published") return
+    if (!data.firstName.trim() || !data.lastName.trim()) return
+    const serialized = JSON.stringify(buildBody("draft"))
+    if (serialized === lastSavedRef.current) return
+    const t = setTimeout(async () => {
+      if (persistingRef.current || saving) return
+      persistingRef.current = true
+      setAutoSaveState("saving")
+      try {
+        await persist("draft")
+        lastSavedRef.current = serialized
+        setAutoSaveState("saved")
+      } catch {
+        setAutoSaveState("idle")
+      } finally {
+        persistingRef.current = false
+      }
+    }, 900)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, saving])
 
   const isPublished = data.status === "published"
   const noCredits = creditsRemaining !== null && creditsRemaining <= 0
@@ -1880,14 +1927,20 @@ export function ObituaryForm({
           Anuluj
         </Button>
         <div className="flex items-center gap-2">
-          <Button
-            color="secondary"
-            onClick={() => save(isPublished ? "published" : "draft", { navigate: false })}
-            disabled={saving}
-          >
-            <Save className="h-4 w-4" />
-            {saving ? "Zapisuję…" : isPublished ? "Zapisz zmiany" : "Zapisz szkic"}
-          </Button>
+          {isPublished ? (
+            <Button
+              color="secondary"
+              onClick={() => save("published", { navigate: false })}
+              disabled={saving}
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Zapisuję…" : "Zapisz zmiany"}
+            </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground min-w-[92px]">
+              {autoSaveState === "saving" ? "Zapisywanie…" : autoSaveState === "saved" ? "Szkic zapisany" : ""}
+            </span>
+          )}
           <Button color="secondary" onClick={() => window.print()}>
             <Download className="h-4 w-4" />
             Pobierz .pdf
