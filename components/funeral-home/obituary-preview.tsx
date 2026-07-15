@@ -41,7 +41,7 @@ export interface BlockSettings {
   fontId?: string
   fontWeight?: number
   italic?: boolean
-  smallCaps?: boolean
+  uppercase?: boolean
   enabled?: boolean
   text?: string
   sigilId?: string
@@ -227,7 +227,7 @@ function fontStyleFor(block: BlockSettings): React.CSSProperties {
   if (block.fontId) style.fontFamily = getPrintFontFamily(block.fontId)
   if (block.fontWeight !== undefined) style.fontWeight = block.fontWeight
   style.fontStyle = block.italic ? "italic" : "normal"
-  style.fontVariantCaps = block.smallCaps ? "small-caps" : "normal"
+  style.textTransform = block.uppercase ? "uppercase" : "none"
   return style
 }
 

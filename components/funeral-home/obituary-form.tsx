@@ -31,6 +31,7 @@ import {
   AlignVerticalSpaceBetween,
   ChevronDown,
   Italic,
+  CaseUpper,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -1794,12 +1795,12 @@ export function ObituaryForm({
                                 type="button"
                                 color="secondary"
                                 size="icon"
-                                className={cn("h-10 w-10 shrink-0", block.smallCaps && "bg-foreground/10 text-foreground hover:bg-foreground/10")}
-                                aria-pressed={!!block.smallCaps}
-                                title="Kapitaliki"
-                                onClick={() => updateBlock(blockId, "smallCaps", !block.smallCaps)}
+                                className={cn("h-10 w-10 shrink-0", block.uppercase && "bg-foreground/10 text-foreground hover:bg-foreground/10")}
+                                aria-pressed={!!block.uppercase}
+                                title="Wielkie litery"
+                                onClick={() => updateBlock(blockId, "uppercase", !block.uppercase)}
                               >
-                                <span className="text-sm font-semibold leading-none" style={{ fontVariantCaps: "small-caps" }}>Aa</span>
+                                <CaseUpper className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
