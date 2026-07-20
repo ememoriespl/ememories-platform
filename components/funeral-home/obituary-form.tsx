@@ -84,9 +84,10 @@ const WEIGHT_NAMES: Record<number, string> = {
 }
 
 
-// Pre-filled body text for a brand-new obituary — a fill-in-the-blanks template.
-const DEFAULT_OBITUARY_TEXT =
-  "Msza święta żałobna odbędzie się w kościele .......... w ........... Następnie ostatnia droga poprowadzi na cmentarz parafialny w .......... przy ul. ........... Ze smutkiem zawiadamiają ..........."
+// Pre-filled fill-in-the-blanks templates for a brand-new obituary.
+const DEFAULT_OBITUARY_TEXT = "W wieku ... lat odeszła / odszedł ..."
+const DEFAULT_CEREMONY_INFO =
+  "Msza święta żałobna odbędzie się w kościele .......... w ........... Po mszy nastąpi odprowadzenie na cmentarz .......... w ..........."
 
 const BLOCK_LABELS: Record<ContentBlockId, string> = {
   photo: "Zdjęcie",
@@ -525,7 +526,7 @@ export function ObituaryForm({
     return () => window.removeEventListener("resize", update)
   }, [])
   const [data, setData] = useState<FormData>(() => {
-    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: DEFAULT_OBITUARY_TEXT, ceremonyInfo: "", preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
+    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: DEFAULT_OBITUARY_TEXT, ceremonyInfo: DEFAULT_CEREMONY_INFO, preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
     const parsed = parseLocationJSON(initialRaw.location ?? "", fhAddress)
     return {
       firstName: initialRaw.first_name ?? "",
