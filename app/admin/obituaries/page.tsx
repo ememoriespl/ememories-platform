@@ -31,6 +31,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { STATUS_META, effectiveStatusFromRow, type EffectiveStatus } from "@/lib/obituary-status"
 import { toast } from "sonner"
 
+const STATUS_FILTER_KEY = "admin-obituaries-status-filter"
+
 const STATUS_OPTIONS: { value: EffectiveStatus; label: string }[] = [
   { value: "published", label: "Opublikowane" },
   { value: "finished", label: "Zakończone" },
@@ -58,11 +60,29 @@ export default function AdminObituariesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   // Empty = no filter (show all). Otherwise only rows whose effective status is selected.
-  const [statusFilter, setStatusFilter] = useState<EffectiveStatus[]>([])
+  // Persisted so the selection survives navigating away and back.
+  const [statusFilter, setStatusFilter] = useState<EffectiveStatus[]>(() => {
+    if (typeof window === "undefined") return []
+    try {
+      const raw = JSON.parse(localStorage.getItem(STATUS_FILTER_KEY) ?? "[]")
+      const allowed = STATUS_OPTIONS.map((o) => o.value)
+      return Array.isArray(raw) ? raw.filter((s): s is EffectiveStatus => allowed.includes(s)) : []
+    } catch {
+      return []
+    }
+  })
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
   const { sort, toggleSort, sortData, paginate, page, setPage } = useTableState(10)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STATUS_FILTER_KEY, JSON.stringify(statusFilter))
+    } catch {
+      // ignore storage failures (private mode, quota)
+    }
+  }, [statusFilter])
 
   useEffect(() => {
     fetch("/api/admin/obituaries")
