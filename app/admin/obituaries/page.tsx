@@ -8,12 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -25,16 +19,23 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, ExternalLink, MoreHorizontal, Trash2, X, Pencil } from "lucide-react"
+import { Search, ExternalLink, MoreHorizontal, Trash2, X, Pencil, ChevronDown } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { STATUS_META, effectiveStatusFromRow } from "@/lib/obituary-status"
+import { STATUS_META, effectiveStatusFromRow, type EffectiveStatus } from "@/lib/obituary-status"
 import { toast } from "sonner"
+
+const STATUS_OPTIONS: { value: EffectiveStatus; label: string }[] = [
+  { value: "published", label: "Opublikowane" },
+  { value: "finished", label: "Zakończone" },
+  { value: "draft", label: "Szkice" },
+]
 
 interface AdminObituary {
   id: string
@@ -56,7 +57,8 @@ export default function AdminObituariesPage() {
   const [obituaries, setObituaries] = useState<AdminObituary[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  // Empty = no filter (show all). Otherwise only rows whose effective status is selected.
+  const [statusFilter, setStatusFilter] = useState<EffectiveStatus[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
@@ -74,9 +76,21 @@ export default function AdminObituariesPage() {
     const matchSearch =
       `${o.first_name} ${o.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
       (o.funeral_homes?.name ?? "").toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === "all" || effectiveStatusFromRow(o) === statusFilter
+    const matchStatus = statusFilter.length === 0 || statusFilter.includes(effectiveStatusFromRow(o))
     return matchSearch && matchStatus
   })
+
+  function toggleStatus(v: EffectiveStatus) {
+    setPage(1)
+    setStatusFilter((prev) => (prev.includes(v) ? prev.filter((s) => s !== v) : [...prev, v]))
+  }
+
+  const statusLabel =
+    statusFilter.length === 0
+      ? "Wszystkie"
+      : statusFilter.length === 1
+        ? STATUS_OPTIONS.find((o) => o.value === statusFilter[0])?.label ?? "Wszystkie"
+        : `${statusFilter.length} statusy`
 
   const sorted = sortData(filtered, (o, col) => {
     if (col === "name") return `${o.first_name} ${o.last_name}`
@@ -135,17 +149,29 @@ export default function AdminObituariesPage() {
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             />
           </div>
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v ?? "all"); setPage(1) }}>
-            <SelectTrigger className="!h-9 w-40">
-              <span>{{ all: "Wszystkie", published: "Opublikowane", finished: "Zakończone", draft: "Szkice" }[statusFilter] ?? "Wszystkie"}</span>
-            </SelectTrigger>
-            <SelectContent alignItemWithTrigger={false}>
-              <SelectItem value="all">Wszystkie</SelectItem>
-              <SelectItem value="published">Opublikowane</SelectItem>
-              <SelectItem value="finished">Zakończone</SelectItem>
-              <SelectItem value="draft">Szkice</SelectItem>
-            </SelectContent>
-          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex h-9 w-40 items-center justify-between rounded-lg border bg-background px-3 text-sm outline-none transition-colors hover:bg-muted/50">
+              <span className="truncate">{statusLabel}</span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuCheckboxItem
+                checked={statusFilter.length === 0}
+                onCheckedChange={() => { setStatusFilter([]); setPage(1) }}
+              >
+                Wszystkie
+              </DropdownMenuCheckboxItem>
+              {STATUS_OPTIONS.map((opt) => (
+                <DropdownMenuCheckboxItem
+                  key={opt.value}
+                  checked={statusFilter.includes(opt.value)}
+                  onCheckedChange={() => toggleStatus(opt.value)}
+                >
+                  {opt.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <Card>
