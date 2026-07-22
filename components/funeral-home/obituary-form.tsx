@@ -333,6 +333,11 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     const { displayMode: _displayMode, ...rest } = p.blocks?.[id] ?? {}
     blocks[id] = { ...DEFAULT_PRINT_TEMPLATE.blocks[id], ...rest }
   }
+  // Older templates saved the abbreviation lowercase ("ś.p."); it should always read "Ś.P.".
+  // Only the bare abbreviation is normalised — custom text is left alone.
+  if (blocks.sp.text && /^ś\.?\s*p\.?$/i.test(blocks.sp.text.trim())) {
+    blocks.sp = { ...blocks.sp, text: "Ś.P." }
+  }
   const graphicItems = { ...DEFAULT_PRINT_TEMPLATE.graphicItems }
   for (const id of DEFAULT_GRAPHIC_ORDER) {
     graphicItems[id] = { ...DEFAULT_PRINT_TEMPLATE.graphicItems[id], ...p.graphicItems?.[id] }
@@ -838,6 +843,13 @@ export function ObituaryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, saving])
 
+  // "Szkic zapisany" is a transient confirmation — fade it out a few seconds after it shows.
+  useEffect(() => {
+    if (autoSaveState !== "saved") return
+    const t = setTimeout(() => setAutoSaveState("idle"), 3000)
+    return () => clearTimeout(t)
+  }, [autoSaveState])
+
   const isPublished = data.status === "published"
   const noCredits = creditsRemaining !== null && creditsRemaining <= 0
   const previewData = { ...data, preparedByText: data.preparedByText || defaultPreparedByText }
@@ -1324,27 +1336,30 @@ export function ObituaryForm({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Wewnętrzny margines (px)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={data.printTemplate.pagePadding}
-                      onChange={(e) => updateTemplate("pagePadding", Number(e.target.value) || 0)}
-                    />
-                    <p className="text-xs text-muted-foreground">Odsuwa całą treść od krawędzi kartki — przydatne przy wąskich ramkach.</p>
+                {/* Page padding / column gap are admin-only knobs — clients use whatever the template sets. */}
+                {isAdmin && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Wewnętrzny margines (px)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={data.printTemplate.pagePadding}
+                        onChange={(e) => updateTemplate("pagePadding", Number(e.target.value) || 0)}
+                      />
+                      <p className="text-xs text-muted-foreground">Odsuwa całą treść od krawędzi kartki — przydatne przy wąskich ramkach.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Odstęp między kolumnami (px)</Label>
+                      <Input
+                        type="number"
+                        value={data.printTemplate.columnGap}
+                        onChange={(e) => updateTemplate("columnGap", Number(e.target.value) || 0)}
+                      />
+                      <p className="text-xs text-muted-foreground">Odległość między kolumną graficzną a kolumną z treścią.</p>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Odstęp między kolumnami (px)</Label>
-                    <Input
-                      type="number"
-                      value={data.printTemplate.columnGap}
-                      onChange={(e) => updateTemplate("columnGap", Number(e.target.value) || 0)}
-                    />
-                    <p className="text-xs text-muted-foreground">Odległość między kolumną graficzną a kolumną z treścią.</p>
-                  </div>
-                </div>
+                )}
               </div>
             </CollapsibleSectionCard>
 

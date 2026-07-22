@@ -131,7 +131,7 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
     dates: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
     headline: { size: 13, align: "center", marginTop: 0, marginBottom: 24, italic: true },
     body: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
-    ceremonyLabel: { size: 9, align: "center", marginTop: 0, marginBottom: 6, fontWeight: 600 },
+    ceremonyLabel: { size: 20, align: "center", marginTop: 0, marginBottom: 6, fontWeight: 600 },
     ceremony: { size: 11, align: "center", marginTop: 0, marginBottom: 0, italic: true, qrEnabled: false, qrSize: 64, qrGap: 16 },
     ceremonyBy: { size: 9, align: "center", marginTop: 20, marginBottom: 0, enabled: true },
   },

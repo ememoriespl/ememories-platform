@@ -34,9 +34,9 @@ import { toast } from "sonner"
 const STATUS_FILTER_KEY = "admin-obituaries-status-filter"
 
 const STATUS_OPTIONS: { value: EffectiveStatus; label: string }[] = [
+  { value: "draft", label: "Szkice" },
   { value: "published", label: "Opublikowane" },
   { value: "finished", label: "Zakończone" },
-  { value: "draft", label: "Szkice" },
 ]
 
 interface AdminObituary {
@@ -102,7 +102,11 @@ export default function AdminObituariesPage() {
 
   function toggleStatus(v: EffectiveStatus) {
     setPage(1)
-    setStatusFilter((prev) => (prev.includes(v) ? prev.filter((s) => s !== v) : [...prev, v]))
+    setStatusFilter((prev) => {
+      const next = prev.includes(v) ? prev.filter((s) => s !== v) : [...prev, v]
+      // Selecting every status is the same as no filter — collapse to "Wszystkie".
+      return next.length === STATUS_OPTIONS.length ? [] : next
+    })
   }
 
   const statusLabel =
@@ -175,12 +179,6 @@ export default function AdminObituariesPage() {
               <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuCheckboxItem
-                checked={statusFilter.length === 0}
-                onCheckedChange={() => { setStatusFilter([]); setPage(1) }}
-              >
-                Wszystkie
-              </DropdownMenuCheckboxItem>
               {STATUS_OPTIONS.map((opt) => (
                 <DropdownMenuCheckboxItem
                   key={opt.value}
@@ -190,6 +188,12 @@ export default function AdminObituariesPage() {
                   {opt.label}
                 </DropdownMenuCheckboxItem>
               ))}
+              <DropdownMenuCheckboxItem
+                checked={statusFilter.length === 0}
+                onCheckedChange={() => { setStatusFilter([]); setPage(1) }}
+              >
+                Wszystkie
+              </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
