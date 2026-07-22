@@ -27,7 +27,7 @@ export interface PreviewData {
   photoBw: boolean
 }
 
-export type ContentBlockId = "photo" | "sigil" | "sp" | "name" | "dates" | "headline" | "body" | "ceremonyLabel" | "ceremony" | "ceremonyBy"
+export type ContentBlockId = "photo" | "sigil" | "sp" | "name" | "dates" | "headline" | "body" | "ceremonyLabel" | "ceremonyDateTime" | "ceremony" | "ceremonyBy"
 export type GraphicItemId = "photo" | "sigil" | "qr"
 
 export type BlockAlign = "left" | "center" | "right"
@@ -96,6 +96,8 @@ export interface PrintTemplateSettings {
   verticalAlign: VerticalAlign
   /** vertical alignment of the graphic column's own items, independent of the content column's */
   graphicVerticalAlign: VerticalAlign
+  /** master switch for the eNekrolog QR code; when off it renders in neither column */
+  qrEnabled: boolean
   /** where the eNekrolog QR code renders: at the bottom of the graphic column, or inline next to the ceremony text in the content column */
   qrLocation: "graphic" | "content"
   /** inset (px) applied to the whole two-column content area, on top of each column's own padding — pulls content in from the page edge to clear the frame */
@@ -109,8 +111,11 @@ export interface PrintTemplateSettings {
   frame: FrameSettings
 }
 
-export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sigil", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremony", "ceremonyBy"]
+export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sigil", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremonyDateTime", "ceremony", "ceremonyBy"]
 export const DEFAULT_GRAPHIC_ORDER: GraphicItemId[] = ["photo", "sigil", "qr"]
+
+/** Ceremony blocks that group with the inline QR code when it sits in the content column. */
+const CEREMONY_GROUP_IDS = new Set<ContentBlockId>(["ceremonyLabel", "ceremonyDateTime", "ceremony"])
 
 export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   fontId: DEFAULT_PRINT_FONT_ID,
@@ -119,6 +124,7 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   graphicColumnEnabled: true,
   verticalAlign: "center",
   graphicVerticalAlign: "top",
+  qrEnabled: true,
   qrLocation: "graphic",
   pagePadding: 0,
   columnGap: 0,
@@ -132,6 +138,7 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
     headline: { size: 13, align: "center", marginTop: 0, marginBottom: 24, italic: true },
     body: { size: 12, align: "center", marginTop: 0, marginBottom: 24 },
     ceremonyLabel: { size: 20, align: "center", marginTop: 0, marginBottom: 6, fontWeight: 600 },
+    ceremonyDateTime: { size: 12, align: "center", marginTop: 0, marginBottom: 4, italic: true },
     ceremony: { size: 11, align: "center", marginTop: 0, marginBottom: 0, italic: true, qrEnabled: false, qrSize: 64, qrGap: 16 },
     ceremonyBy: { size: 9, align: "center", marginTop: 20, marginBottom: 0, enabled: true },
   },
@@ -381,29 +388,25 @@ export function ObituaryPreview({
         Ceremonia pogrzebowa
       </p>
     ) : null,
-    ceremony: showCeremony ? (
-      <div>
-        {ceremonyDateFmt && (
-          <p style={{ fontSize: b.ceremony.size + 1, textAlign: b.ceremony.align, marginBottom: 4, color: "#222", ...fontStyleFor(b.ceremony) }}>
-            {ceremonyDateFmt}
-            {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
-          </p>
-        )}
-        {data.ceremonyInfo && (
-          <p
-            style={{
-              fontSize: b.ceremony.size,
-              textAlign: b.ceremony.align,
-              lineHeight: 1.6,
-              color: "#555",
-              whiteSpace: "pre-wrap",
-              ...fontStyleFor(b.ceremony),
-            }}
-          >
-            {data.ceremonyInfo}
-          </p>
-        )}
-      </div>
+    ceremonyDateTime: ceremonyDateFmt ? (
+      <p style={{ fontSize: b.ceremonyDateTime.size, textAlign: b.ceremonyDateTime.align, color: "#222", ...fontStyleFor(b.ceremonyDateTime) }}>
+        {ceremonyDateFmt}
+        {data.ceremonyTime && `, godz. ${data.ceremonyTime}`}
+      </p>
+    ) : null,
+    ceremony: data.ceremonyInfo ? (
+      <p
+        style={{
+          fontSize: b.ceremony.size,
+          textAlign: b.ceremony.align,
+          lineHeight: 1.6,
+          color: "#555",
+          whiteSpace: "pre-wrap",
+          ...fontStyleFor(b.ceremony),
+        }}
+      >
+        {data.ceremonyInfo}
+      </p>
     ) : null,
     ceremonyBy:
       b.ceremonyBy.enabled && data.preparedByText.trim() ? (
@@ -431,7 +434,7 @@ export function ObituaryPreview({
   // "Ceremonia" can show the eNekrolog QR code inline; when the "Etykieta" block directly precedes it,
   // both are grouped into a single row so the QR forms one column and the label+ceremony text the other.
   const ceremonyQrNode =
-    template.qrLocation === "content" && b.ceremony.qrEnabled && ceremonyQrImageUrl ? (
+    template.qrEnabled && template.qrLocation === "content" && ceremonyQrImageUrl ? (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         <img src={ceremonyQrImageUrl} alt="Kod QR do eNekrologu" width={ceremonyQrSize} height={ceremonyQrSize} />
         <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
@@ -441,37 +444,39 @@ export function ObituaryPreview({
   const contentRows: { key: string; marginTop: number; marginBottom: number; node: React.ReactNode }[] = []
   for (let i = 0; i < orderedBlocks.length; i++) {
     const item = orderedBlocks[i]
-    const next = orderedBlocks[i + 1]
-    if (item.id === "ceremonyLabel" && next?.id === "ceremony" && ceremonyQrNode) {
+    // When the QR sits in the content column, the whole run of adjacent ceremony blocks
+    // (label / date+time / text) becomes one row: QR in one column, the run in the other.
+    if (ceremonyQrNode && CEREMONY_GROUP_IDS.has(item.id)) {
+      const run = [item]
+      let j = i + 1
+      while (j < orderedBlocks.length && CEREMONY_GROUP_IDS.has(orderedBlocks[j].id)) {
+        run.push(orderedBlocks[j])
+        j++
+      }
       contentRows.push({
         key: "ceremony-group",
-        marginTop: b.ceremonyLabel.marginTop,
-        marginBottom: b.ceremony.marginBottom,
+        marginTop: b[run[0].id].marginTop,
+        marginBottom: b[run[run.length - 1].id].marginBottom,
         node: (
           <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: b.ceremony.qrGap ?? 16 }}>
             {ceremonyQrNode}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ marginBottom: b.ceremonyLabel.marginBottom }}>{item.node}</div>
-              <div style={{ marginTop: b.ceremony.marginTop }}>{next.node}</div>
+              {run.map((r, idx) => (
+                <div
+                  key={r.id}
+                  style={{
+                    marginTop: idx === 0 ? 0 : b[r.id].marginTop,
+                    marginBottom: idx === run.length - 1 ? 0 : b[r.id].marginBottom,
+                  }}
+                >
+                  {r.node}
+                </div>
+              ))}
             </div>
           </div>
         ),
       })
-      i++
-      continue
-    }
-    if (item.id === "ceremony" && ceremonyQrNode) {
-      contentRows.push({
-        key: item.id,
-        marginTop: b.ceremony.marginTop,
-        marginBottom: b.ceremony.marginBottom,
-        node: (
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: b.ceremony.qrGap ?? 16 }}>
-            {ceremonyQrNode}
-            <div style={{ flex: 1, minWidth: 0 }}>{item.node}</div>
-          </div>
-        ),
-      })
+      i = j - 1
       continue
     }
     const margin = b[item.id]
@@ -496,7 +501,7 @@ export function ObituaryPreview({
       ) : null,
     sigil: g.sigil.enabled ? renderSigil(g.sigil.sigilId ?? DEFAULT_SIGIL_ID, g.sigil.size, g.sigil.color ?? DEFAULT_SIGIL_COLOR) : null,
     qr:
-      template.qrLocation === "graphic" && g.qr.enabled && qrImageUrl ? (
+      template.qrEnabled && template.qrLocation === "graphic" && qrImageUrl ? (
         <div style={{ textAlign: "center" }}>
           <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={g.qr.size} height={g.qr.size} />
           <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
