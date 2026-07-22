@@ -19,25 +19,21 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, ExternalLink, MoreHorizontal, Trash2, X, Pencil, ChevronDown } from "lucide-react"
+import { Search, ExternalLink, MoreHorizontal, Trash2, X, Pencil } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { STATUS_META, effectiveStatusFromRow, type EffectiveStatus } from "@/lib/obituary-status"
+import { STATUS_META, effectiveStatusFromRow } from "@/lib/obituary-status"
+import {
+  ObituaryStatusFilter,
+  matchesStatusFilter,
+  usePersistedStatusFilter,
+} from "@/components/obituary-status-filter"
 import { toast } from "sonner"
-
-const STATUS_FILTER_KEY = "admin-obituaries-status-filter"
-
-const STATUS_OPTIONS: { value: EffectiveStatus; label: string }[] = [
-  { value: "draft", label: "Szkice" },
-  { value: "published", label: "Opublikowane" },
-  { value: "finished", label: "Zakończone" },
-]
 
 interface AdminObituary {
   id: string
@@ -59,30 +55,11 @@ export default function AdminObituariesPage() {
   const [obituaries, setObituaries] = useState<AdminObituary[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  // Empty = no filter (show all). Otherwise only rows whose effective status is selected.
-  // Persisted so the selection survives navigating away and back.
-  const [statusFilter, setStatusFilter] = useState<EffectiveStatus[]>(() => {
-    if (typeof window === "undefined") return []
-    try {
-      const raw = JSON.parse(localStorage.getItem(STATUS_FILTER_KEY) ?? "[]")
-      const allowed = STATUS_OPTIONS.map((o) => o.value)
-      return Array.isArray(raw) ? raw.filter((s): s is EffectiveStatus => allowed.includes(s)) : []
-    } catch {
-      return []
-    }
-  })
+  const [statusFilter, setStatusFilter] = usePersistedStatusFilter("admin-obituaries-status-filter")
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
   const { sort, toggleSort, sortData, paginate, page, setPage } = useTableState(10)
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STATUS_FILTER_KEY, JSON.stringify(statusFilter))
-    } catch {
-      // ignore storage failures (private mode, quota)
-    }
-  }, [statusFilter])
 
   useEffect(() => {
     fetch("/api/admin/obituaries")
@@ -96,25 +73,9 @@ export default function AdminObituariesPage() {
     const matchSearch =
       `${o.first_name} ${o.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
       (o.funeral_homes?.name ?? "").toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter.length === 0 || statusFilter.includes(effectiveStatusFromRow(o))
+    const matchStatus = matchesStatusFilter(statusFilter, effectiveStatusFromRow(o))
     return matchSearch && matchStatus
   })
-
-  function toggleStatus(v: EffectiveStatus) {
-    setPage(1)
-    setStatusFilter((prev) => {
-      const next = prev.includes(v) ? prev.filter((s) => s !== v) : [...prev, v]
-      // Selecting every status is the same as no filter — collapse to "Wszystkie".
-      return next.length === STATUS_OPTIONS.length ? [] : next
-    })
-  }
-
-  const statusLabel =
-    statusFilter.length === 0
-      ? "Wszystkie"
-      : statusFilter.length === 1
-        ? STATUS_OPTIONS.find((o) => o.value === statusFilter[0])?.label ?? "Wszystkie"
-        : `${statusFilter.length} statusy`
 
   const sorted = sortData(filtered, (o, col) => {
     if (col === "name") return `${o.first_name} ${o.last_name}`
@@ -173,29 +134,11 @@ export default function AdminObituariesPage() {
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             />
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex h-9 w-40 items-center justify-between rounded-lg border bg-background px-3 text-sm outline-none transition-colors hover:bg-muted/50">
-              <span className="truncate">{statusLabel}</span>
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-44">
-              {STATUS_OPTIONS.map((opt) => (
-                <DropdownMenuCheckboxItem
-                  key={opt.value}
-                  checked={statusFilter.includes(opt.value)}
-                  onCheckedChange={() => toggleStatus(opt.value)}
-                >
-                  {opt.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-              <DropdownMenuCheckboxItem
-                checked={statusFilter.length === 0}
-                onCheckedChange={() => { setStatusFilter([]); setPage(1) }}
-              >
-                Wszystkie
-              </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ObituaryStatusFilter
+            value={statusFilter}
+            setValue={setStatusFilter}
+            onChanged={() => setPage(1)}
+          />
         </div>
 
         <Card>

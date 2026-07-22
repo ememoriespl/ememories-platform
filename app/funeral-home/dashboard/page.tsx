@@ -9,12 +9,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -27,6 +21,11 @@ import { useTableState, SortHead, TablePagination } from "@/components/ui/data-t
 import { BookOpen, Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
 import { ObituaryStatus } from "@/lib/types"
 import { STATUS_META, effectiveStatusFromRow } from "@/lib/obituary-status"
+import {
+  ObituaryStatusFilter,
+  matchesStatusFilter,
+  usePersistedStatusFilter,
+} from "@/components/obituary-status-filter"
 import { toast } from "sonner"
 
 interface FhData {
@@ -57,7 +56,7 @@ export default function FhDashboardPage() {
   const [obituaries, setObituaries] = useState<DbObituary[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = usePersistedStatusFilter("fh-dashboard-status-filter")
   const { sort, toggleSort, sortData, paginate, page, setPage } = useTableState(10)
 
   useEffect(() => {
@@ -78,7 +77,7 @@ export default function FhDashboardPage() {
 
   const filtered = obituaries.filter((o) => {
     const matchSearch = `${o.first_name} ${o.last_name}`.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === "all" || effectiveStatusFromRow(o) === statusFilter
+    const matchStatus = matchesStatusFilter(statusFilter, effectiveStatusFromRow(o))
     return matchSearch && matchStatus
   })
 
@@ -177,17 +176,11 @@ export default function FhDashboardPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
-              <SelectTrigger className="!h-9 w-40">
-                <span>{{ all: "Wszystkie", published: "Opublikowane", finished: "Zakończone", draft: "Szkice" }[statusFilter] ?? "Wszystkie"}</span>
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false}>
-                <SelectItem value="all">Wszystkie</SelectItem>
-                <SelectItem value="published">Opublikowane</SelectItem>
-                <SelectItem value="finished">Zakończone</SelectItem>
-                <SelectItem value="draft">Szkice</SelectItem>
-              </SelectContent>
-            </Select>
+            <ObituaryStatusFilter
+              value={statusFilter}
+              setValue={setStatusFilter}
+              onChanged={() => setPage(1)}
+            />
             <div className="ml-auto">
               <Link href="/funeral-home/obituaries/new">
                 <Button >
