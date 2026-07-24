@@ -97,10 +97,11 @@ export interface PrintTemplateSettings {
   verticalAlign: VerticalAlign
   /** vertical alignment of the graphic column's own items, independent of the content column's */
   graphicVerticalAlign: VerticalAlign
-  /** master switch for the eNekrolog QR code; when off it renders in neither column */
+  /** master switch for the eNekrolog QR code; when on it renders inline next to the ceremony
+   *  text in the content column, when off it renders nowhere and the ceremony text is full-width */
   qrEnabled: boolean
-  /** where the eNekrolog QR code renders: at the bottom of the graphic column, or inline next to the ceremony text in the content column */
-  qrLocation: "graphic" | "content"
+  /** @deprecated the QR now always lives in the content column; kept so older saved templates still parse */
+  qrLocation?: "graphic" | "content"
   /** inset (px) applied to the whole two-column content area, on top of each column's own padding — pulls content in from the page edge to clear the frame */
   pagePadding: number
   /** gap (px) between the graphic column and the content column */
@@ -113,7 +114,7 @@ export interface PrintTemplateSettings {
 }
 
 export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sigil", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremonyDateTime", "ceremony", "ceremonyBy"]
-export const DEFAULT_GRAPHIC_ORDER: GraphicItemId[] = ["photo", "sigil", "qr"]
+export const DEFAULT_GRAPHIC_ORDER: GraphicItemId[] = ["photo", "sigil"]
 
 /** Ceremony blocks that group with the inline QR code when it sits in the content column. */
 const CEREMONY_GROUP_IDS = new Set<ContentBlockId>(["ceremonyLabel", "ceremonyDateTime", "ceremony"])
@@ -126,7 +127,6 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   verticalAlign: "center",
   graphicVerticalAlign: "top",
   qrEnabled: true,
-  qrLocation: "graphic",
   pagePadding: 0,
   columnGap: 0,
   blockOrder: DEFAULT_BLOCK_ORDER,
@@ -369,14 +369,10 @@ export function ObituaryPreview({
   const cardWidth = availableWidth ?? Math.round(A4_W * scale)
   const fontFamily = getPrintFontFamily(template.fontId)
   const g = template.graphicItems
-  // ecc=H (30% error correction) keeps the code scannable with the sygnet logo over its centre.
-  const qrImageUrl = publicUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=${g.qr.size * 2}x${g.qr.size * 2}&margin=8&ecc=H&data=${encodeURIComponent(publicUrl)}`
-    : null
-
   const b = template.blocks
   const showCeremony = !!(ceremonyDateFmt || data.ceremonyInfo)
   const ceremonyQrSize = b.ceremony.qrSize ?? 64
+  // ecc=H (30% error correction) keeps the code scannable with the sygnet logo over its centre.
   const ceremonyQrImageUrl = publicUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=${ceremonyQrSize * 2}x${ceremonyQrSize * 2}&margin=8&ecc=H&data=${encodeURIComponent(publicUrl)}`
     : null
@@ -503,7 +499,7 @@ export function ObituaryPreview({
   // "Ceremonia" can show the eNekrolog QR code inline; when the "Etykieta" block directly precedes it,
   // both are grouped into a single row so the QR forms one column and the label+ceremony text the other.
   const ceremonyQrNode =
-    template.qrEnabled && template.qrLocation === "content" && ceremonyQrImageUrl ? (
+    template.qrEnabled && ceremonyQrImageUrl ? (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         {renderQrImage(ceremonyQrImageUrl, ceremonyQrSize)}
         <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
@@ -555,13 +551,8 @@ export function ObituaryPreview({
   const graphicNodes: Partial<Record<GraphicItemId, React.ReactNode>> = {
     photo: g.photo.enabled ? renderPhoto(data.photo, g.photo.size, data.photoBw) : null,
     sigil: g.sigil.enabled ? renderSigil(g.sigil.sigilId ?? DEFAULT_SIGIL_ID, g.sigil.size, g.sigil.color ?? DEFAULT_SIGIL_COLOR) : null,
-    qr:
-      template.qrEnabled && template.qrLocation === "graphic" && qrImageUrl ? (
-        <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center" }}>
-          {renderQrImage(qrImageUrl, g.qr.size)}
-          <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
-        </div>
-      ) : null,
+    // The QR no longer renders in the graphic column — it lives inline in the content column.
+    qr: null,
   }
 
   const orderedGraphic = template.graphicOrder.map((id) => ({ id, node: graphicNodes[id] })).filter((item) => item.node !== null)

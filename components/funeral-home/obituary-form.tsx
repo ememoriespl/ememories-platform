@@ -383,15 +383,10 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
   if (frame.style in LEGACY_FRAME_STYLES) {
     frame.style = LEGACY_FRAME_STYLES[frame.style]
   }
-  // legacy: templates saved before qrLocation existed had both QR placements independently
-  // toggleable; prefer "content" if that was explicitly turned on, since it was the deliberate
-  // (non-default) choice, otherwise fall back to "graphic" (the graphic column QR defaults to on).
-  const qrLocation = p.qrLocation ?? (p.blocks?.ceremony?.qrEnabled ? "content" : "graphic")
-  // legacy: the QR used to be switched on per placement (graphic item / ceremony block) rather
-  // than by one master toggle — seed it from whichever placement is the active one.
+  // The QR now always lives in the content column. legacy: it used to be switched on per placement
+  // (graphic item / ceremony block) — seed the single toggle from whichever placement was active.
   const qrEnabled =
-    p.qrEnabled ??
-    (qrLocation === "content" ? !!(p.blocks?.ceremony?.qrEnabled ?? blocks.ceremony.qrEnabled) : graphicItems.qr.enabled)
+    p.qrEnabled ?? !!(p.blocks?.ceremony?.qrEnabled ?? graphicItems.qr.enabled)
 
   return {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
@@ -401,7 +396,6 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
     graphicVerticalAlign: p.graphicVerticalAlign ?? DEFAULT_PRINT_TEMPLATE.graphicVerticalAlign,
     qrEnabled,
-    qrLocation,
     pagePadding: p.pagePadding ?? DEFAULT_PRINT_TEMPLATE.pagePadding,
     columnGap: p.columnGap ?? DEFAULT_PRINT_TEMPLATE.columnGap,
     frame,
@@ -1302,25 +1296,14 @@ export function ObituaryForm({
                   </div>
                   <div className="space-y-2">
                     <Label>QR kod do eNekrologu</Label>
-                    <div className="flex items-center gap-3 h-9">
+                    <div className="flex items-center gap-2.5 h-9">
                       <Checkbox
                         checked={data.printTemplate.qrEnabled}
                         onCheckedChange={(checked) => updateTemplate("qrEnabled", !!checked)}
                       />
-                      {data.printTemplate.qrEnabled && (
-                        <Select
-                          value={data.printTemplate.qrLocation}
-                          onValueChange={(v) => updateTemplate("qrLocation", (v as "graphic" | "content") ?? "graphic")}
-                        >
-                          <SelectTrigger className="!h-9 flex-1">
-                            <span>{data.printTemplate.qrLocation === "content" ? "Kolumna z treścią" : "Kolumna graficzna"}</span>
-                          </SelectTrigger>
-                          <SelectContent alignItemWithTrigger={false}>
-                            <SelectItem value="graphic">Kolumna graficzna</SelectItem>
-                            <SelectItem value="content">Kolumna z treścią</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
+                      <span className="text-sm text-muted-foreground">
+                        {data.printTemplate.qrEnabled ? "Widoczny w kolumnie z treścią" : "Ukryty"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1553,11 +1536,11 @@ export function ObituaryForm({
 
             <CollapsibleSectionCard
               title="Kolumna graficzna"
-              description="Przeciągnij za uchwyt, aby zmienić kolejność w pionie. Włącz/wyłącz, wyrównaj i ustaw marginesy dla zdjęcia, sygnetu i kodu QR."
+              description="Przeciągnij za uchwyt, aby zmienić kolejność w pionie. Włącz/wyłącz, wyrównaj i ustaw marginesy dla zdjęcia i sygnetu."
             >
                 <div className="space-y-2">
                   {data.printTemplate.graphicOrder
-                    .filter((itemId) => itemId !== "qr" || (data.printTemplate.qrEnabled && data.printTemplate.qrLocation === "graphic"))
+                    .filter((itemId) => itemId !== "qr")
                     .map((itemId) => {
                     const item = data.printTemplate.graphicItems[itemId]
                     return (
@@ -1585,15 +1568,12 @@ export function ObituaryForm({
                       >
                         <div className="flex items-center gap-2">
                           <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                          {/* The QR has its own master toggle in "Ustawienia ogólne" — no second switch here. */}
-                          {itemId !== "qr" && (
-                            <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
-                              <Checkbox
-                                checked={item.enabled}
-                                onCheckedChange={(checked) => updateGraphicItem(itemId, "enabled", !!checked)}
-                              />
-                            </div>
-                          )}
+                          <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                            <Checkbox
+                              checked={item.enabled}
+                              onCheckedChange={(checked) => updateGraphicItem(itemId, "enabled", !!checked)}
+                            />
+                          </div>
                           <span className="flex-1 text-sm font-medium truncate">{GRAPHIC_LABELS[itemId]}</span>
                         </div>
 
@@ -1608,7 +1588,7 @@ export function ObituaryForm({
 
                         <div className={SETTINGS_ROW}>
                           <span className="text-xs text-muted-foreground">
-                            {itemId === "qr" ? "Wielkość QR kodu" : itemId === "sigil" ? "Wielkość sygnetu" : "Wielkość zdjęcia"}
+                            {itemId === "sigil" ? "Wielkość sygnetu" : "Wielkość zdjęcia"}
                           </span>
                           <div className="flex items-center gap-1">
                             <Input
@@ -1824,7 +1804,7 @@ export function ObituaryForm({
                           </div>
                         )}
 
-                        {blockId === "ceremony" && data.printTemplate.qrEnabled && data.printTemplate.qrLocation === "content" && (
+                        {blockId === "ceremony" && data.printTemplate.qrEnabled && (
                           <>
                                 <div className={SETTINGS_ROW}>
                                   <span className="text-xs text-muted-foreground">Wielkość QR</span>
