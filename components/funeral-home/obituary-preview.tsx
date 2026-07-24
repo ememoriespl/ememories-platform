@@ -9,6 +9,7 @@ import { getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/pri
 import { SIGIL_ICON_DATA } from "@/lib/sigil-icons"
 import { FRAME_ART_DATA } from "@/lib/frame-art"
 import { WATERMARK_VIEWBOX, WATERMARK_INNER_HTML } from "@/lib/watermark"
+import { EMEMORIES_MARK_VIEWBOX, EMEMORIES_MARK_INNER_HTML } from "@/lib/ememories-mark"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
@@ -299,6 +300,43 @@ function renderPhoto(photo: string | null, size: number, bw: boolean): React.Rea
   )
 }
 
+/** eNekrolog QR code (fetched at ecc=H) with the eMemories sygnet inset in the centre. */
+function renderQrImage(url: string, size: number): React.ReactNode {
+  // ~22% of the code width — small enough for ecc=H to reconstruct the covered modules.
+  const logo = Math.round(size * 0.22)
+  const pad = Math.max(1, Math.round(logo * 0.14))
+  return (
+    <div style={{ position: "relative", width: size, height: size }}>
+      <img src={url} alt="Kod QR do eNekrologu" width={size} height={size} style={{ display: "block" }} />
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: logo,
+          height: logo,
+          background: "#fff",
+          borderRadius: Math.round(logo * 0.18),
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: pad,
+          boxSizing: "border-box",
+        }}
+      >
+        <svg
+          viewBox={EMEMORIES_MARK_VIEWBOX}
+          width="100%"
+          height="100%"
+          fill="#141414"
+          dangerouslySetInnerHTML={{ __html: EMEMORIES_MARK_INNER_HTML }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function ObituaryPreview({
   data,
   availableWidth,
@@ -331,15 +369,16 @@ export function ObituaryPreview({
   const cardWidth = availableWidth ?? Math.round(A4_W * scale)
   const fontFamily = getPrintFontFamily(template.fontId)
   const g = template.graphicItems
+  // ecc=H (30% error correction) keeps the code scannable with the sygnet logo over its centre.
   const qrImageUrl = publicUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=${g.qr.size * 2}x${g.qr.size * 2}&margin=8&data=${encodeURIComponent(publicUrl)}`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=${g.qr.size * 2}x${g.qr.size * 2}&margin=8&ecc=H&data=${encodeURIComponent(publicUrl)}`
     : null
 
   const b = template.blocks
   const showCeremony = !!(ceremonyDateFmt || data.ceremonyInfo)
   const ceremonyQrSize = b.ceremony.qrSize ?? 64
   const ceremonyQrImageUrl = publicUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=${ceremonyQrSize * 2}x${ceremonyQrSize * 2}&margin=8&data=${encodeURIComponent(publicUrl)}`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=${ceremonyQrSize * 2}x${ceremonyQrSize * 2}&margin=8&ecc=H&data=${encodeURIComponent(publicUrl)}`
     : null
 
   const blocks: Partial<Record<ContentBlockId, React.ReactNode>> = {
@@ -466,7 +505,7 @@ export function ObituaryPreview({
   const ceremonyQrNode =
     template.qrEnabled && template.qrLocation === "content" && ceremonyQrImageUrl ? (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-        <img src={ceremonyQrImageUrl} alt="Kod QR do eNekrologu" width={ceremonyQrSize} height={ceremonyQrSize} />
+        {renderQrImage(ceremonyQrImageUrl, ceremonyQrSize)}
         <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
       </div>
     ) : null
@@ -518,8 +557,8 @@ export function ObituaryPreview({
     sigil: g.sigil.enabled ? renderSigil(g.sigil.sigilId ?? DEFAULT_SIGIL_ID, g.sigil.size, g.sigil.color ?? DEFAULT_SIGIL_COLOR) : null,
     qr:
       template.qrEnabled && template.qrLocation === "graphic" && qrImageUrl ? (
-        <div style={{ textAlign: "center" }}>
-          <img src={qrImageUrl} alt="Kod QR do eNekrologu" width={g.qr.size} height={g.qr.size} />
+        <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center" }}>
+          {renderQrImage(qrImageUrl, g.qr.size)}
           <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
         </div>
       ) : null,
