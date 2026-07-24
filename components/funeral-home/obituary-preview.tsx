@@ -258,6 +258,47 @@ function renderSigil(sigilId: string, size: number, color: string): React.ReactN
   )
 }
 
+/**
+ * Circular portrait. Renders the uploaded photo when present, otherwise a generic
+ * person-silhouette avatar so a photo-enabled template still shows a placeholder.
+ */
+function renderPhoto(photo: string | null, size: number, bw: boolean): React.ReactNode {
+  if (photo) {
+    return (
+      <img
+        src={photo}
+        alt=""
+        style={{
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          objectFit: "cover",
+          display: "block",
+          filter: bw ? "grayscale(100%)" : "none",
+        }}
+      />
+    )
+  }
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: "#e5e7eb",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      <svg viewBox="0 0 24 24" width={size} height={size} fill="#9ca3af" aria-hidden="true">
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v1.5h16V18c0-2.66-5.33-4-8-4z" />
+      </svg>
+    </div>
+  )
+}
+
 export function ObituaryPreview({
   data,
   availableWidth,
@@ -303,20 +344,9 @@ export function ObituaryPreview({
 
   const blocks: Partial<Record<ContentBlockId, React.ReactNode>> = {
     photo:
-      b.photo.enabled !== false && data.photo ? (
+      b.photo.enabled !== false ? (
         <div style={{ display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.photo.align] }}>
-          <img
-            src={data.photo}
-            alt=""
-            style={{
-              width: b.photo.size,
-              height: b.photo.size,
-              borderRadius: "50%",
-              objectFit: "cover",
-              display: "block",
-              filter: data.photoBw ? "grayscale(100%)" : "none",
-            }}
-          />
+          {renderPhoto(data.photo, b.photo.size, data.photoBw)}
         </div>
       ) : null,
     sigil: b.sigil.enabled ? (
@@ -484,21 +514,7 @@ export function ObituaryPreview({
   }
 
   const graphicNodes: Partial<Record<GraphicItemId, React.ReactNode>> = {
-    photo:
-      g.photo.enabled && data.photo ? (
-        <img
-          src={data.photo}
-          alt=""
-          style={{
-            width: g.photo.size,
-            height: g.photo.size,
-            borderRadius: "50%",
-            objectFit: "cover",
-            display: "block",
-            filter: data.photoBw ? "grayscale(100%)" : "none",
-          }}
-        />
-      ) : null,
+    photo: g.photo.enabled ? renderPhoto(data.photo, g.photo.size, data.photoBw) : null,
     sigil: g.sigil.enabled ? renderSigil(g.sigil.sigilId ?? DEFAULT_SIGIL_ID, g.sigil.size, g.sigil.color ?? DEFAULT_SIGIL_COLOR) : null,
     qr:
       template.qrEnabled && template.qrLocation === "graphic" && qrImageUrl ? (
