@@ -280,23 +280,23 @@ function renderPhoto(photo: string | null, size: number, bw: boolean): React.Rea
       />
     )
   }
+  // Outline avatar (ring + head + shoulders), all strokes so it prints in Chromium PDF export.
   return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        background: "#e5e7eb",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-      }}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="#141414"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      aria-hidden="true"
+      style={{ display: "block" }}
     >
-      <svg viewBox="0 0 24 24" width={size} height={size} fill="#9ca3af" aria-hidden="true">
-        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v1.5h16V18c0-2.66-5.33-4-8-4z" />
-      </svg>
-    </div>
+      <circle cx="24" cy="24" r="21.5" />
+      <circle cx="24" cy="19" r="6.4" />
+      <path d="M7.9 37.5 C 7.9 29 40.1 29 40.1 37.5" />
+    </svg>
   )
 }
 
