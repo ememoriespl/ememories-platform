@@ -378,8 +378,10 @@ export function ObituaryPreview({
     : null
 
   const blocks: Partial<Record<ContentBlockId, React.ReactNode>> = {
+    // Only a real uploaded photo renders in the content column; with no photo the name
+    // takes the full width (no placeholder). The photo is grouped into the name row below.
     photo:
-      b.photo.enabled !== false ? (
+      b.photo.enabled !== false && data.photo ? (
         <div style={{ display: "flex", justifyContent: HORIZONTAL_ALIGN_MAP[b.photo.align] }}>
           {renderPhoto(data.photo, b.photo.size, data.photoBw)}
         </div>
@@ -398,7 +400,7 @@ export function ObituaryPreview({
         style={{
           fontSize: b.name.size,
           textAlign: b.name.align,
-          lineHeight: 1.3,
+          lineHeight: 1.12,
           opacity: hasName ? 1 : 0.25,
           ...fontStyleFor(b.name),
         }}
@@ -506,9 +508,29 @@ export function ObituaryPreview({
       </div>
     ) : null
 
+  // A real photo in the content column sits in one row next to the name (photo | name),
+  // like the QR next to the ceremony text. With no photo the name spans the full width.
+  const groupPhotoWithName = b.photo.enabled !== false && !!data.photo
+
   const contentRows: { key: string; marginTop: number; marginBottom: number; node: React.ReactNode }[] = []
   for (let i = 0; i < orderedBlocks.length; i++) {
     const item = orderedBlocks[i]
+    // The photo is rendered inside the name row, not in its own slot.
+    if (item.id === "photo" && groupPhotoWithName) continue
+    if (item.id === "name" && groupPhotoWithName) {
+      contentRows.push({
+        key: "photo-name-group",
+        marginTop: b.name.marginTop,
+        marginBottom: b.name.marginBottom,
+        node: (
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 24 }}>
+            <div style={{ flexShrink: 0 }}>{renderPhoto(data.photo, b.photo.size, data.photoBw)}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>{item.node}</div>
+          </div>
+        ),
+      })
+      continue
+    }
     // When the QR sits in the content column, the whole run of adjacent ceremony blocks
     // (label / date+time / text) becomes one row: QR in one column, the run in the other.
     if (ceremonyQrNode && CEREMONY_GROUP_IDS.has(item.id)) {
