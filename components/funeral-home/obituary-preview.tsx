@@ -119,6 +119,9 @@ export const DEFAULT_GRAPHIC_ORDER: GraphicItemId[] = ["photo", "sigil"]
 /** Ceremony blocks that group with the inline QR code when it sits in the content column. */
 const CEREMONY_GROUP_IDS = new Set<ContentBlockId>(["ceremonyLabel", "ceremonyDateTime", "ceremony"])
 
+/** "Portrait" blocks that share a column beside the photo, so they align to each other. */
+const PHOTO_GROUP_IDS = new Set<ContentBlockId>(["sigil", "sp", "name", "dates", "headline", "body"])
+
 export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   fontId: DEFAULT_PRINT_FONT_ID,
   fontWeight: 400,
@@ -508,27 +511,45 @@ export function ObituaryPreview({
       </div>
     ) : null
 
-  // A real photo in the content column sits in one row next to the name (photo | name),
-  // like the QR next to the ceremony text. With no photo the name spans the full width.
-  const groupPhotoWithName = b.photo.enabled !== false && !!data.photo
+  // A real photo forms a left column beside the run of portrait blocks that follow it
+  // (sygnet, Ś.P., name, dates, body) — like the QR beside the ceremony run — so those
+  // blocks align to each other, not to the full page width. With no photo they stay full-width.
+  const groupPhoto = b.photo.enabled !== false && !!data.photo
 
   const contentRows: { key: string; marginTop: number; marginBottom: number; node: React.ReactNode }[] = []
   for (let i = 0; i < orderedBlocks.length; i++) {
     const item = orderedBlocks[i]
-    // The photo is rendered inside the name row, not in its own slot.
-    if (item.id === "photo" && groupPhotoWithName) continue
-    if (item.id === "name" && groupPhotoWithName) {
+    if (item.id === "photo" && groupPhoto) {
+      const run = []
+      let j = i + 1
+      while (j < orderedBlocks.length && PHOTO_GROUP_IDS.has(orderedBlocks[j].id)) {
+        run.push(orderedBlocks[j])
+        j++
+      }
       contentRows.push({
-        key: "photo-name-group",
-        marginTop: b.name.marginTop,
-        marginBottom: b.name.marginBottom,
+        key: "photo-group",
+        marginTop: b.photo.marginTop,
+        marginBottom: run.length ? b[run[run.length - 1].id].marginBottom : b.photo.marginBottom,
         node: (
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 24 }}>
             <div style={{ flexShrink: 0 }}>{renderPhoto(data.photo, b.photo.size, data.photoBw)}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>{item.node}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {run.map((r, idx) => (
+                <div
+                  key={r.id}
+                  style={{
+                    marginTop: idx === 0 ? 0 : b[r.id].marginTop,
+                    marginBottom: idx === run.length - 1 ? 0 : b[r.id].marginBottom,
+                  }}
+                >
+                  {r.node}
+                </div>
+              ))}
+            </div>
           </div>
         ),
       })
+      i = j - 1
       continue
     }
     // When the QR sits in the content column, the whole run of adjacent ceremony blocks
