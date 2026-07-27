@@ -4,7 +4,9 @@ import { createServerClient } from "@/lib/supabase"
 
 export async function POST(req: Request) {
   const session = await getSession()
-  if (!session || session.role !== "funeral-home") {
+  // Admins edit obituaries too, so they must be able to upload photos — every other
+  // obituary-editing endpoint already allows both roles.
+  if (!session || (session.role !== "funeral-home" && session.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
