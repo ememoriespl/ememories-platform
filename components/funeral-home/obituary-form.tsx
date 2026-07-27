@@ -1294,18 +1294,6 @@ export function ObituaryForm({
                       })}
                     </ButtonGroup>
                   </div>
-                  <div className="space-y-2">
-                    <Label>QR kod do eNekrologu</Label>
-                    <div className="flex items-center gap-2.5 h-9">
-                      <Checkbox
-                        checked={data.printTemplate.qrEnabled}
-                        onCheckedChange={(checked) => updateTemplate("qrEnabled", !!checked)}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {data.printTemplate.qrEnabled ? "Widoczny w kolumnie z treścią" : "Ukryty"}
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1806,8 +1794,21 @@ export function ObituaryForm({
                           </div>
                         )}
 
-                        {blockId === "ceremony" && data.printTemplate.qrEnabled && (
+                        {/* The eNekrolog QR is part of this block (renders beside the ceremony
+                            text), like the photo is part of the name block. */}
+                        {blockId === "ceremony" && (
                           <>
+                            <div className={SETTINGS_ROW}>
+                              <span className="text-xs text-muted-foreground">Kod QR</span>
+                              <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                                <Checkbox
+                                  checked={data.printTemplate.qrEnabled}
+                                  onCheckedChange={(checked) => updateTemplate("qrEnabled", !!checked)}
+                                />
+                              </div>
+                            </div>
+                            {data.printTemplate.qrEnabled && (
+                              <>
                                 <div className={SETTINGS_ROW}>
                                   <span className="text-xs text-muted-foreground">Wielkość QR</span>
                                   <div className="flex items-center gap-1">
@@ -1838,6 +1839,8 @@ export function ObituaryForm({
                                     <span className="text-[10px] text-muted-foreground">px</span>
                                   </div>
                                 </div>
+                              </>
+                            )}
                           </>
                         )}
 
@@ -1846,7 +1849,7 @@ export function ObituaryForm({
                         {blockId === "name" && (
                           <>
                             <div className={SETTINGS_ROW}>
-                              <span className="text-xs text-muted-foreground">Zdjęcie obok</span>
+                              <span className="text-xs text-muted-foreground">Zdjęcie</span>
                               <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                                 <Checkbox
                                   checked={data.printTemplate.blocks.photo.enabled ?? true}
