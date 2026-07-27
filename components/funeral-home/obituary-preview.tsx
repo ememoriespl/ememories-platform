@@ -116,8 +116,9 @@ export interface PrintTemplateSettings {
 export const DEFAULT_BLOCK_ORDER: ContentBlockId[] = ["photo", "sigil", "sp", "name", "dates", "headline", "body", "ceremonyLabel", "ceremonyDateTime", "ceremony", "ceremonyBy"]
 export const DEFAULT_GRAPHIC_ORDER: GraphicItemId[] = ["photo", "sigil"]
 
-/** Ceremony blocks that group with the inline QR code when it sits in the content column. */
-const CEREMONY_GROUP_IDS = new Set<ContentBlockId>(["ceremonyLabel", "ceremonyDateTime", "ceremony"])
+/** Ceremony blocks that group with the inline QR code when it sits in the content column
+ *  — including "Przygotowane przez", so it aligns to the ceremony column, not the full width. */
+const CEREMONY_GROUP_IDS = new Set<ContentBlockId>(["ceremonyLabel", "ceremonyDateTime", "ceremony", "ceremonyBy"])
 
 /** "Portrait" blocks that share a column beside the photo, so they align to each other. */
 const PHOTO_GROUP_IDS = new Set<ContentBlockId>(["sigil", "sp", "name", "dates", "headline", "body"])
