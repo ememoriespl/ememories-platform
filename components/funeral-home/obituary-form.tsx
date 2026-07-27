@@ -103,11 +103,6 @@ const BLOCK_LABELS: Record<ContentBlockId, string> = {
   ceremonyBy: "Przygotowane przez",
 }
 
-const GRAPHIC_LABELS: Record<GraphicItemId, string> = {
-  photo: "Zdjęcie",
-  sigil: "Sygnet",
-  qr: "Kod QR",
-}
 
 const ALIGN_OPTIONS: { id: BlockAlign; label: string; icon: LucideIcon }[] = [
   { id: "left", label: "Lewo", icon: AlignLeft },
@@ -392,7 +387,8 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
     fontId: p.fontId ?? DEFAULT_PRINT_TEMPLATE.fontId,
     fontWeight: p.fontWeight ?? DEFAULT_PRINT_TEMPLATE.fontWeight,
     columnPosition: p.columnPosition ?? DEFAULT_PRINT_TEMPLATE.columnPosition,
-    graphicColumnEnabled: p.graphicColumnEnabled ?? DEFAULT_PRINT_TEMPLATE.graphicColumnEnabled,
+    // Graphic column is retired — force it off so older saved templates render content-only too.
+    graphicColumnEnabled: false,
     verticalAlign: p.verticalAlign ?? DEFAULT_PRINT_TEMPLATE.verticalAlign,
     graphicVerticalAlign: p.graphicVerticalAlign ?? DEFAULT_PRINT_TEMPLATE.graphicVerticalAlign,
     qrEnabled,
@@ -590,7 +586,6 @@ export function ObituaryForm({
   const persistingRef = useRef(false)
   const lastSavedRef = useRef<string>("")
   const [draggedBlock, setDraggedBlock] = useState<ContentBlockId | null>(null)
-  const [draggedGraphicItem, setDraggedGraphicItem] = useState<GraphicItemId | null>(null)
 
   function update<K extends keyof FormData>(field: K, value: FormData[K]) {
     setData((prev) => ({ ...prev, [field]: value }))
@@ -606,16 +601,6 @@ export function ObituaryForm({
       printTemplate: {
         ...prev.printTemplate,
         blocks: { ...prev.printTemplate.blocks, [blockId]: { ...prev.printTemplate.blocks[blockId], [field]: value } },
-      },
-    }))
-  }
-
-  function updateGraphicItem<K extends keyof GraphicItemSettings>(itemId: GraphicItemId, field: K, value: GraphicItemSettings[K]) {
-    setData((prev) => ({
-      ...prev,
-      printTemplate: {
-        ...prev.printTemplate,
-        graphicItems: { ...prev.printTemplate.graphicItems, [itemId]: { ...prev.printTemplate.graphicItems[itemId], [field]: value } },
       },
     }))
   }
@@ -1257,62 +1242,13 @@ export function ObituaryForm({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="shrink-0">Kolumna graficzna</Label>
-                    <ButtonGroup className="w-full">
-                      {([
-                        { id: "none", label: "Brak" },
-                        { id: "left", label: "Lewo" },
-                        { id: "right", label: "Prawo" },
-                      ] as const).map((p) => {
-                        const active =
-                          p.id === "none"
-                            ? !data.printTemplate.graphicColumnEnabled
-                            : data.printTemplate.graphicColumnEnabled && data.printTemplate.columnPosition === p.id
-                        return (
-                          <Button
-                            key={p.id}
-                            type="button"
-                            color="secondary"
-                            onClick={() => {
-                              if (p.id === "none") {
-                                updateTemplate("graphicColumnEnabled", false)
-                              } else {
-                                updateTemplate("graphicColumnEnabled", true)
-                                updateTemplate("columnPosition", p.id)
-                              }
-                            }}
-                            className={cn(
-                              "flex-1 h-auto py-2 px-2 text-xs font-medium",
-                              active && "bg-foreground/10 text-foreground hover:bg-foreground/10"
-                            )}
-                          >
-                            {p.label}
-                          </Button>
-                        )
-                      })}
-                    </ButtonGroup>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Wyrównanie kolumny z treścią w pionie</Label>
-                    <IconToggleGroup
-                      value={data.printTemplate.verticalAlign}
-                      onChange={(v) => updateTemplate("verticalAlign", v)}
-                      options={VALIGN_OPTIONS}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Wyrównanie kolumny graficznej w pionie</Label>
-                    <IconToggleGroup
-                      value={data.printTemplate.graphicVerticalAlign}
-                      onChange={(v) => updateTemplate("graphicVerticalAlign", v)}
-                      options={VALIGN_OPTIONS}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label>Wyrównanie treści w pionie</Label>
+                  <IconToggleGroup
+                    value={data.printTemplate.verticalAlign}
+                    onChange={(v) => updateTemplate("verticalAlign", v)}
+                    options={VALIGN_OPTIONS}
+                  />
                 </div>
 
                 {/* Page padding / column gap are admin-only knobs — clients use whatever the template sets. */}
@@ -1520,114 +1456,6 @@ export function ObituaryForm({
                   </button>
                 ))}
               </div>
-            </CollapsibleSectionCard>
-
-            <CollapsibleSectionCard
-              title="Kolumna graficzna"
-              description="Przeciągnij za uchwyt, aby zmienić kolejność w pionie. Włącz/wyłącz, wyrównaj i ustaw marginesy dla zdjęcia i sygnetu."
-            >
-                <div className="space-y-2">
-                  {data.printTemplate.graphicOrder
-                    .filter((itemId) => itemId !== "qr")
-                    .map((itemId) => {
-                    const item = data.printTemplate.graphicItems[itemId]
-                    return (
-                      <div
-                        key={itemId}
-                        draggable
-                        onDragStart={() => setDraggedGraphicItem(itemId)}
-                        onDragOver={(e) => {
-                          e.preventDefault()
-                          if (!draggedGraphicItem || draggedGraphicItem === itemId) return
-                          const order = [...data.printTemplate.graphicOrder]
-                          const from = order.indexOf(draggedGraphicItem)
-                          const to = order.indexOf(itemId)
-                          if (from === -1 || to === -1 || from === to) return
-                          order.splice(from, 1)
-                          order.splice(to, 0, draggedGraphicItem)
-                          updateTemplate("graphicOrder", order)
-                        }}
-                        onDrop={(e) => e.preventDefault()}
-                        onDragEnd={() => setDraggedGraphicItem(null)}
-                        className={cn(
-                          "rounded-lg border bg-muted/30 p-2.5 space-y-2.5 cursor-grab active:cursor-grabbing transition-opacity",
-                          draggedGraphicItem === itemId && "opacity-40"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
-                            <Checkbox
-                              checked={item.enabled}
-                              onCheckedChange={(checked) => updateGraphicItem(itemId, "enabled", !!checked)}
-                            />
-                          </div>
-                          <span className="flex-1 text-sm font-medium truncate">{GRAPHIC_LABELS[itemId]}</span>
-                        </div>
-
-                        {itemId === "sigil" && (
-                          <SigilPickerRow
-                            sigilId={item.sigilId ?? DEFAULT_SIGIL_ID}
-                            color={item.color ?? DEFAULT_SIGIL_COLOR}
-                            onSigilChange={(id) => updateGraphicItem("sigil", "sigilId", id)}
-                            onColorChange={(hex) => updateGraphicItem("sigil", "color", hex)}
-                          />
-                        )}
-
-                        <div className={SETTINGS_ROW}>
-                          <span className="text-xs text-muted-foreground">
-                            {itemId === "sigil" ? "Wielkość sygnetu" : "Wielkość zdjęcia"}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <Input
-                              type="number"
-                              min={1}
-                              value={item.size}
-                              onChange={(e) => updateGraphicItem(itemId, "size", Number(e.target.value) || 1)}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                              className="w-20"
-                            />
-                            <span className="text-[10px] text-muted-foreground">px</span>
-                          </div>
-                        </div>
-
-                        <div className={SETTINGS_ROW}>
-                          <span className="text-xs text-muted-foreground">Wyrównanie</span>
-                          <IconToggleGroup value={item.align} onChange={(v) => updateGraphicItem(itemId, "align", v)} options={ALIGN_OPTIONS} />
-                        </div>
-
-                        <div className={SETTINGS_ROW}>
-                          <span className="text-xs text-muted-foreground">Marginesy</span>
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-muted-foreground">góra</span>
-                              <Input
-                                type="number"
-                                value={item.marginTop}
-                                onChange={(e) => updateGraphicItem(itemId, "marginTop", Number(e.target.value) || 0)}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-16"
-                              />
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-muted-foreground">dół</span>
-                              <Input
-                                type="number"
-                                value={item.marginBottom}
-                                onChange={(e) => updateGraphicItem(itemId, "marginBottom", Number(e.target.value) || 0)}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-                                className="w-16"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
             </CollapsibleSectionCard>
 
             <CollapsibleSectionCard

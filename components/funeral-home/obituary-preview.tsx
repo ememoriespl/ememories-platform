@@ -127,7 +127,8 @@ export const DEFAULT_PRINT_TEMPLATE: PrintTemplateSettings = {
   fontId: DEFAULT_PRINT_FONT_ID,
   fontWeight: 400,
   columnPosition: "left",
-  graphicColumnEnabled: true,
+  // The graphic column is retired from the editor; obituaries are single (content) column.
+  graphicColumnEnabled: false,
   verticalAlign: "center",
   graphicVerticalAlign: "top",
   qrEnabled: true,
