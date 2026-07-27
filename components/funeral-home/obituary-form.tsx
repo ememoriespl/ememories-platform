@@ -1647,9 +1647,11 @@ export function ObituaryForm({
               description="Przeciągnij za uchwyt, aby zmienić kolejność. Każdy blok ma własny rozmiar, czcionkę, wyrównanie i marginesy."
             >
                 <div className="space-y-2">
-                  {data.printTemplate.blockOrder.filter((blockId) => blockId !== "headline").map((blockId) => {
+                  {/* "photo" is not its own card — its controls live inside the "Imię i nazwisko"
+                      block below, like the QR settings live inside the ceremony block. */}
+                  {data.printTemplate.blockOrder.filter((blockId) => blockId !== "headline" && blockId !== "photo").map((blockId) => {
                     const block = data.printTemplate.blocks[blockId]
-                    const isTextBlock = blockId !== "photo" && blockId !== "sigil"
+                    const isTextBlock = blockId !== "sigil"
                     const effectiveFontId = block.fontId ?? data.printTemplate.fontId
                     const weightOptions = PRINT_FONTS.find((f) => f.id === effectiveFontId)?.weights ?? []
                     return (
@@ -1677,7 +1679,7 @@ export function ObituaryForm({
                       >
                         <div className="flex items-center gap-2">
                           <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                          {(blockId === "sp" || blockId === "photo" || blockId === "sigil" || blockId === "ceremonyBy") ? (
+                          {(blockId === "sp" || blockId === "sigil" || blockId === "ceremonyBy") ? (
                             <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
                               <Checkbox
                                 checked={block.enabled ?? true}
@@ -1715,7 +1717,7 @@ export function ObituaryForm({
 
                         <div className={SETTINGS_ROW}>
                           <span className="text-xs text-muted-foreground">
-                            {blockId === "photo" ? "Wielkość zdjęcia" : blockId === "sigil" ? "Wielkość sygnetu" : "Rozmiar czcionki"}
+                            {blockId === "sigil" ? "Wielkość sygnetu" : "Rozmiar czcionki"}
                           </span>
                           <div className="flex items-center gap-1">
                             <Input
@@ -1836,6 +1838,39 @@ export function ObituaryForm({
                                     <span className="text-[10px] text-muted-foreground">px</span>
                                   </div>
                                 </div>
+                          </>
+                        )}
+
+                        {/* Photo is part of the "Imię i nazwisko" block (renders beside it),
+                            just like the QR is part of the ceremony block. */}
+                        {blockId === "name" && (
+                          <>
+                            <div className={SETTINGS_ROW}>
+                              <span className="text-xs text-muted-foreground">Zdjęcie obok</span>
+                              <div onMouseDown={(e) => e.stopPropagation()} draggable={false}>
+                                <Checkbox
+                                  checked={data.printTemplate.blocks.photo.enabled ?? true}
+                                  onCheckedChange={(checked) => updateBlock("photo", "enabled", !!checked)}
+                                />
+                              </div>
+                            </div>
+                            {(data.printTemplate.blocks.photo.enabled ?? true) && (
+                              <div className={SETTINGS_ROW}>
+                                <span className="text-xs text-muted-foreground">Wielkość zdjęcia</span>
+                                <div className="flex items-center gap-1">
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={data.printTemplate.blocks.photo.size}
+                                    onChange={(e) => updateBlock("photo", "size", Number(e.target.value) || 1)}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                    className="w-20"
+                                  />
+                                  <span className="text-[10px] text-muted-foreground">px</span>
+                                </div>
+                              </div>
+                            )}
                           </>
                         )}
 
