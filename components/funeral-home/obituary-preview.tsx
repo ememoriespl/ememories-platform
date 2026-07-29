@@ -264,19 +264,24 @@ function renderSigil(sigilId: string, size: number, color: string): React.ReactN
   )
 }
 
+/** Portrait oval is taller than wide; `size` is the width, height is scaled by this. */
+const PHOTO_OVAL_RATIO = 1.3
+
 /**
- * Circular portrait. Renders the uploaded photo when present, otherwise a generic
+ * Oval portrait. Renders the uploaded photo when present, otherwise a generic
  * person-silhouette avatar so a photo-enabled template still shows a placeholder.
  */
 function renderPhoto(photo: string | null, size: number, bw: boolean): React.ReactNode {
+  const width = size
+  const height = Math.round(size * PHOTO_OVAL_RATIO)
   if (photo) {
     return (
       <img
         src={photo}
         alt=""
         style={{
-          width: size,
-          height: size,
+          width,
+          height,
           borderRadius: "50%",
           objectFit: "cover",
           display: "block",
@@ -285,22 +290,22 @@ function renderPhoto(photo: string | null, size: number, bw: boolean): React.Rea
       />
     )
   }
-  // Outline avatar (ring + head + shoulders), all strokes so it prints in Chromium PDF export.
+  // Outline avatar (oval ring + head + shoulders), all strokes so it prints in Chromium PDF export.
   return (
     <svg
-      width={size}
-      height={size}
-      viewBox="0 0 48 48"
+      width={width}
+      height={height}
+      viewBox="0 0 100 130"
       fill="none"
       stroke="#141414"
-      strokeWidth={2.4}
+      strokeWidth={5}
       strokeLinecap="round"
       aria-hidden="true"
       style={{ display: "block" }}
     >
-      <circle cx="24" cy="24" r="21.5" />
-      <circle cx="24" cy="19" r="6.4" />
-      <path d="M7.9 37.5 C 7.9 29 40.1 29 40.1 37.5" />
+      <ellipse cx="50" cy="65" rx="47.5" ry="62.5" />
+      <circle cx="50" cy="47" r="14" />
+      <path d="M16 96 C 16 72 84 72 84 96" />
     </svg>
   )
 }
