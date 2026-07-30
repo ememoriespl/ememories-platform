@@ -285,6 +285,9 @@ function renderPhoto(photo: string | null, size: number, bw: boolean): React.Rea
           borderRadius: "50%",
           objectFit: "cover",
           display: "block",
+          boxSizing: "border-box",
+          border: "4px solid #fff",
+          boxShadow: "0 8px 26px rgba(0, 0, 0, 0.28)",
           filter: bw ? "grayscale(100%)" : "none",
         }}
       />
@@ -301,7 +304,7 @@ function renderPhoto(photo: string | null, size: number, bw: boolean): React.Rea
       strokeWidth={5}
       strokeLinecap="round"
       aria-hidden="true"
-      style={{ display: "block" }}
+      style={{ display: "block", filter: "drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2))" }}
     >
       <ellipse cx="50" cy="65" rx="47.5" ry="62.5" />
       <circle cx="50" cy="47" r="14" />
