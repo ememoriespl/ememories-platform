@@ -124,18 +124,20 @@ const SETTINGS_ROW = "grid grid-cols-[150px_1fr] items-center gap-2"
  * Numeric input that can be cleared while typing. A plain controlled `value={n}` with
  * `Number(e.target.value) || fallback` snaps an emptied field straight back to the fallback,
  * so you can never delete the digits to type a new value. This keeps a local string while
- * focused (empty / lone "-" allowed), commits valid numbers as you type, and on blur reverts
- * an empty/invalid field to the current value and clamps to `min`.
+ * focused (empty / lone "-" allowed), commits valid numbers as you type, and on blur fills an
+ * empty/invalid field with `fallback` (default 1) and clamps to `min`.
  */
 function NumberField({
   value,
   onChange,
   min,
+  fallback = 1,
   className,
 }: {
   value: number
   onChange: (n: number) => void
   min?: number
+  fallback?: number
   className?: string
 }) {
   const [text, setText] = useState(String(value))
@@ -159,14 +161,10 @@ function NumberField({
       onBlur={() => {
         focusedRef.current = false
         const n = Number(text)
-        if (text === "" || !Number.isFinite(n)) {
-          setText(String(value))
-        } else if (min !== undefined && n < min) {
-          onChange(min)
-          setText(String(min))
-        } else {
-          setText(String(n))
-        }
+        // Empty/invalid on blur → fill the fallback (1); otherwise clamp to min.
+        const next = text === "" || !Number.isFinite(n) ? fallback : min !== undefined && n < min ? min : n
+        onChange(next)
+        setText(String(next))
       }}
       onMouseDown={(e) => e.stopPropagation()}
       onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
