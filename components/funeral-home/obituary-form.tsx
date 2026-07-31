@@ -120,6 +120,61 @@ const VALIGN_OPTIONS: { id: VerticalAlign; label: string; icon: LucideIcon }[] =
 /** Shared label/control grid for the setting rows in the "Kolumna graficzna" and "Kolumna z treścią" cards, so controls line up in a left-aligned settings column instead of hugging the right edge. */
 const SETTINGS_ROW = "grid grid-cols-[150px_1fr] items-center gap-2"
 
+/**
+ * Numeric input that can be cleared while typing. A plain controlled `value={n}` with
+ * `Number(e.target.value) || fallback` snaps an emptied field straight back to the fallback,
+ * so you can never delete the digits to type a new value. This keeps a local string while
+ * focused (empty / lone "-" allowed), commits valid numbers as you type, and on blur reverts
+ * an empty/invalid field to the current value and clamps to `min`.
+ */
+function NumberField({
+  value,
+  onChange,
+  min,
+  className,
+}: {
+  value: number
+  onChange: (n: number) => void
+  min?: number
+  className?: string
+}) {
+  const [text, setText] = useState(String(value))
+  const focusedRef = useRef(false)
+  useEffect(() => {
+    if (!focusedRef.current) setText(String(value))
+  }, [value])
+  return (
+    <Input
+      type="number"
+      min={min}
+      value={text}
+      onFocus={() => { focusedRef.current = true }}
+      onChange={(e) => {
+        const raw = e.target.value
+        setText(raw)
+        if (raw === "" || raw === "-") return // allow a transient empty / minus while typing
+        const n = Number(raw)
+        if (Number.isFinite(n)) onChange(n)
+      }}
+      onBlur={() => {
+        focusedRef.current = false
+        const n = Number(text)
+        if (text === "" || !Number.isFinite(n)) {
+          setText(String(value))
+        } else if (min !== undefined && n < min) {
+          onChange(min)
+          setText(String(min))
+        } else {
+          setText(String(n))
+        }
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+      className={className}
+    />
+  )
+}
+
 function IconToggleGroup<T extends string>({
   value,
   onChange,
@@ -1256,20 +1311,18 @@ export function ObituaryForm({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Wewnętrzny margines (px)</Label>
-                      <Input
-                        type="number"
-                        min={0}
+                      <NumberField
                         value={data.printTemplate.pagePadding}
-                        onChange={(e) => updateTemplate("pagePadding", Number(e.target.value) || 0)}
+                        onChange={(n) => updateTemplate("pagePadding", n)}
+                        min={0}
                       />
                       <p className="text-xs text-muted-foreground">Odsuwa całą treść od krawędzi kartki — przydatne przy wąskich ramkach.</p>
                     </div>
                     <div className="space-y-2">
                       <Label>Odstęp między kolumnami (px)</Label>
-                      <Input
-                        type="number"
+                      <NumberField
                         value={data.printTemplate.columnGap}
-                        onChange={(e) => updateTemplate("columnGap", Number(e.target.value) || 0)}
+                        onChange={(n) => updateTemplate("columnGap", n)}
                       />
                       <p className="text-xs text-muted-foreground">Odległość między kolumną graficzną a kolumną z treścią.</p>
                     </div>
@@ -1536,13 +1589,10 @@ export function ObituaryForm({
                             {blockId === "sigil" ? "Wielkość sygnetu" : "Rozmiar czcionki"}
                           </span>
                           <div className="flex items-center gap-1">
-                            <Input
-                              type="number"
-                              min={1}
+                            <NumberField
                               value={block.size}
-                              onChange={(e) => updateBlock(blockId, "size", Number(e.target.value) || 1)}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                              onChange={(n) => updateBlock(blockId, "size", n)}
+                              min={1}
                               className="w-20"
                             />
                             <span className="text-[10px] text-muted-foreground">px</span>
@@ -1640,13 +1690,10 @@ export function ObituaryForm({
                                 <div className={SETTINGS_ROW}>
                                   <span className="text-xs text-muted-foreground">Wielkość QR</span>
                                   <div className="flex items-center gap-1">
-                                    <Input
-                                      type="number"
-                                      min={1}
+                                    <NumberField
                                       value={block.qrSize ?? 64}
-                                      onChange={(e) => updateBlock(blockId, "qrSize", Number(e.target.value) || 1)}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                      onChange={(n) => updateBlock(blockId, "qrSize", n)}
+                                      min={1}
                                       className="w-20"
                                     />
                                     <span className="text-[10px] text-muted-foreground">px</span>
@@ -1655,13 +1702,10 @@ export function ObituaryForm({
                                 <div className={SETTINGS_ROW}>
                                   <span className="text-xs text-muted-foreground">Odstęp od treści</span>
                                   <div className="flex items-center gap-1">
-                                    <Input
-                                      type="number"
-                                      min={0}
+                                    <NumberField
                                       value={block.qrGap ?? 16}
-                                      onChange={(e) => updateBlock(blockId, "qrGap", Number(e.target.value) || 0)}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                      onChange={(n) => updateBlock(blockId, "qrGap", n)}
+                                      min={0}
                                       className="w-20"
                                     />
                                     <span className="text-[10px] text-muted-foreground">px</span>
@@ -1689,13 +1733,10 @@ export function ObituaryForm({
                               <div className={SETTINGS_ROW}>
                                 <span className="text-xs text-muted-foreground">Wielkość zdjęcia</span>
                                 <div className="flex items-center gap-1">
-                                  <Input
-                                    type="number"
-                                    min={1}
+                                  <NumberField
                                     value={data.printTemplate.blocks.photo.size}
-                                    onChange={(e) => updateBlock("photo", "size", Number(e.target.value) || 1)}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                    onChange={(n) => updateBlock("photo", "size", n)}
+                                    min={1}
                                     className="w-20"
                                   />
                                   <span className="text-[10px] text-muted-foreground">px</span>
@@ -1715,23 +1756,17 @@ export function ObituaryForm({
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
                               <span className="text-[10px] text-muted-foreground">góra</span>
-                              <Input
-                                type="number"
+                              <NumberField
                                 value={block.marginTop}
-                                onChange={(e) => updateBlock(blockId, "marginTop", Number(e.target.value) || 0)}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                onChange={(n) => updateBlock(blockId, "marginTop", n)}
                                 className="w-16"
                               />
                             </div>
                             <div className="flex items-center gap-1">
                               <span className="text-[10px] text-muted-foreground">dół</span>
-                              <Input
-                                type="number"
+                              <NumberField
                                 value={block.marginBottom}
-                                onChange={(e) => updateBlock(blockId, "marginBottom", Number(e.target.value) || 0)}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                onChange={(n) => updateBlock(blockId, "marginBottom", n)}
                                 className="w-16"
                               />
                             </div>
