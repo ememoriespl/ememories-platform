@@ -32,6 +32,8 @@ import {
   ChevronDown,
   Italic,
   CaseUpper,
+  Copy,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -48,7 +50,7 @@ import {
   type BlockAlign,
   type VerticalAlign,
 } from "@/components/funeral-home/obituary-preview"
-import { EnekrologView, enekrologDateRange, enekrologCeremonyDateTime, type EnekrologData } from "@/components/enekrolog-view"
+import { EnekrologView, enekrologDateRange, enekrologCeremonyDateTime, enekrologCeremonyIso, type EnekrologData } from "@/components/enekrolog-view"
 import { CoverCropDialog } from "@/components/funeral-home/cover-crop-dialog"
 import { PhoneFrame } from "@/components/funeral-home/phone-frame"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
@@ -942,6 +944,7 @@ export function ObituaryForm({
     dateRange: enekrologDateRange(data.birthDate, data.deathDate),
     obituaryText: data.obituaryText,
     ceremonyDateTime: enekrologCeremonyDateTime(data.ceremonyDate, data.ceremonyTime),
+    ceremonyIso: enekrologCeremonyIso(data.ceremonyDate, data.ceremonyTime),
     ceremonyInfo: data.ceremonyInfo,
     photo: data.photo,
     photoBw: data.enekrologPhotoBw,
@@ -955,6 +958,19 @@ export function ObituaryForm({
     )
       .filter((a) => a.loc.enabled && a.loc.address)
       .map((a) => ({ key: a.key, label: a.label, address: a.loc.address })),
+  }
+
+  // Public eNekrolog address — only exists once the record has been saved.
+  const enekrologUrl = recordId ? `${BASE_URL}/obituary/${recordId}` : null
+
+  async function copyEnekrologUrl() {
+    if (!enekrologUrl) return
+    try {
+      await navigator.clipboard.writeText(enekrologUrl)
+      toast.success("Skopiowano adres")
+    } catch {
+      toast.error("Nie udało się skopiować adresu")
+    }
   }
 
   return (
@@ -1844,6 +1860,50 @@ export function ObituaryForm({
 
         {activeTab === "enekrolog" && (
           <div className="max-w-2xl space-y-6">
+            {/* QR code size (as printed on the obituary) + the public eNekrolog address */}
+            <CollapsibleSectionCard title="QR kod i link" description="Kod QR drukowany na nekrologu prowadzi pod ten adres." defaultOpen>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-muted-foreground">Wielkość QR kodu na nekrologu</span>
+                  <div className="flex items-center gap-1">
+                    <NumberField
+                      value={data.printTemplate.blocks.ceremony.qrSize ?? 64}
+                      onChange={(n) => updateBlock("ceremony", "qrSize", n)}
+                      min={1}
+                      className="w-20"
+                    />
+                    <span className="text-[10px] text-muted-foreground">px</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Adres eNekrologu</Label>
+                  {enekrologUrl ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        readOnly
+                        value={enekrologUrl}
+                        className="flex-1"
+                        onFocus={(e) => e.currentTarget.select()}
+                      />
+                      <Button color="secondary" size="icon" title="Kopiuj adres" onClick={copyEnekrologUrl}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <a href={enekrologUrl} target="_blank" rel="noopener noreferrer">
+                        <Button color="secondary" size="icon" title="Otwórz w nowej karcie">
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Adres pojawi się po zapisaniu nekrologu (wpisz imię i nazwisko).
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CollapsibleSectionCard>
+
             {/* Avatar — same photo as "Dane", but its own B&W / colour choice for the eNekrolog */}
             <CollapsibleSectionCard title="Zdjęcie" description="To samo zdjęcie co w zakładce „Dane”. Wybierz styl dla eNekrologu." defaultOpen>
               {data.photo ? (

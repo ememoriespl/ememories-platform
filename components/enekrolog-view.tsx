@@ -1,5 +1,6 @@
 import { MapPin } from "lucide-react"
 import { LogoLight } from "@/components/logo"
+import { EnekrologNavBar } from "@/components/enekrolog-nav-bar"
 import { cn } from "@/lib/utils"
 
 export interface EnekrologAddress {
@@ -14,6 +15,8 @@ export interface EnekrologData {
   dateRange: string
   obituaryText: string
   ceremonyDateTime: string
+  /** ISO timestamp of the ceremony, for the countdown. Null when no date is set. */
+  ceremonyIso: string | null
   ceremonyInfo: string
   photo: string | null
   photoBw: boolean
@@ -75,6 +78,24 @@ export function parseEnekrologCeremonyDateTime(locationRaw: string | null | unde
     return enekrologCeremonyDateTime(p?.ceremonyDate, p?.ceremonyTime)
   } catch {
     return ""
+  }
+}
+
+/** Ceremony moment as an ISO string (local time), for the countdown. */
+export function enekrologCeremonyIso(date: string | null | undefined, time: string | null | undefined): string | null {
+  if (!date) return null
+  const iso = `${date}T${time || "00:00"}:00`
+  return Number.isNaN(new Date(iso).getTime()) ? null : iso
+}
+
+/** Ceremony moment from the `location` blob, as an ISO string. */
+export function parseEnekrologCeremonyIso(locationRaw: string | null | undefined): string | null {
+  if (!locationRaw) return null
+  try {
+    const p = JSON.parse(locationRaw)
+    return enekrologCeremonyIso(p?.ceremonyDate, p?.ceremonyTime)
+  } catch {
+    return null
   }
 }
 
@@ -156,12 +177,15 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
         </div>
       </div>
 
-      <footer className="sticky bottom-0 border-t bg-background/95 px-4 py-3 backdrop-blur">
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <span>Cyfrowy nekrolog wygenerowany przez</span>
-          <LogoLight style={{ height: 16, width: "auto" }} />
-        </div>
-      </footer>
+      <div className="sticky bottom-0">
+        <EnekrologNavBar ceremonyIso={data.ceremonyIso} addresses={data.addresses} />
+        <footer className="border-t bg-background/95 px-4 py-3 backdrop-blur">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span>Cyfrowy nekrolog wygenerowany przez</span>
+            <LogoLight style={{ height: 16, width: "auto" }} />
+          </div>
+        </footer>
+      </div>
     </div>
   )
 }

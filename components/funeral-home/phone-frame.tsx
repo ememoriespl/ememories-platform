@@ -11,7 +11,8 @@ const DEVICE_W = 390
 const S = DEVICE_W / FIGMA_W
 
 const DEVICE_H = Math.round(1311 * S) // 848
-const RADIUS = Math.round(48 * S) // 31
+const RADIUS = 48
+const BORDER = 6
 const STATUS_H = Math.round(64 * S) // 41
 /** Safari bottom bar area: the 74px bar plus the 50px gap below it (Figma). */
 const BROWSER_BAR_H = 74 * S
@@ -113,11 +114,13 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
     >
       {scale > 0 && (
         <div
-          className="absolute left-0 top-0 flex flex-col overflow-hidden bg-background shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-0 flex flex-col overflow-hidden bg-background"
           style={{
             width: DEVICE_W,
             height: DEVICE_H,
             borderRadius: RADIUS,
+            border: `${BORDER}px solid #000`,
+            boxSizing: "border-box",
             transform: `scale(${scale})`,
             transformOrigin: "top left",
           }}
