@@ -1,4 +1,3 @@
-import { MapPin } from "lucide-react"
 import { LogoLight } from "@/components/logo"
 import { EnekrologNavBar } from "@/components/enekrolog-nav-bar"
 import { cn } from "@/lib/utils"
@@ -140,7 +139,9 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
                 <p className="whitespace-pre-wrap text-center text-sm leading-relaxed">{data.obituaryText}</p>
               )}
 
-              {(data.ceremonyDateTime || data.ceremonyInfo || data.addresses.length > 0) && (
+              {/* Addresses live only behind the "Nawiguj" button in the bottom bar, so they
+                  aren't duplicated here. */}
+              {(data.ceremonyDateTime || data.ceremonyInfo) && (
                 <div className="space-y-4 border-t pt-5">
                   <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     Ceremonia pożegnalna
@@ -150,25 +151,6 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
                   )}
                   {data.ceremonyInfo && (
                     <p className="whitespace-pre-wrap text-center text-sm text-muted-foreground">{data.ceremonyInfo}</p>
-                  )}
-                  {data.addresses.length > 0 && (
-                    <div className="space-y-2">
-                      {data.addresses.map((a) => (
-                        <a
-                          key={a.key}
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-start gap-3 rounded-xl border bg-background px-4 py-3 text-left transition-colors hover:bg-accent"
-                        >
-                          <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                          <span className="min-w-0">
-                            <span className="block text-sm font-medium">{a.label}</span>
-                            <span className="block text-sm text-muted-foreground">{a.address}</span>
-                          </span>
-                        </a>
-                      ))}
-                    </div>
                   )}
                 </div>
               )}
