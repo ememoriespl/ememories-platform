@@ -314,6 +314,15 @@ function renderPhoto(photo: string | null, size: number, bw: boolean): React.Rea
 }
 
 /** eNekrolog QR code (fetched at ecc=H) with the eMemories sygnet inset in the centre. */
+/**
+ * The eNekrolog QR exactly as it prints on the A4 sheet (ecc=H + centred sygnet).
+ * Exported so the editor can show the very same code next to the public link.
+ */
+export function EnekrologQrCode({ publicUrl, size }: { publicUrl: string; size: number }) {
+  const src = `https://api.qrserver.com/v1/create-qr-code/?size=${size * 2}x${size * 2}&margin=8&ecc=H&data=${encodeURIComponent(publicUrl)}`
+  return <>{renderQrImage(src, size)}</>
+}
+
 function renderQrImage(url: string, size: number): React.ReactNode {
   // ~22% of the code width — small enough for ecc=H to reconstruct the covered modules.
   const logo = Math.round(size * 0.22)

@@ -38,6 +38,7 @@ import {
 } from "lucide-react"
 import {
   ObituaryPreview,
+  EnekrologQrCode,
   DEFAULT_PRINT_TEMPLATE,
   DEFAULT_BLOCK_ORDER,
   DEFAULT_GRAPHIC_ORDER,
@@ -1862,28 +1863,19 @@ export function ObituaryForm({
           <div className="max-w-2xl space-y-6">
             {/* QR code size (as printed on the obituary) + the public eNekrolog address */}
             <CollapsibleSectionCard title="QR kod i link" description="Kod QR drukowany na nekrologu prowadzi pod ten adres." defaultOpen>
-              <div className="space-y-5">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm text-muted-foreground">Wielkość QR kodu na nekrologu</span>
-                  <div className="flex items-center gap-1">
-                    <NumberField
-                      value={data.printTemplate.blocks.ceremony.qrSize ?? 64}
-                      onChange={(n) => updateBlock("ceremony", "qrSize", n)}
-                      min={1}
-                      className="w-20"
-                    />
-                    <span className="text-[10px] text-muted-foreground">px</span>
+              {enekrologUrl ? (
+                <div className="flex items-start gap-5">
+                  {/* The very same QR that prints on the A4 sheet */}
+                  <div className="shrink-0">
+                    <EnekrologQrCode publicUrl={enekrologUrl} size={112} />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Adres eNekrologu</Label>
-                  {enekrologUrl ? (
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Label>Adres eNekrologu</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         readOnly
                         value={enekrologUrl}
-                        className="flex-1"
+                        className="min-w-0 flex-1"
                         onFocus={(e) => e.currentTarget.select()}
                       />
                       <Button color="secondary" size="icon" title="Kopiuj adres" onClick={copyEnekrologUrl}>
@@ -1895,13 +1887,13 @@ export function ObituaryForm({
                         </Button>
                       </a>
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Adres pojawi się po zapisaniu nekrologu (wpisz imię i nazwisko).
-                    </p>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Kod QR i adres pojawią się po zapisaniu nekrologu (wpisz imię i nazwisko).
+                </p>
+              )}
             </CollapsibleSectionCard>
 
             {/* Avatar — same photo as "Dane", but its own B&W / colour choice for the eNekrolog */}
