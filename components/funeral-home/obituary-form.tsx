@@ -48,6 +48,8 @@ import {
   type BlockAlign,
   type VerticalAlign,
 } from "@/components/funeral-home/obituary-preview"
+import { EnekrologView, enekrologDateRange, type EnekrologData } from "@/components/enekrolog-view"
+import { CoverCropDialog } from "@/components/funeral-home/cover-crop-dialog"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
 import { PRINT_SIGILS, getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
@@ -334,6 +336,9 @@ interface FormData {
   locations: Locations
   photo: string | null
   photoBw: boolean
+  // eNekrolog-only: a separate B&W choice for the avatar, plus a cover/banner photo.
+  enekrologPhotoBw: boolean
+  coverPhoto: string | null
   status: string
   printTemplate: PrintTemplateSettings
   printTemplateId: string
@@ -458,7 +463,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
 function parseLocationJSON(
   raw: string,
   fhAddress: string
-): Pick<FormData, "locations" | "obituaryHeadline" | "preparedByText" | "ceremonyDate" | "ceremonyTime" | "printTemplate" | "printTemplateId"> {
+): Pick<FormData, "locations" | "obituaryHeadline" | "preparedByText" | "ceremonyDate" | "ceremonyTime" | "printTemplate" | "printTemplateId" | "enekrologPhotoBw" | "coverPhoto"> {
   try {
     const parsed = JSON.parse(raw)
     const locations: Locations = {
@@ -474,6 +479,8 @@ function parseLocationJSON(
       ceremonyTime: parsed.ceremonyTime ?? "",
       printTemplate: parsePrintTemplate(parsed.printTemplate),
       printTemplateId: parsed.printTemplateId ?? "",
+      enekrologPhotoBw: parsed.enekrologPhotoBw ?? false,
+      coverPhoto: parsed.coverPhoto ?? null,
     }
   } catch {
     return {
@@ -484,13 +491,15 @@ function parseLocationJSON(
       ceremonyTime: "",
       printTemplate: DEFAULT_PRINT_TEMPLATE,
       printTemplateId: "",
+      enekrologPhotoBw: false,
+      coverPhoto: null,
     }
   }
 }
 
 function serializeLocation(data: FormData): string {
   return JSON.stringify({
-    v: 6,
+    v: 7,
     obituaryHeadline: data.obituaryHeadline,
     preparedByText: data.preparedByText,
     ceremonyDate: data.ceremonyDate,
@@ -500,6 +509,8 @@ function serializeLocation(data: FormData): string {
     cemetery: data.locations.cemetery,
     printTemplate: data.printTemplate,
     printTemplateId: data.printTemplateId,
+    enekrologPhotoBw: data.enekrologPhotoBw,
+    coverPhoto: data.coverPhoto,
   })
 }
 
@@ -581,7 +592,7 @@ export function ObituaryForm({
     return () => window.removeEventListener("resize", update)
   }, [])
   const [data, setData] = useState<FormData>(() => {
-    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: DEFAULT_OBITUARY_TEXT, ceremonyInfo: DEFAULT_CEREMONY_INFO, preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
+    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: DEFAULT_OBITUARY_TEXT, ceremonyInfo: DEFAULT_CEREMONY_INFO, preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, enekrologPhotoBw: false, coverPhoto: null, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
     const parsed = parseLocationJSON(initialRaw.location ?? "", fhAddress)
     return {
       firstName: initialRaw.first_name ?? "",
@@ -597,6 +608,8 @@ export function ObituaryForm({
       locations: parsed.locations,
       photo: initialRaw.photo_url ?? null,
       photoBw: initialRaw.photo_bw ?? false,
+      enekrologPhotoBw: parsed.enekrologPhotoBw,
+      coverPhoto: parsed.coverPhoto,
       status: initialRaw.status ?? "draft",
       printTemplate: parsed.printTemplate,
       printTemplateId: parsed.printTemplateId,
@@ -782,6 +795,35 @@ export function ObituaryForm({
     }
   }
 
+  // eNekrolog cover photo: pick a file → crop dialog → upload the cropped result.
+  const [coverSrc, setCoverSrc] = useState<string | null>(null)
+  const [coverCropOpen, setCoverCropOpen] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+
+  function onCoverFileSelected(file: File) {
+    const url = URL.createObjectURL(file)
+    setCoverSrc(url)
+    setCoverCropOpen(true)
+  }
+
+  async function handleCoverCropped(file: File) {
+    setUploadingCover(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/obituaries/upload", { method: "POST", body: fd })
+      if (!res.ok) throw new Error()
+      const { url } = await res.json()
+      update("coverPhoto", url)
+    } catch {
+      toast.error("Błąd podczas wgrywania zdjęcia w tle")
+    } finally {
+      setUploadingCover(false)
+      if (coverSrc) URL.revokeObjectURL(coverSrc)
+      setCoverSrc(null)
+    }
+  }
+
   function buildBody(status: "draft" | "published") {
     return {
       first_name: data.firstName,
@@ -893,6 +935,26 @@ export function ObituaryForm({
   const noCredits = creditsRemaining !== null && creditsRemaining <= 0
   const previewData = { ...data, preparedByText: data.preparedByText || defaultPreparedByText }
 
+  const enekrologData: EnekrologData = {
+    fullName: `${data.firstName} ${data.lastName}`.trim() || "Imię Nazwisko",
+    initials: (`${data.firstName[0] ?? ""}${data.lastName[0] ?? ""}`).toUpperCase() || "–",
+    dateRange: enekrologDateRange(data.birthDate, data.deathDate),
+    obituaryText: data.obituaryText,
+    ceremonyInfo: data.ceremonyInfo,
+    photo: data.photo,
+    photoBw: data.enekrologPhotoBw,
+    coverPhoto: data.coverPhoto,
+    addresses: (
+      [
+        { key: "church", label: "Kościół", loc: data.locations.church },
+        { key: "funeralHome", label: "Dom pogrzebowy", loc: data.locations.funeralHome },
+        { key: "cemetery", label: "Cmentarz", loc: data.locations.cemetery },
+      ] as const
+    )
+      .filter((a) => a.loc.enabled && a.loc.address)
+      .map((a) => ({ key: a.key, label: a.label, address: a.loc.address })),
+  }
+
   return (
     <>
       {/* Tab bar — button minimal horizontal */}
@@ -917,7 +979,7 @@ export function ObituaryForm({
 
       {/* Tab content — two-column when on Dane or Szablon tab */}
       <div className="flex print:hidden">
-        <div className={cn("min-w-0 p-6 pb-24", activeTab === "dane" || activeTab === "szablon" ? "w-1/2" : "flex-1")}>
+        <div className={cn("min-w-0 p-6 pb-24", activeTab === "dane" || activeTab === "szablon" || activeTab === "enekrolog" ? "w-1/2" : "flex-1")}>
           <div className="max-w-2xl space-y-6">
         {activeTab === "dane" && (
           <>
@@ -1779,8 +1841,106 @@ export function ObituaryForm({
         )}
 
         {activeTab === "enekrolog" && (
-          <div className="flex items-center justify-center h-48 rounded-xl border border-dashed text-sm text-muted-foreground">
-            eNekrolog — wkrótce
+          <div className="max-w-2xl space-y-6">
+            {/* Avatar — same photo as "Dane", but its own B&W / colour choice for the eNekrolog */}
+            <CollapsibleSectionCard title="Zdjęcie" description="To samo zdjęcie co w zakładce „Dane”. Wybierz styl dla eNekrologu." defaultOpen>
+              {data.photo ? (
+                <div className="flex items-center gap-6">
+                  <img
+                    src={data.photo}
+                    alt=""
+                    className="h-24 w-24 shrink-0 rounded-full object-cover"
+                    style={data.enekrologPhotoBw ? { filter: "grayscale(100%)" } : {}}
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => update("enekrologPhotoBw", false)}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-xs font-medium transition-colors",
+                        !data.enekrologPhotoBw ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <img src={data.photo} alt="" className="h-12 w-12 rounded object-cover" />
+                      Kolorowe
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => update("enekrologPhotoBw", true)}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 text-xs font-medium transition-colors",
+                        data.enekrologPhotoBw ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <img src={data.photo} alt="" className="h-12 w-12 rounded object-cover grayscale" />
+                      Czarno-białe
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Dodaj zdjęcie w zakładce „Dane”, aby pojawiło się w eNekrologu.
+                </p>
+              )}
+            </CollapsibleSectionCard>
+
+            {/* Cover / banner photo */}
+            <CollapsibleSectionCard title="Zdjęcie w tle" description="Baner nad avatarem (jak w mediach społecznościowych). Wgraj i skadruj." defaultOpen>
+              {data.coverPhoto ? (
+                <div className="space-y-3">
+                  <div className="w-full overflow-hidden rounded-lg border" style={{ aspectRatio: "16 / 6" }}>
+                    <img src={data.coverPhoto} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label
+                      className={cn(
+                        "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted/50",
+                        uploadingCover && "pointer-events-none opacity-60"
+                      )}
+                    >
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) onCoverFileSelected(f); e.target.value = "" }}
+                      />
+                      <Upload className="h-3.5 w-3.5" />
+                      {uploadingCover ? "Wgrywanie…" : "Zmień"}
+                    </label>
+                    <Button color="secondary" size="sm" className="gap-1.5" onClick={() => update("coverPhoto", null)}>
+                      <X className="h-3.5 w-3.5" />
+                      Usuń
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <label
+                  className={cn(
+                    "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:bg-muted/30",
+                    uploadingCover && "pointer-events-none opacity-60"
+                  )}
+                >
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="sr-only"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) onCoverFileSelected(f); e.target.value = "" }}
+                  />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium">{uploadingCover ? "Wgrywanie…" : "Przeciągnij zdjęcie lub kliknij, aby wybrać"}</p>
+                  <p className="text-xs text-muted-foreground">PNG, JPG, WebP</p>
+                </label>
+              )}
+            </CollapsibleSectionCard>
+
+            <CoverCropDialog
+              imageSrc={coverSrc}
+              open={coverCropOpen}
+              onOpenChange={setCoverCropOpen}
+              onCropped={handleCoverCropped}
+            />
           </div>
         )}
           </div>
@@ -1822,6 +1982,36 @@ export function ObituaryForm({
                     />
                   </div>
                 )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Right: eNekrolog live preview (phone frame) */}
+        {activeTab === "enekrolog" && (
+          <>
+            <div ref={previewSpacerRef} className="hidden xl:block w-1/2 shrink-0" />
+            {panelRect && (
+              <div
+                style={{
+                  position: "fixed",
+                  left: panelRect.left,
+                  width: panelRect.width,
+                  top: 117,
+                  bottom: 64,
+                  zIndex: 45,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  padding: 32,
+                }}
+              >
+                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Podgląd eNekrologu</p>
+                <div className="w-full max-w-sm min-h-0 flex-1 overflow-hidden rounded-[28px] border-4 border-foreground/10 bg-background shadow-lg">
+                  <div className="h-full overflow-y-auto">
+                    <EnekrologView data={enekrologData} />
+                  </div>
+                </div>
               </div>
             )}
           </>
