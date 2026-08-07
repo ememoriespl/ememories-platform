@@ -4,6 +4,7 @@ import {
   EnekrologView,
   parseEnekrologAddresses,
   parseEnekrologCover,
+  parseEnekrologCeremonyDateTime,
   enekrologDateRange,
   type EnekrologData,
 } from "@/components/enekrolog-view"
@@ -38,6 +39,7 @@ export default async function PublicObituaryPage({ params }: Props) {
     initials: `${obit.first_name?.[0] ?? ""}${obit.last_name?.[0] ?? ""}`,
     dateRange: enekrologDateRange(obit.birth_date, obit.death_date),
     obituaryText: obit.obituary_text ?? "",
+    ceremonyDateTime: parseEnekrologCeremonyDateTime(obit.location),
     ceremonyInfo: obit.ceremony_info ?? "",
     photo: obit.photo_url ?? null,
     photoBw: cover.photoBw,

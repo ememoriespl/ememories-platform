@@ -13,6 +13,7 @@ export interface EnekrologData {
   initials: string
   dateRange: string
   obituaryText: string
+  ceremonyDateTime: string
   ceremonyInfo: string
   photo: string | null
   photoBw: boolean
@@ -57,6 +58,26 @@ export function enekrologDateRange(birth: string | null | undefined, death: stri
     .join(" — ")
 }
 
+/** "30 lipca 2026, godz. 12:00" — the ceremony date (+ optional time). */
+export function enekrologCeremonyDateTime(date: string | null | undefined, time: string | null | undefined): string {
+  if (!date) return ""
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return ""
+  const day = d.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })
+  return time ? `${day}, godz. ${time}` : day
+}
+
+/** Ceremony date/time stored in the `location` blob, formatted for display. */
+export function parseEnekrologCeremonyDateTime(locationRaw: string | null | undefined): string {
+  if (!locationRaw) return ""
+  try {
+    const p = JSON.parse(locationRaw)
+    return enekrologCeremonyDateTime(p?.ceremonyDate, p?.ceremonyTime)
+  } catch {
+    return ""
+  }
+}
+
 /**
  * The eNekrolog card (what a scanned QR opens). Used by both the public page and the
  * editor preview so they stay identical. The container it's placed in controls scrolling;
@@ -98,11 +119,14 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
                 <p className="whitespace-pre-wrap text-center text-sm leading-relaxed">{data.obituaryText}</p>
               )}
 
-              {(data.ceremonyInfo || data.addresses.length > 0) && (
+              {(data.ceremonyDateTime || data.ceremonyInfo || data.addresses.length > 0) && (
                 <div className="space-y-4 border-t pt-5">
                   <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     Ceremonia pożegnalna
                   </p>
+                  {data.ceremonyDateTime && (
+                    <p className="text-center text-base font-semibold text-foreground">{data.ceremonyDateTime}</p>
+                  )}
                   {data.ceremonyInfo && (
                     <p className="whitespace-pre-wrap text-center text-sm text-muted-foreground">{data.ceremonyInfo}</p>
                   )}

@@ -48,7 +48,7 @@ import {
   type BlockAlign,
   type VerticalAlign,
 } from "@/components/funeral-home/obituary-preview"
-import { EnekrologView, enekrologDateRange, type EnekrologData } from "@/components/enekrolog-view"
+import { EnekrologView, enekrologDateRange, enekrologCeremonyDateTime, type EnekrologData } from "@/components/enekrolog-view"
 import { CoverCropDialog } from "@/components/funeral-home/cover-crop-dialog"
 import { PhoneFrame } from "@/components/funeral-home/phone-frame"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
@@ -941,6 +941,7 @@ export function ObituaryForm({
     initials: (`${data.firstName[0] ?? ""}${data.lastName[0] ?? ""}`).toUpperCase() || "–",
     dateRange: enekrologDateRange(data.birthDate, data.deathDate),
     obituaryText: data.obituaryText,
+    ceremonyDateTime: enekrologCeremonyDateTime(data.ceremonyDate, data.ceremonyTime),
     ceremonyInfo: data.ceremonyInfo,
     photo: data.photo,
     photoBw: data.enekrologPhotoBw,
