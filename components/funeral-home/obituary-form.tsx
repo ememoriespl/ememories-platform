@@ -50,6 +50,7 @@ import {
 } from "@/components/funeral-home/obituary-preview"
 import { EnekrologView, enekrologDateRange, type EnekrologData } from "@/components/enekrolog-view"
 import { CoverCropDialog } from "@/components/funeral-home/cover-crop-dialog"
+import { PhoneFrame } from "@/components/funeral-home/phone-frame"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
 import { PRINT_SIGILS, getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
@@ -2007,10 +2008,10 @@ export function ObituaryForm({
                 }}
               >
                 <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Podgląd eNekrologu</p>
-                <div className="w-full max-w-sm min-h-0 flex-1 overflow-hidden rounded-[28px] border-4 border-foreground/10 bg-background shadow-lg">
-                  <div className="h-full overflow-y-auto">
+                <div className="flex min-h-0 w-full flex-1 justify-center">
+                  <PhoneFrame>
                     <EnekrologView data={enekrologData} />
-                  </div>
+                  </PhoneFrame>
                 </div>
               </div>
             )}

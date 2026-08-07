@@ -46,8 +46,8 @@ export default async function PublicObituaryPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen">
-      <EnekrologView data={data} />
+    <div className="flex min-h-[100dvh] flex-col">
+      <EnekrologView data={data} className="flex-1" />
     </div>
   )
 }

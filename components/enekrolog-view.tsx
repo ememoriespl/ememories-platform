@@ -1,5 +1,6 @@
 import { MapPin } from "lucide-react"
 import { LogoLight } from "@/components/logo"
+import { cn } from "@/lib/utils"
 
 export interface EnekrologAddress {
   key: string
@@ -61,9 +62,9 @@ export function enekrologDateRange(birth: string | null | undefined, death: stri
  * editor preview so they stay identical. The container it's placed in controls scrolling;
  * the footer sticks to the bottom of that container.
  */
-export function EnekrologView({ data }: { data: EnekrologData }) {
+export function EnekrologView({ data, className }: { data: EnekrologData; className?: string }) {
   return (
-    <div className="flex min-h-full flex-col bg-muted/20">
+    <div className={cn("flex min-h-full flex-col bg-muted/20", className)}>
       <div className="flex-1 px-4 py-6">
         <div className="mx-auto w-full max-w-xl">
           <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">

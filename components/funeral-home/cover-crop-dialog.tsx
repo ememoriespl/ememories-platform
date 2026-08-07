@@ -26,6 +26,9 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
   canvas.height = Math.round(pixelCrop.height)
   const ctx = canvas.getContext("2d")
   if (!ctx) throw new Error("no canvas context")
+  // JPEG has no alpha — paint white first so transparent PNGs get a white background (not black).
+  ctx.fillStyle = "#ffffff"
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.drawImage(
     image,
     pixelCrop.x,
