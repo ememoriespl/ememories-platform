@@ -57,24 +57,27 @@ export function EnekrologNavBar({
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 border-t bg-background px-4 py-3">
-        {ceremonyIso ? (
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Rozpoczęcie za…</p>
-            <p className="truncate text-sm font-semibold tabular-nums">
-              {remaining === null ? "—" : remaining > 0 ? formatCountdown(remaining) : "Ceremonia się odbyła"}
-            </p>
-          </div>
-        ) : (
-          <span />
-        )}
+      <div className="border-t bg-background px-4 py-3">
+        {/* Same max width as the card above, so the bar lines up with the content on desktop */}
+        <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
+          {ceremonyIso ? (
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Rozpoczęcie za…</p>
+              <p className="truncate text-sm font-semibold tabular-nums">
+                {remaining === null ? "—" : remaining > 0 ? formatCountdown(remaining) : "Ceremonia się odbyła"}
+              </p>
+            </div>
+          ) : (
+            <span />
+          )}
 
-        {addresses.length > 0 && (
-          <Button className="shrink-0 gap-1.5" onClick={() => setOpen(true)}>
-            <Navigation className="h-4 w-4" />
-            Nawiguj
-          </Button>
-        )}
+          {addresses.length > 0 && (
+            <Button className="shrink-0 gap-1.5" onClick={() => setOpen(true)}>
+              <Navigation className="h-4 w-4" />
+              Nawiguj
+            </Button>
+          )}
+        </div>
       </div>
 
       {open && (
@@ -89,7 +92,7 @@ export function EnekrologNavBar({
             role="dialog"
             aria-label="Nawiguj do"
           >
-            <div className="flex items-center justify-between px-4 pt-4">
+            <div className="mx-auto flex w-full max-w-xl items-center justify-between px-4 pt-4">
               <p className="text-sm font-semibold">Nawiguj do…</p>
               <button
                 type="button"
@@ -100,7 +103,7 @@ export function EnekrologNavBar({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-2 p-4 pb-6">
+            <div className="mx-auto w-full max-w-xl space-y-2 p-4 pb-6">
               {addresses.map((a) => (
                 <a
                   key={a.key}
