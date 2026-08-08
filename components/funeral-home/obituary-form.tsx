@@ -1203,7 +1203,7 @@ export function ObituaryForm({
                 ) : (
                   <label
                     className={cn(
-                      "flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-border p-12 text-center cursor-pointer transition-colors hover:bg-muted/30",
+                      "relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-border p-12 text-center cursor-pointer transition-colors hover:bg-muted/30",
                       uploading && "opacity-60 pointer-events-none"
                     )}
                   >
@@ -1972,7 +1972,7 @@ export function ObituaryForm({
                   <div className="flex items-center gap-2">
                     <label
                       className={cn(
-                        "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted/50",
+                        "relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted/50",
                         uploadingCover && "pointer-events-none opacity-60"
                       )}
                     >
@@ -1994,7 +1994,7 @@ export function ObituaryForm({
               ) : (
                 <label
                   className={cn(
-                    "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:bg-muted/30",
+                    "relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:bg-muted/30",
                     uploadingCover && "pointer-events-none opacity-60"
                   )}
                 >
@@ -2023,7 +2023,7 @@ export function ObituaryForm({
                   <div className="flex items-center gap-2">
                     <label
                       className={cn(
-                        "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted/50",
+                        "relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted/50",
                         uploadingBackground && "pointer-events-none opacity-60"
                       )}
                     >
@@ -2045,7 +2045,7 @@ export function ObituaryForm({
               ) : (
                 <label
                   className={cn(
-                    "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:bg-muted/30",
+                    "relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:bg-muted/30",
                     uploadingBackground && "pointer-events-none opacity-60"
                   )}
                 >

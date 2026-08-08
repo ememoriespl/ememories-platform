@@ -125,10 +125,10 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
           : undefined
       }
     >
-      <div className="flex-1 px-4 py-6">
+      <div className="flex-1 px-4 pb-6 pt-3">
         <div className="mx-auto w-full max-w-xl">
           {/* Chip background so the credit stays legible over any uploaded background image */}
-          <p className="mb-6 flex justify-center">
+          <p className="mb-3 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur">
               <span>Cyfrowy nekrolog wygenerowany przez</span>
               <LogoLight style={{ height: 16, width: "auto" }} />
@@ -185,8 +185,9 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
         </div>
       </div>
 
-      {/* Only the countdown / navigation bar is pinned; the credit line scrolls with the content. */}
-      <div className="sticky bottom-0">
+      {/* Only the countdown / navigation bar is pinned; the credit line scrolls with the content.
+          Opaque so the background image can't bleed through under it. */}
+      <div className="sticky bottom-0 bg-background">
         <EnekrologNavBar ceremonyIso={data.ceremonyIso} addresses={data.addresses} />
       </div>
     </div>

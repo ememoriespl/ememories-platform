@@ -144,8 +144,8 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
             <StatusIcons />
           </div>
 
-          {/* Screen */}
-          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+          {/* Screen — opaque so nothing bleeds through the seam with the browser bar below */}
+          <div className="min-h-0 flex-1 overflow-y-auto bg-background">{children}</div>
 
           {/* Safari bottom bar */}
           <div
