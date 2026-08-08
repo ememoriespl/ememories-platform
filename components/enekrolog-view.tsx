@@ -156,17 +156,17 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
               )}
             </div>
           </div>
+
+          <p className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span>Cyfrowy nekrolog wygenerowany przez</span>
+            <LogoLight style={{ height: 16, width: "auto" }} />
+          </p>
         </div>
       </div>
 
+      {/* Only the countdown / navigation bar is pinned; the credit line scrolls with the content. */}
       <div className="sticky bottom-0">
         <EnekrologNavBar ceremonyIso={data.ceremonyIso} addresses={data.addresses} />
-        <footer className="border-t bg-background/95 px-4 py-3 backdrop-blur">
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span>Cyfrowy nekrolog wygenerowany przez</span>
-            <LogoLight style={{ height: 16, width: "auto" }} />
-          </div>
-        </footer>
       </div>
     </div>
   )

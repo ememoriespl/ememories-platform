@@ -1,9 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Navigation, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import type { EnekrologAddress } from "@/components/enekrolog-view"
+
+/** Slide duration for the navigation drawer, in ms (kept in sync with the CSS duration). */
+const DRAWER_MS = 300
 
 /** Directions link — opens the phone's navigation app (Google/Apple Maps) with the address. */
 export function navigationUrl(address: string) {
@@ -41,7 +45,10 @@ export function EnekrologNavBar({
   addresses: EnekrologAddress[]
 }) {
   const [remaining, setRemaining] = useState<number | null>(null)
-  const [open, setOpen] = useState(false)
+  // `mounted` keeps the drawer in the DOM while it slides out; `shown` drives the transform.
+  const [mounted, setMounted] = useState(false)
+  const [shown, setShown] = useState(false)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!ceremonyIso) return
@@ -52,6 +59,33 @@ export function EnekrologNavBar({
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [ceremonyIso])
+
+  useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current) }, [])
+
+  // Flip to the shown state in a follow-up task, so the closed position is committed first and
+  // the transition has a start value. Deliberately not requestAnimationFrame — that never fires
+  // in a background tab, which would leave the drawer stuck off-screen.
+  useEffect(() => {
+    if (!mounted) return
+    const id = setTimeout(() => setShown(true), 0)
+    return () => clearTimeout(id)
+  }, [mounted])
+
+  function openDrawer() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+    setMounted(true)
+  }
+
+  function closeDrawer() {
+    setShown(false)
+    closeTimer.current = setTimeout(() => {
+      setMounted(false)
+      closeTimer.current = null
+    }, DRAWER_MS)
+  }
 
   if (!ceremonyIso && addresses.length === 0) return null
 
@@ -72,7 +106,7 @@ export function EnekrologNavBar({
           )}
 
           {addresses.length > 0 && (
-            <Button className="shrink-0 gap-1.5" onClick={() => setOpen(true)}>
+            <Button className="shrink-0 gap-1.5" onClick={openDrawer}>
               <Navigation className="h-4 w-4" />
               Nawiguj
             </Button>
@@ -80,15 +114,22 @@ export function EnekrologNavBar({
         </div>
       </div>
 
-      {open && (
+      {mounted && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setOpen(false)}
+            className={cn(
+              "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ease-out motion-reduce:transition-none",
+              shown ? "opacity-100" : "opacity-0"
+            )}
+            onClick={closeDrawer}
             aria-hidden="true"
           />
           <div
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t bg-background shadow-2xl"
+            className={cn(
+              "fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t bg-background shadow-2xl",
+              "transition-transform duration-300 ease-out motion-reduce:transition-none",
+              shown ? "translate-y-0" : "translate-y-full"
+            )}
             role="dialog"
             aria-label="Nawiguj do"
           >
@@ -96,11 +137,11 @@ export function EnekrologNavBar({
               <p className="text-sm font-semibold">Nawiguj do…</p>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closeDrawer}
                 aria-label="Zamknij"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted"
               >
-                <X className="h-4 w-4" />
+                <X className="h-6 w-6" />
               </button>
             </div>
             <div className="mx-auto w-full max-w-xl space-y-2 p-4 pb-6">
