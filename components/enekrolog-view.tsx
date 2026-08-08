@@ -20,6 +20,8 @@ export interface EnekrologData {
   photo: string | null
   photoBw: boolean
   coverPhoto: string | null
+  /** Optional image behind the whole card. */
+  backgroundPhoto: string | null
   addresses: EnekrologAddress[]
 }
 
@@ -42,14 +44,20 @@ export function parseEnekrologAddresses(locationRaw: string | null | undefined):
   }
 }
 
-/** eNekrolog-only cover photo + avatar B&W choice, read from the `location` blob. */
-export function parseEnekrologCover(locationRaw: string | null | undefined): { coverPhoto: string | null; photoBw: boolean } {
-  if (!locationRaw) return { coverPhoto: null, photoBw: false }
+/** eNekrolog-only images + avatar B&W choice, read from the `location` blob. */
+export function parseEnekrologCover(
+  locationRaw: string | null | undefined
+): { coverPhoto: string | null; backgroundPhoto: string | null; photoBw: boolean } {
+  if (!locationRaw) return { coverPhoto: null, backgroundPhoto: null, photoBw: false }
   try {
     const p = JSON.parse(locationRaw)
-    return { coverPhoto: p?.coverPhoto ?? null, photoBw: !!p?.enekrologPhotoBw }
+    return {
+      coverPhoto: p?.coverPhoto ?? null,
+      backgroundPhoto: p?.backgroundPhoto ?? null,
+      photoBw: !!p?.enekrologPhotoBw,
+    }
   } catch {
-    return { coverPhoto: null, photoBw: false }
+    return { coverPhoto: null, backgroundPhoto: null, photoBw: false }
   }
 }
 
@@ -105,9 +113,27 @@ export function parseEnekrologCeremonyIso(locationRaw: string | null | undefined
  */
 export function EnekrologView({ data, className }: { data: EnekrologData; className?: string }) {
   return (
-    <div className={cn("flex min-h-full flex-col bg-muted/20", className)}>
+    <div
+      className={cn("flex min-h-full flex-col bg-muted/20", className)}
+      style={
+        data.backgroundPhoto
+          ? {
+              backgroundImage: `url(${data.backgroundPhoto})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }
+          : undefined
+      }
+    >
       <div className="flex-1 px-4 py-6">
         <div className="mx-auto w-full max-w-xl">
+          {/* Chip background so the credit stays legible over any uploaded background image */}
+          <p className="mb-6 flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur">
+              <span>Cyfrowy nekrolog wygenerowany przez</span>
+              <LogoLight style={{ height: 16, width: "auto" }} />
+            </span>
+          </p>
           <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
             {/* Cover banner — the avatar overlaps its bottom edge (cover reaches the avatar's middle).
                 Aspect matches COVER_ASPECT (16/6) in the crop dialog so the crop is WYSIWYG. */}
@@ -156,11 +182,6 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
               )}
             </div>
           </div>
-
-          <p className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span>Cyfrowy nekrolog wygenerowany przez</span>
-            <LogoLight style={{ height: 16, width: "auto" }} />
-          </p>
         </div>
       </div>
 

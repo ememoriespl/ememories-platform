@@ -343,6 +343,7 @@ interface FormData {
   // eNekrolog-only: a separate B&W choice for the avatar, plus a cover/banner photo.
   enekrologPhotoBw: boolean
   coverPhoto: string | null
+  backgroundPhoto: string | null
   status: string
   printTemplate: PrintTemplateSettings
   printTemplateId: string
@@ -467,7 +468,7 @@ function parsePrintTemplate(raw: unknown): PrintTemplateSettings {
 function parseLocationJSON(
   raw: string,
   fhAddress: string
-): Pick<FormData, "locations" | "obituaryHeadline" | "preparedByText" | "ceremonyDate" | "ceremonyTime" | "printTemplate" | "printTemplateId" | "enekrologPhotoBw" | "coverPhoto"> {
+): Pick<FormData, "locations" | "obituaryHeadline" | "preparedByText" | "ceremonyDate" | "ceremonyTime" | "printTemplate" | "printTemplateId" | "enekrologPhotoBw" | "coverPhoto" | "backgroundPhoto"> {
   try {
     const parsed = JSON.parse(raw)
     const locations: Locations = {
@@ -485,6 +486,7 @@ function parseLocationJSON(
       printTemplateId: parsed.printTemplateId ?? "",
       enekrologPhotoBw: parsed.enekrologPhotoBw ?? false,
       coverPhoto: parsed.coverPhoto ?? null,
+      backgroundPhoto: parsed.backgroundPhoto ?? null,
     }
   } catch {
     return {
@@ -497,6 +499,7 @@ function parseLocationJSON(
       printTemplateId: "",
       enekrologPhotoBw: false,
       coverPhoto: null,
+      backgroundPhoto: null,
     }
   }
 }
@@ -515,6 +518,7 @@ function serializeLocation(data: FormData): string {
     printTemplateId: data.printTemplateId,
     enekrologPhotoBw: data.enekrologPhotoBw,
     coverPhoto: data.coverPhoto,
+    backgroundPhoto: data.backgroundPhoto,
   })
 }
 
@@ -596,7 +600,7 @@ export function ObituaryForm({
     return () => window.removeEventListener("resize", update)
   }, [])
   const [data, setData] = useState<FormData>(() => {
-    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: DEFAULT_OBITUARY_TEXT, ceremonyInfo: DEFAULT_CEREMONY_INFO, preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, enekrologPhotoBw: false, coverPhoto: null, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
+    if (!initialRaw) return { firstName: "", lastName: "", birthDate: "", deathDate: "", obituaryHeadline: "", obituaryText: DEFAULT_OBITUARY_TEXT, ceremonyInfo: DEFAULT_CEREMONY_INFO, preparedByText: "", ceremonyDate: "", ceremonyTime: "", locations: defaultLocations(fhAddress), photo: null, photoBw: false, enekrologPhotoBw: false, coverPhoto: null, backgroundPhoto: null, status: "draft", printTemplate: DEFAULT_PRINT_TEMPLATE, printTemplateId: "" }
     const parsed = parseLocationJSON(initialRaw.location ?? "", fhAddress)
     return {
       firstName: initialRaw.first_name ?? "",
@@ -614,6 +618,7 @@ export function ObituaryForm({
       photoBw: initialRaw.photo_bw ?? false,
       enekrologPhotoBw: parsed.enekrologPhotoBw,
       coverPhoto: parsed.coverPhoto,
+      backgroundPhoto: parsed.backgroundPhoto,
       status: initialRaw.status ?? "draft",
       printTemplate: parsed.printTemplate,
       printTemplateId: parsed.printTemplateId,
@@ -810,6 +815,24 @@ export function ObituaryForm({
     setCoverCropOpen(true)
   }
 
+  const [uploadingBackground, setUploadingBackground] = useState(false)
+
+  async function handleBackgroundUpload(file: File) {
+    setUploadingBackground(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/obituaries/upload", { method: "POST", body: fd })
+      if (!res.ok) throw new Error()
+      const { url } = await res.json()
+      update("backgroundPhoto", url)
+    } catch {
+      toast.error("Błąd podczas wgrywania tła")
+    } finally {
+      setUploadingBackground(false)
+    }
+  }
+
   async function handleCoverCropped(file: File) {
     setUploadingCover(true)
     try {
@@ -950,6 +973,7 @@ export function ObituaryForm({
     photo: data.photo,
     photoBw: data.enekrologPhotoBw,
     coverPhoto: data.coverPhoto,
+    backgroundPhoto: data.backgroundPhoto,
     addresses: (
       [
         { key: "church", label: "Kościół", loc: data.locations.church },
@@ -1984,6 +2008,57 @@ export function ObituaryForm({
                     <Upload className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <p className="text-sm font-medium">{uploadingCover ? "Wgrywanie…" : "Przeciągnij zdjęcie lub kliknij, aby wybrać"}</p>
+                  <p className="text-xs text-muted-foreground">PNG, JPG, WebP</p>
+                </label>
+              )}
+            </CollapsibleSectionCard>
+
+            {/* Page background — the image behind the whole eNekrolog card */}
+            <CollapsibleSectionCard title="Tło" description="Grafika za kartą eNekrologu. Wypełnia cały ekran." defaultOpen>
+              {data.backgroundPhoto ? (
+                <div className="space-y-3">
+                  <div className="h-40 w-full overflow-hidden rounded-lg border">
+                    <img src={data.backgroundPhoto} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label
+                      className={cn(
+                        "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted/50",
+                        uploadingBackground && "pointer-events-none opacity-60"
+                      )}
+                    >
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBackgroundUpload(f); e.target.value = "" }}
+                      />
+                      <Upload className="h-3.5 w-3.5" />
+                      {uploadingBackground ? "Wgrywanie…" : "Zmień"}
+                    </label>
+                    <Button color="secondary" size="sm" className="gap-1.5" onClick={() => update("backgroundPhoto", null)}>
+                      <X className="h-3.5 w-3.5" />
+                      Usuń
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <label
+                  className={cn(
+                    "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:bg-muted/30",
+                    uploadingBackground && "pointer-events-none opacity-60"
+                  )}
+                >
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="sr-only"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBackgroundUpload(f); e.target.value = "" }}
+                  />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium">{uploadingBackground ? "Wgrywanie…" : "Przeciągnij zdjęcie lub kliknij, aby wybrać"}</p>
                   <p className="text-xs text-muted-foreground">PNG, JPG, WebP</p>
                 </label>
               )}

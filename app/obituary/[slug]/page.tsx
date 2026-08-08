@@ -46,6 +46,7 @@ export default async function PublicObituaryPage({ params }: Props) {
     photo: obit.photo_url ?? null,
     photoBw: cover.photoBw,
     coverPhoto: cover.coverPhoto,
+    backgroundPhoto: cover.backgroundPhoto,
     addresses: parseEnekrologAddresses(obit.location),
   }
 
