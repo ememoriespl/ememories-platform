@@ -53,6 +53,7 @@ import {
 } from "@/components/funeral-home/obituary-preview"
 import { EnekrologView, enekrologDateRange, enekrologCeremonyDateTime, enekrologCeremonyIso, type EnekrologData } from "@/components/enekrolog-view"
 import { CoverCropDialog } from "@/components/funeral-home/cover-crop-dialog"
+import { EnekrologAssetPicker, useEnekrologAssets } from "@/components/funeral-home/enekrolog-assets"
 import { PhoneFrame } from "@/components/funeral-home/phone-frame"
 import { PRINT_FONTS, PRINT_FONTS_CLASSNAME, getClosestWeight } from "@/lib/print-fonts"
 import { PRINT_SIGILS, getSigilOption, DEFAULT_SIGIL_ID, DEFAULT_SIGIL_COLOR } from "@/lib/print-sigils"
@@ -815,6 +816,22 @@ export function ObituaryForm({
     setCoverCropOpen(true)
   }
 
+  const { assets: enekrologAssets, setAssets: setEnekrologAssets } = useEnekrologAssets()
+
+  // A brand-new obituary starts on the first default cover/background, so it never looks empty.
+  const seededAssetsRef = useRef(false)
+  useEffect(() => {
+    if (mode !== "new" || seededAssetsRef.current || enekrologAssets.length === 0) return
+    seededAssetsRef.current = true
+    const firstDefault = (kind: "cover" | "background") =>
+      enekrologAssets.find((a) => a.kind === kind && a.is_default)?.url ?? null
+    setData((prev) => ({
+      ...prev,
+      coverPhoto: prev.coverPhoto ?? firstDefault("cover"),
+      backgroundPhoto: prev.backgroundPhoto ?? firstDefault("background"),
+    }))
+  }, [enekrologAssets, mode])
+
   const [uploadingBackground, setUploadingBackground] = useState(false)
 
   async function handleBackgroundUpload(file: File) {
@@ -925,20 +942,21 @@ export function ObituaryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Auto-save drafts in the background so "Zapisz szkic" is never needed. The record
-  // is created once a first and last name are present (so we don't spam empty rows),
-  // then debounced-updated on every change. Published obituaries save explicitly.
+  // Auto-save in the background so no manual save button is needed — for drafts and for
+  // published obituaries alike. The record is created once a first and last name are present
+  // (so we don't spam empty rows), then debounced-updated on every change. Saving keeps the
+  // current status, so an auto-save never re-publishes (and never re-charges a credit).
   useEffect(() => {
-    if (data.status === "published") return
     if (!data.firstName.trim() || !data.lastName.trim()) return
-    const serialized = JSON.stringify(buildBody("draft"))
+    const status = data.status === "published" ? "published" : "draft"
+    const serialized = JSON.stringify(buildBody(status))
     if (serialized === lastSavedRef.current) return
     const t = setTimeout(async () => {
       if (persistingRef.current || saving) return
       persistingRef.current = true
       setAutoSaveState("saving")
       try {
-        await persist("draft")
+        await persist(status)
         lastSavedRef.current = serialized
         setAutoSaveState("saved")
       } catch {
@@ -1962,106 +1980,40 @@ export function ObituaryForm({
               )}
             </CollapsibleSectionCard>
 
-            {/* Cover / banner photo */}
-            <CollapsibleSectionCard title="Zdjęcie w tle" description="Baner nad avatarem (jak w mediach społecznościowych). Wgraj i skadruj." defaultOpen>
-              {data.coverPhoto ? (
-                <div className="space-y-3">
-                  <div className="w-full overflow-hidden rounded-lg border" style={{ aspectRatio: "16 / 6" }}>
-                    <img src={data.coverPhoto} alt="" className="h-full w-full object-cover" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label
-                      className={cn(
-                        "relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted/50",
-                        uploadingCover && "pointer-events-none opacity-60"
-                      )}
-                    >
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        className="sr-only"
-                        onChange={(e) => { const f = e.target.files?.[0]; if (f) onCoverFileSelected(f); e.target.value = "" }}
-                      />
-                      <Upload className="h-3.5 w-3.5" />
-                      {uploadingCover ? "Wgrywanie…" : "Zmień"}
-                    </label>
-                    <Button color="secondary" size="sm" className="gap-1.5" onClick={() => update("coverPhoto", null)}>
-                      <X className="h-3.5 w-3.5" />
-                      Usuń
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <label
-                  className={cn(
-                    "relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:bg-muted/30",
-                    uploadingCover && "pointer-events-none opacity-60"
-                  )}
-                >
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="sr-only"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) onCoverFileSelected(f); e.target.value = "" }}
-                  />
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium">{uploadingCover ? "Wgrywanie…" : "Przeciągnij zdjęcie lub kliknij, aby wybrać"}</p>
-                  <p className="text-xs text-muted-foreground">PNG, JPG, WebP</p>
-                </label>
-              )}
+            {/* Cover banner — pick a saved one or upload + crop your own */}
+            <CollapsibleSectionCard
+              title="Zdjęcie w tle"
+              description="Baner nad avatarem (jak w mediach społecznościowych). Wybierz gotowy lub wgraj własny."
+              defaultOpen
+            >
+              <EnekrologAssetPicker
+                kind="cover"
+                assets={enekrologAssets}
+                setAssets={setEnekrologAssets}
+                value={data.coverPhoto}
+                onChange={(url) => update("coverPhoto", url)}
+                onPickFile={onCoverFileSelected}
+                uploading={uploadingCover}
+                isAdmin={isAdmin}
+              />
             </CollapsibleSectionCard>
 
             {/* Page background — the image behind the whole eNekrolog card */}
-            <CollapsibleSectionCard title="Tło" description="Grafika za kartą eNekrologu. Wypełnia cały ekran." defaultOpen>
-              {data.backgroundPhoto ? (
-                <div className="space-y-3">
-                  <div className="h-40 w-full overflow-hidden rounded-lg border">
-                    <img src={data.backgroundPhoto} alt="" className="h-full w-full object-cover" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label
-                      className={cn(
-                        "relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted/50",
-                        uploadingBackground && "pointer-events-none opacity-60"
-                      )}
-                    >
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        className="sr-only"
-                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBackgroundUpload(f); e.target.value = "" }}
-                      />
-                      <Upload className="h-3.5 w-3.5" />
-                      {uploadingBackground ? "Wgrywanie…" : "Zmień"}
-                    </label>
-                    <Button color="secondary" size="sm" className="gap-1.5" onClick={() => update("backgroundPhoto", null)}>
-                      <X className="h-3.5 w-3.5" />
-                      Usuń
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <label
-                  className={cn(
-                    "relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:bg-muted/30",
-                    uploadingBackground && "pointer-events-none opacity-60"
-                  )}
-                >
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="sr-only"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBackgroundUpload(f); e.target.value = "" }}
-                  />
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium">{uploadingBackground ? "Wgrywanie…" : "Przeciągnij zdjęcie lub kliknij, aby wybrać"}</p>
-                  <p className="text-xs text-muted-foreground">PNG, JPG, WebP</p>
-                </label>
-              )}
+            <CollapsibleSectionCard
+              title="Tło"
+              description="Grafika za kartą eNekrologu. Wypełnia cały ekran."
+              defaultOpen
+            >
+              <EnekrologAssetPicker
+                kind="background"
+                assets={enekrologAssets}
+                setAssets={setEnekrologAssets}
+                value={data.backgroundPhoto}
+                onChange={(url) => update("backgroundPhoto", url)}
+                onPickFile={handleBackgroundUpload}
+                uploading={uploadingBackground}
+                isAdmin={isAdmin}
+              />
             </CollapsibleSectionCard>
 
             <CoverCropDialog
@@ -2157,20 +2109,13 @@ export function ObituaryForm({
           Anuluj
         </Button>
         <div className="flex items-center gap-2">
-          {isPublished ? (
-            <Button
-              color="secondary"
-              onClick={() => save("published", { navigate: false })}
-              disabled={saving}
-            >
-              <Save className="h-4 w-4" />
-              {saving ? "Zapisuję…" : "Zapisz zmiany"}
-            </Button>
-          ) : (
-            <span className="text-xs text-muted-foreground min-w-[92px]">
-              {autoSaveState === "saving" ? "Zapisywanie…" : autoSaveState === "saved" ? "Szkic zapisany" : ""}
-            </span>
-          )}
+          <span className="min-w-[92px] text-xs text-muted-foreground">
+            {autoSaveState === "saving"
+              ? "Zapisywanie…"
+              : autoSaveState === "saved"
+                ? isPublished ? "Zapisano" : "Szkic zapisany"
+                : ""}
+          </span>
           <Button color="secondary" onClick={() => window.print()}>
             <Download className="h-4 w-4" />
             Pobierz .pdf
