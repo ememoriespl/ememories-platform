@@ -125,12 +125,12 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
           : undefined
       }
     >
-      <div className="flex-1 px-4 pb-6 pt-3">
+      <div className="flex-1 px-4 pb-6 pt-2">
         <div className="mx-auto w-full max-w-xl">
           {/* Obituary text sits above the card, on a translucent panel so it stays legible
               over any uploaded background image. */}
           {data.obituaryText && (
-            <p className="mb-3 whitespace-pre-wrap rounded-xl bg-background/80 px-4 py-3 text-center text-sm leading-relaxed backdrop-blur">
+            <p className="mb-2 whitespace-pre-wrap rounded-xl bg-background/80 px-4 py-2 text-center text-sm leading-relaxed backdrop-blur">
               {data.obituaryText}
             </p>
           )}
@@ -177,9 +177,10 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
                 </div>
               )}
 
+              {/* Logo is desaturated + faded so the whole credit reads as one grey line */}
               <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <span>Cyfrowy nekrolog wygenerowany przez</span>
-                <LogoLight style={{ height: 16, width: "auto" }} />
+                <span>eNekrolog wygenerowany przez</span>
+                <LogoLight className="opacity-60 grayscale" style={{ height: 16, width: "auto" }} />
               </p>
             </div>
           </div>
