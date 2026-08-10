@@ -127,13 +127,13 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
     >
       <div className="flex-1 px-4 pb-6 pt-3">
         <div className="mx-auto w-full max-w-xl">
-          {/* Chip background so the credit stays legible over any uploaded background image */}
-          <p className="mb-3 flex justify-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur">
-              <span>Cyfrowy nekrolog wygenerowany przez</span>
-              <LogoLight style={{ height: 16, width: "auto" }} />
-            </span>
-          </p>
+          {/* Obituary text sits above the card, on a translucent panel so it stays legible
+              over any uploaded background image. */}
+          {data.obituaryText && (
+            <p className="mb-3 whitespace-pre-wrap rounded-xl bg-background/80 px-4 py-3 text-center text-sm leading-relaxed backdrop-blur">
+              {data.obituaryText}
+            </p>
+          )}
           <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
             {/* Cover banner — the avatar overlaps its bottom edge (cover reaches the avatar's middle).
                 Aspect matches COVER_ASPECT (16/6) in the crop dialog so the crop is WYSIWYG. */}
@@ -161,10 +161,6 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
             </div>
 
             <div className="space-y-5 px-8 pb-8">
-              {data.obituaryText && (
-                <p className="whitespace-pre-wrap text-center text-sm leading-relaxed">{data.obituaryText}</p>
-              )}
-
               {/* Addresses live only behind the "Nawiguj" button in the bottom bar, so they
                   aren't duplicated here. */}
               {(data.ceremonyDateTime || data.ceremonyInfo) && (
@@ -180,6 +176,11 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
                   )}
                 </div>
               )}
+
+              <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <span>Cyfrowy nekrolog wygenerowany przez</span>
+                <LogoLight style={{ height: 16, width: "auto" }} />
+              </p>
             </div>
           </div>
         </div>
