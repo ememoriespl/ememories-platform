@@ -6,9 +6,11 @@ export const alt = "eNekrolog"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
-const COVER_H = 380
-const AVATAR = 300
-const AVATAR_INNER = 280
+/** Portrait takes 80% of the canvas height, vertically centred, straddling the cover's edge. */
+const AVATAR = Math.round(size.height * 0.8)
+const AVATAR_INNER = AVATAR - 24
+const AVATAR_TOP = Math.round((size.height - AVATAR) / 2)
+const COVER_H = AVATAR_TOP + AVATAR / 2
 
 /**
  * Link preview for a shared eNekrolog: the cover banner with the portrait overlapping its
@@ -45,7 +47,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
         <div
           style={{
             position: "absolute",
-            top: COVER_H - AVATAR / 2,
+            top: AVATAR_TOP,
             left: (size.width - AVATAR) / 2,
             width: AVATAR,
             height: AVATAR,
