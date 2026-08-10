@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+  // Makes og:image / canonical URLs absolute, which link previews require.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://ememoriespl.vercel.app"),
   title: "eMemories — Platforma Cyfrowych Nekrologów",
   description: "Profesjonalna platforma do tworzenia cyfrowych nekrologów z kodami QR dla zakładów pogrzebowych.",
   icons: {

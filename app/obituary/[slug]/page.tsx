@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { createServerClient } from "@/lib/supabase"
 import {
@@ -12,6 +13,41 @@ import {
 
 interface Props {
   params: Promise<{ slug: string }>
+}
+
+/**
+ * Link preview shown by messengers and social networks. The image itself comes from the
+ * `opengraph-image` route in this segment, which Next wires up automatically.
+ */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = createServerClient()
+  const { data: obit } = await supabase
+    .from("obituaries")
+    .select("first_name, last_name, birth_date, death_date, obituary_text")
+    .eq("id", slug)
+    .eq("status", "published")
+    .single()
+
+  if (!obit) return { title: "eNekrolog" }
+
+  const fullName = `${obit.first_name} ${obit.last_name}`.trim()
+  const dates = enekrologDateRange(obit.birth_date, obit.death_date)
+  const title = dates ? `${fullName} — ${dates}` : fullName
+  const description = obit.obituary_text?.trim() || "eNekrolog"
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: "profile",
+      siteName: "eMemories",
+      title,
+      description,
+      url: `/obituary/${slug}`,
+    },
+    twitter: { card: "summary_large_image", title, description },
+  }
 }
 
 export default async function PublicObituaryPage({ params }: Props) {
