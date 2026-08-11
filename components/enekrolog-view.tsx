@@ -145,9 +145,9 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
             </div>
 
             <div className="flex flex-col items-center px-8 pb-6 text-center">
-              {/* Pulled up by its own height, so the portrait sits wholly on the cover with its
-                  bottom edge on the cover's. */}
-              <div className="-mt-28">
+              {/* Pulled up by just under its own height, so the portrait sits on the cover but
+                  dips a little past its bottom edge. */}
+              <div className="-mt-[100px]">
                 {data.photo ? (
                   <img
                     src={data.photo}
