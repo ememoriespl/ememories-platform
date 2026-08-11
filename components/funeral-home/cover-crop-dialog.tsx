@@ -83,18 +83,28 @@ export function CoverCropDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      {/* react-easy-crop sizes the crop frame from one getBoundingClientRect taken on mount and
+          never remeasures. The dialog's zoom-in entrance would still be mid-scale at that moment,
+          so the frame came out ~5% smaller than the image. Drop the scale, keep the fade. */}
+      <DialogContent className="max-w-lg" style={{ "--tw-enter-scale": 1 } as React.CSSProperties}>
         <DialogHeader>
           <DialogTitle>Kadruj zdjęcie w tle</DialogTitle>
         </DialogHeader>
 
-        <div className="relative h-64 w-full overflow-hidden rounded-lg bg-muted">
+        {/* The frame carries the banner's own ratio, so the crop area fills it exactly and an
+            image already cut to 16:6 lines up edge to edge at zoom 1. `cover` then guarantees
+            the media always fills that frame, whatever ratio the source happens to have. */}
+        <div
+          className="relative w-full overflow-hidden rounded-lg bg-muted"
+          style={{ aspectRatio: `${COVER_ASPECT}` }}
+        >
           {imageSrc && (
             <Cropper
               image={imageSrc}
               crop={crop}
               zoom={zoom}
               aspect={COVER_ASPECT}
+              objectFit="cover"
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
