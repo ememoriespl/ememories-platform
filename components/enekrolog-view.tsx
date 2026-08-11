@@ -138,7 +138,9 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
             {/* Cover banner — the avatar sits fully inside it, its bottom edge flush with the
                 cover's. Aspect matches COVER_ASPECT (16/6) in the crop dialog so the crop is
                 WYSIWYG. */}
-            <div className="w-full bg-gradient-to-br from-muted to-muted/40" style={{ aspectRatio: "16 / 6" }}>
+            {/* With no cover picked the banner stays the card's own colour, so the portrait sits
+                on plain white rather than a grey block. */}
+            <div className="w-full bg-card" style={{ aspectRatio: "16 / 6" }}>
               {data.coverPhoto && <img src={data.coverPhoto} alt="" className="h-full w-full object-cover" />}
             </div>
 
