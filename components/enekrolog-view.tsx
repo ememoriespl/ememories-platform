@@ -135,23 +135,26 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
             </p>
           )}
           <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-            {/* Cover banner — the avatar overlaps its bottom edge (cover reaches the avatar's middle).
-                Aspect matches COVER_ASPECT (16/6) in the crop dialog so the crop is WYSIWYG. */}
+            {/* Cover banner — the avatar sits fully inside it, its bottom edge flush with the
+                cover's. Aspect matches COVER_ASPECT (16/6) in the crop dialog so the crop is
+                WYSIWYG. */}
             <div className="w-full bg-gradient-to-br from-muted to-muted/40" style={{ aspectRatio: "16 / 6" }}>
               {data.coverPhoto && <img src={data.coverPhoto} alt="" className="h-full w-full object-cover" />}
             </div>
 
             <div className="flex flex-col items-center px-8 pb-6 text-center">
-              <div className="-mt-12">
+              {/* Pulled up by its own height, so the portrait sits wholly on the cover with its
+                  bottom edge on the cover's. */}
+              <div className="-mt-28">
                 {data.photo ? (
                   <img
                     src={data.photo}
                     alt={data.fullName}
-                    className="h-24 w-24 rounded-full object-cover ring-4 ring-card"
+                    className="h-28 w-28 rounded-full object-cover ring-4 ring-card"
                     style={data.photoBw ? { filter: "grayscale(100%)" } : undefined}
                   />
                 ) : (
-                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted text-2xl font-semibold ring-4 ring-card">
+                  <div className="flex h-28 w-28 items-center justify-center rounded-full bg-muted text-2xl font-semibold ring-4 ring-card">
                     {data.initials}
                   </div>
                 )}
@@ -177,10 +180,10 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
                 </div>
               )}
 
-              {/* Logo is desaturated + faded so the whole credit reads as one grey line */}
-              <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              {/* Logo is desaturated + faded so the whole credit reads as one light grey line */}
+              <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70">
                 <span>eNekrolog wygenerowany przez</span>
-                <LogoLight className="opacity-60 grayscale" style={{ height: 16, width: "auto" }} />
+                <LogoLight className="opacity-40 grayscale" style={{ height: 16, width: "auto" }} />
               </p>
             </div>
           </div>
