@@ -44,6 +44,16 @@ export interface EnekrologAsset {
 const TILE_ASPECT: Record<AssetKind, string> = { cover: "16 / 6", background: "9 / 16" }
 const GRID_COLS: Record<AssetKind, string> = { cover: "grid-cols-2", background: "grid-cols-4" }
 
+/** Serverless request bodies cap out around 4.5 MB, so reject oversized files before uploading. */
+const MAX_UPLOAD_MB = 4
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+
+/** Covers get cropped to the banner ratio; backgrounds are used as-is behind the whole screen. */
+const UPLOAD_HINT: Record<AssetKind, string> = {
+  cover: `JPG, PNG lub WEBP · min. 1600 × 600 px · kadr 16:6 · do ${MAX_UPLOAD_MB} MB`,
+  background: `JPG, PNG lub WEBP · zalecane 1080 × 1920 px · 9:16 · do ${MAX_UPLOAD_MB} MB`,
+}
+
 /** Shared loader so both sections work off one request. */
 export function useEnekrologAssets() {
   const [assets, setAssets] = useState<EnekrologAsset[]>([])
@@ -232,12 +242,19 @@ export function EnekrologAssetPicker({
             className="sr-only"
             onChange={(e) => {
               const f = e.target.files?.[0]
-              if (f) onPickFile(f)
               e.target.value = ""
+              if (!f) return
+              if (f.size > MAX_UPLOAD_BYTES) {
+                toast.error(
+                  `Plik waży ${(f.size / 1024 / 1024).toFixed(1)} MB — maksymalnie ${MAX_UPLOAD_MB} MB.`
+                )
+                return
+              }
+              onPickFile(f)
             }}
           />
           <Upload className="h-3.5 w-3.5" />
-          {uploading ? "Wgrywanie…" : "Wgraj własne"}
+          {uploading ? "Wgrywanie…" : "Wgraj"}
         </label>
 
         {isAdmin && (
@@ -268,6 +285,8 @@ export function EnekrologAssetPicker({
             </Button>
           </ButtonGroup>
         )}
+
+        <p className="text-xs text-muted-foreground">{UPLOAD_HINT[kind]}</p>
       </div>
 
       {/* Save current image as a template */}
