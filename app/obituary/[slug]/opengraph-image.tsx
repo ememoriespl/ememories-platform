@@ -87,6 +87,13 @@ export default async function Image({ params }: { params: Promise<{ slug: string
         </div>
       </div>
     ),
-    size
+    {
+      ...size,
+      // Rendering this costs a few seconds, and link scrapers give an image only a short
+      // window before they give up. Let the CDN serve it so only the first hit pays.
+      headers: {
+        "cache-control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    }
   )
 }
