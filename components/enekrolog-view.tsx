@@ -134,19 +134,18 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
             </p>
           )}
           <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-            {/* Cover banner — the avatar sits fully inside it, its bottom edge flush with the
-                cover's. Aspect matches COVER_ASPECT (16/6) in the crop dialog so the crop is
-                WYSIWYG. */}
-            {/* With no cover picked the banner stays the card's own colour, so the portrait sits
-                on plain white rather than a grey block. */}
-            <div className="w-full bg-card" style={{ aspectRatio: "16 / 6" }}>
-              {data.coverPhoto && <img src={data.coverPhoto} alt="" className="h-full w-full object-cover" />}
-            </div>
+            {/* Cover banner — the portrait sits on it, dipping a little past its bottom edge.
+                Aspect matches COVER_ASPECT (16/6) in the crop dialog so the crop is WYSIWYG.
+                With no cover there is no banner at all, so the portrait moves up to the top of
+                the card instead of leaving an empty white block above it. */}
+            {data.coverPhoto && (
+              <div className="w-full" style={{ aspectRatio: "16 / 6" }}>
+                <img src={data.coverPhoto} alt="" className="h-full w-full object-cover" />
+              </div>
+            )}
 
             <div className="flex flex-col items-center px-8 pb-6 text-center">
-              {/* Pulled up by just under its own height, so the portrait sits on the cover but
-                  dips a little past its bottom edge. */}
-              <div className="-mt-[100px]">
+              <div className={data.coverPhoto ? "-mt-[100px]" : "mt-8"}>
                 {data.photo ? (
                   <img
                     src={data.photo}
