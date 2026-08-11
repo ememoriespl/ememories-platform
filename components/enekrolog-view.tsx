@@ -127,10 +127,9 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
     >
       <div className="flex-1 px-4 pb-6 pt-2">
         <div className="mx-auto w-full max-w-xl">
-          {/* Obituary text sits above the card, on a translucent panel so it stays legible
-              over any uploaded background image. */}
+          {/* Obituary text sits above the card, directly on the background. */}
           {data.obituaryText && (
-            <p className="mb-2 whitespace-pre-wrap rounded-xl bg-background/80 px-4 py-2 text-center text-sm leading-relaxed backdrop-blur">
+            <p className="mb-2 whitespace-pre-wrap px-4 py-2 text-center text-sm leading-relaxed">
               {data.obituaryText}
             </p>
           )}
