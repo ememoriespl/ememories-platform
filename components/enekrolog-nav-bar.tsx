@@ -111,7 +111,8 @@ export function EnekrologNavBar({
                   </p>
                 </>
               ) : remaining > -CEREMONY_MS ? (
-                <p className="flex items-center gap-2 truncate text-sm font-semibold">
+                // No `truncate` here: it would clip the ping ring, which grows past the dot.
+                <p className="flex items-center gap-2 text-sm font-semibold">
                   {/* Pulsing dot, as a broadcast would mark a live event */}
                   <span className="relative flex h-2 w-2 shrink-0">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75 motion-reduce:animate-none" />
