@@ -1983,7 +1983,11 @@ export function ObituaryForm({
             {/* Cover banner — pick a saved one or upload + crop your own */}
             <CollapsibleSectionCard
               title="Zdjęcie w tle"
-              description="Baner nad avatarem (jak w mediach społecznościowych). Wybierz gotowy lub wgraj własny."
+              description={
+                isAdmin
+                  ? "Baner nad avatarem (jak w mediach społecznościowych). Wybierz gotowy lub wgraj własny."
+                  : "Baner nad avatarem (jak w mediach społecznościowych). Wybierz jeden z gotowych."
+              }
               defaultOpen
             >
               <EnekrologAssetPicker

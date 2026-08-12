@@ -229,6 +229,9 @@ export function EnekrologAssetPicker({
         )}
       </div>
 
+      {/* Uploading and managing the imagery is the administrator's job; funeral homes pick from
+          what the administrator has prepared. */}
+      {isAdmin && (
       <div className="flex flex-wrap items-center gap-2">
         <label
           className={cn(
@@ -257,37 +260,36 @@ export function EnekrologAssetPicker({
           {uploading ? "Wgrywanie…" : "Wgraj"}
         </label>
 
-        {isAdmin && (
-          <ButtonGroup>
-            <Button
-              type="button"
-              color="secondary"
-              size="icon"
-              className="h-9 w-9"
-              disabled={!isCustom}
-              title="Zapisz jako szablon"
-              onClick={() => {
-                setSaveName("")
-                setSaveOpen(true)
-              }}
-            >
-              <Save className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              color="secondary"
-              size="icon"
-              className="h-9 w-9"
-              title="Zarządzaj"
-              onClick={() => setManageOpen(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </ButtonGroup>
-        )}
+        <ButtonGroup>
+          <Button
+            type="button"
+            color="secondary"
+            size="icon"
+            className="h-9 w-9"
+            disabled={!isCustom}
+            title="Zapisz jako szablon"
+            onClick={() => {
+              setSaveName("")
+              setSaveOpen(true)
+            }}
+          >
+            <Save className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            color="secondary"
+            size="icon"
+            className="h-9 w-9"
+            title="Zarządzaj"
+            onClick={() => setManageOpen(true)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </ButtonGroup>
 
         <p className="text-xs text-muted-foreground">{UPLOAD_HINT[kind]}</p>
       </div>
+      )}
 
       {/* Save current image as a template */}
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
