@@ -9,6 +9,9 @@ import type { EnekrologAddress } from "@/components/enekrolog-view"
 /** Slide duration for the navigation drawer, in ms (kept in sync with the CSS duration). */
 const DRAWER_MS = 300
 
+/** How long after its start time a ceremony is treated as still under way. */
+const CEREMONY_MS = 2 * 60 * 60 * 1000
+
 /** Directions link — opens the phone's navigation app (Google/Apple Maps) with the address. */
 export function navigationUrl(address: string) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
@@ -96,9 +99,19 @@ export function EnekrologNavBar({
         <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
           {ceremonyIso ? (
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Rozpoczęcie za…</p>
+              {/* The "Rozpoczęcie za…" label only makes sense while there is still a wait —
+                  once the ceremony is under way or over, the status stands on its own. */}
+              {remaining !== null && remaining > 0 && (
+                <p className="text-xs text-muted-foreground">Rozpoczęcie za…</p>
+              )}
               <p className="truncate text-sm font-semibold tabular-nums">
-                {remaining === null ? "—" : remaining > 0 ? formatCountdown(remaining) : "Ceremonia się odbyła"}
+                {remaining === null
+                  ? "—"
+                  : remaining > 0
+                    ? formatCountdown(remaining)
+                    : remaining > -CEREMONY_MS
+                      ? "Trwa ceremonia"
+                      : "Ceremonia odbyła się."}
               </p>
             </div>
           ) : (
