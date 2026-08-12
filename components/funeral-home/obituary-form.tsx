@@ -34,6 +34,8 @@ import {
   CaseUpper,
   Copy,
   ExternalLink,
+  Minus,
+  Plus,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -126,6 +128,9 @@ const VALIGN_OPTIONS: { id: VerticalAlign; label: string; icon: LucideIcon }[] =
 
 /** Shared label/control grid for the setting rows in the "Kolumna graficzna" and "Kolumna z treścią" cards, so controls line up in a left-aligned settings column instead of hugging the right edge. */
 const SETTINGS_ROW = "grid grid-cols-[150px_1fr] items-center gap-2"
+
+/** eNekrolog preview zoom levels; the first fits the whole phone and is the furthest out. */
+const PREVIEW_ZOOM_STEPS = [1, 1.25, 1.5, 2, 2.5]
 
 /**
  * Numeric input that can be cleared while typing. A plain controlled `value={n}` with
@@ -833,6 +838,10 @@ export function ObituaryForm({
   }, [enekrologAssets, mode])
 
   const [uploadingBackground, setUploadingBackground] = useState(false)
+
+  // eNekrolog preview zoom — 100% is the whole phone in view, the rest scrolls.
+  const [previewZoomStep, setPreviewZoomStep] = useState(0)
+  const previewZoom = PREVIEW_ZOOM_STEPS[previewZoomStep]
 
   async function handleBackgroundUpload(file: File) {
     setUploadingBackground(true)
@@ -1906,7 +1915,7 @@ export function ObituaryForm({
             {/* QR code size (as printed on the obituary) + the public eNekrolog address */}
             <CollapsibleSectionCard title="QR kod i link" description="Kod QR drukowany na nekrologu prowadzi pod ten adres." defaultOpen>
               {enekrologUrl ? (
-                <div className="flex items-start gap-5">
+                <div className="flex items-center gap-5">
                   {/* The very same QR that prints on the A4 sheet */}
                   <div className="shrink-0">
                     <EnekrologQrCode publicUrl={enekrologUrl} size={112} />
@@ -2091,9 +2100,40 @@ export function ObituaryForm({
                   padding: 32,
                 }}
               >
-                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Podgląd eNekrologu</p>
+                <div className="mb-3 flex items-center gap-3">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Podgląd eNekrologu</p>
+                  <ButtonGroup>
+                    <Button
+                      type="button"
+                      color="secondary"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Oddal"
+                      disabled={previewZoomStep === 0}
+                      onClick={() => setPreviewZoomStep((s) => Math.max(0, s - 1))}
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      color="secondary"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Przybliż"
+                      disabled={previewZoomStep === PREVIEW_ZOOM_STEPS.length - 1}
+                      onClick={() =>
+                        setPreviewZoomStep((s) => Math.min(PREVIEW_ZOOM_STEPS.length - 1, s + 1))
+                      }
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </ButtonGroup>
+                  <span className="w-10 text-xs tabular-nums text-muted-foreground">
+                    {Math.round(previewZoom * 100)}%
+                  </span>
+                </div>
                 <div className="flex min-h-0 w-full flex-1 justify-center">
-                  <PhoneFrame>
+                  <PhoneFrame zoom={previewZoom}>
                     <EnekrologView data={enekrologData} />
                   </PhoneFrame>
                 </div>

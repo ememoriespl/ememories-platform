@@ -89,16 +89,22 @@ function BrowserBar() {
   )
 }
 
-export function PhoneFrame({ children }: { children: React.ReactNode }) {
+/**
+ * `zoom` multiplies the fit-to-container scale: 1 shows the whole phone, above that the frame
+ * grows and scrolls inside the space it is given. The frame spans the full width available so a
+ * zoomed-in phone uses the whole panel rather than staying boxed into its 1× width; it is
+ * centred while it still fits.
+ */
+export function PhoneFrame({ children, zoom = 1 }: { children: React.ReactNode; zoom?: number }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0)
+  const [fit, setFit] = useState(0)
 
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
     const measure = () => {
       const h = el.clientHeight
-      if (h > 0) setScale(h / DEVICE_H)
+      if (h > 0) setFit(h / DEVICE_H)
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -106,15 +112,15 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
     return () => ro.disconnect()
   }, [])
 
+  const scale = fit * zoom
+
   return (
-    <div
-      ref={ref}
-      className="relative h-full overflow-hidden"
-      style={{ width: scale ? DEVICE_W * scale : DEVICE_W }}
-    >
-      {scale > 0 && (
+    <div ref={ref} className="relative h-full w-full overflow-hidden">
+      {fit > 0 && (
+        <div className="absolute inset-0 overflow-auto">
+        <div style={{ width: DEVICE_W * scale, height: DEVICE_H * scale, margin: "0 auto" }}>
         <div
-          className="absolute left-0 top-0 flex flex-col overflow-hidden bg-background"
+          className="flex flex-col overflow-hidden bg-background"
           style={{
             width: DEVICE_W,
             height: DEVICE_H,
@@ -154,6 +160,8 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
           >
             <BrowserBar />
           </div>
+        </div>
+        </div>
         </div>
       )}
     </div>
