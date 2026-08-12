@@ -17,7 +17,7 @@ export function navigationUrl(address: string) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
 }
 
-/** "2 dni 5 godz. 43 min 12 s" — leading zero units are dropped. */
+/** "2 dni 5 godz. 43 m 12 s" — leading zero units are dropped. */
 function formatCountdown(ms: number): string {
   const total = Math.floor(ms / 1000)
   const days = Math.floor(total / 86400)
@@ -27,7 +27,7 @@ function formatCountdown(ms: number): string {
   const parts: string[] = []
   if (days > 0) parts.push(`${days} ${days === 1 ? "dzień" : "dni"}`)
   if (days > 0 || hours > 0) parts.push(`${hours} godz.`)
-  if (days > 0 || hours > 0 || minutes > 0) parts.push(`${minutes} min`)
+  if (days > 0 || hours > 0 || minutes > 0) parts.push(`${minutes} m`)
   parts.push(`${seconds} s`)
   return parts.join(" ")
 }
