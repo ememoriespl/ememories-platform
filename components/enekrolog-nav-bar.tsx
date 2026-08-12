@@ -98,21 +98,30 @@ export function EnekrologNavBar({
         {/* Same max width as the card above, so the bar lines up with the content on desktop */}
         <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
           {ceremonyIso ? (
+            // The "Rozpoczęcie za…" label only makes sense while there is still a wait — once
+            // the ceremony is under way or over, the status stands on its own.
             <div className="min-w-0">
-              {/* The "Rozpoczęcie za…" label only makes sense while there is still a wait —
-                  once the ceremony is under way or over, the status stands on its own. */}
-              {remaining !== null && remaining > 0 && (
-                <p className="text-xs text-muted-foreground">Rozpoczęcie za…</p>
+              {remaining === null ? (
+                <p className="truncate text-sm font-semibold tabular-nums">—</p>
+              ) : remaining > 0 ? (
+                <>
+                  <p className="text-xs text-muted-foreground">Rozpoczęcie za…</p>
+                  <p className="truncate text-sm font-semibold tabular-nums">
+                    {formatCountdown(remaining)}
+                  </p>
+                </>
+              ) : remaining > -CEREMONY_MS ? (
+                <p className="flex items-center gap-2 truncate text-sm font-semibold">
+                  {/* Pulsing dot, as a broadcast would mark a live event */}
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75 motion-reduce:animate-none" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                  </span>
+                  Trwa ceremonia
+                </p>
+              ) : (
+                <p className="truncate text-sm font-semibold">Ceremonia odbyła się.</p>
               )}
-              <p className="truncate text-sm font-semibold tabular-nums">
-                {remaining === null
-                  ? "—"
-                  : remaining > 0
-                    ? formatCountdown(remaining)
-                    : remaining > -CEREMONY_MS
-                      ? "Trwa ceremonia"
-                      : "Ceremonia odbyła się."}
-              </p>
             </div>
           ) : (
             <span />
