@@ -131,7 +131,7 @@ export function EnekrologNavBar({
           {addresses.length > 0 && (
             <Button className="shrink-0 gap-1.5" onClick={openDrawer}>
               <Navigation className="h-4 w-4" />
-              Nawiguj
+              Nawiguj do…
             </Button>
           )}
         </div>
