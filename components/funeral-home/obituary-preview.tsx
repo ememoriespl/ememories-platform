@@ -192,18 +192,20 @@ export function renderFrame(frame: FrameSettings): React.ReactNode {
   )
 }
 
-// Repeating "eMemories" watermark tiled across the whole A4 page, shown on drafts.
+// Repeating "eMemories" watermark tiled across the whole page, shown on drafts.
 // Uses a native SVG <pattern> fill (same approach as renderFrame) so it survives
 // Chromium's print/PDF export, unlike a CSS background-image. `id` must be unique
-// per rendered instance (pass a useId()).
-export function renderWatermark(id: string): React.ReactNode {
+// per rendered instance (pass a useId()). `width`/`height` describe the box being
+// covered — they default to the A4 sheet, and the eNekrolog phone preview passes its
+// own screen size so the tiles keep their proportions there too.
+export function renderWatermark(id: string, width = A4_W, height = A4_H): React.ReactNode {
   const clipId = `${id}-clip`
   const inner = WATERMARK_INNER_HTML.replaceAll("ememories_wm_clip", clipId)
   const tileW = 210
   const tileH = 186
   return (
     <svg
-      viewBox={`0 0 ${A4_W} ${A4_H}`}
+      viewBox={`0 0 ${width} ${height}`}
       width="100%"
       height="100%"
       preserveAspectRatio="none"
@@ -220,7 +222,7 @@ export function renderWatermark(id: string): React.ReactNode {
           dangerouslySetInnerHTML={{ __html: inner }}
         />
       </defs>
-      <rect width={A4_W} height={A4_H} fill={`url(#${id})`} />
+      <rect width={width} height={height} fill={`url(#${id})`} />
     </svg>
   )
 }

@@ -2133,7 +2133,7 @@ export function ObituaryForm({
                   </span>
                 </div>
                 <div className="flex min-h-0 w-full flex-1 justify-center">
-                  <PhoneFrame zoom={previewZoom}>
+                  <PhoneFrame zoom={previewZoom} watermarked={!isPublished}>
                     <EnekrologView data={enekrologData} />
                   </PhoneFrame>
                 </div>

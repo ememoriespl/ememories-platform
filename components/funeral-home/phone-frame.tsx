@@ -1,6 +1,7 @@
 "use client"
 
-import { useLayoutEffect, useRef, useState } from "react"
+import { useId, useLayoutEffect, useRef, useState } from "react"
+import { renderWatermark } from "@/components/funeral-home/obituary-preview"
 
 // Phone mockup from Figma (node 51:10, frame 603×1311). Everything below is that design
 // scaled by 390/603 ≈ 0.647 so the screen renders at a real device width and the chrome keeps
@@ -17,6 +18,10 @@ const STATUS_H = Math.round(64 * S) // 41
 /** Safari bottom bar area: the 74px bar plus the 50px gap below it (Figma). */
 const BROWSER_BAR_H = 74 * S
 const BROWSER_BAR_INSET = 50 * S
+
+/** The screen between the status bar and the browser bar — the box the watermark covers. */
+const SCREEN_W = DEVICE_W - BORDER * 2
+const SCREEN_H = DEVICE_H - BORDER * 2 - STATUS_H - BROWSER_BAR_H - BROWSER_BAR_INSET
 
 /** Cellular / Wifi / Battery, exported from the Figma status bar component. */
 function StatusIcons() {
@@ -95,9 +100,18 @@ function BrowserBar() {
  * zoomed-in phone uses the whole panel rather than staying boxed into its 1× width; it is
  * centred while it still fits.
  */
-export function PhoneFrame({ children, zoom = 1 }: { children: React.ReactNode; zoom?: number }) {
+export function PhoneFrame({
+  children,
+  zoom = 1,
+  watermarked = false,
+}: {
+  children: React.ReactNode
+  zoom?: number
+  watermarked?: boolean
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const [fit, setFit] = useState(0)
+  const watermarkId = useId()
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -150,8 +164,17 @@ export function PhoneFrame({ children, zoom = 1 }: { children: React.ReactNode; 
             <StatusIcons />
           </div>
 
-          {/* Screen — opaque so nothing bleeds through the seam with the browser bar below */}
-          <div className="min-h-0 flex-1 overflow-y-auto bg-background">{children}</div>
+          {/* Screen — opaque so nothing bleeds through the seam with the browser bar below.
+              A draft's watermark sits over the glass rather than inside the scroller, so it
+              stays put as the eNekrolog scrolls underneath. */}
+          <div className="relative min-h-0 flex-1">
+            <div className="h-full overflow-y-auto bg-background">{children}</div>
+            {watermarked && (
+              <div className="pointer-events-none absolute inset-0">
+                {renderWatermark(watermarkId, SCREEN_W, SCREEN_H)}
+              </div>
+            )}
+          </div>
 
           {/* Safari bottom bar */}
           <div
