@@ -991,7 +991,6 @@ export function ObituaryForm({
 
   const enekrologData: EnekrologData = {
     fullName: `${data.firstName} ${data.lastName}`.trim() || "Imię Nazwisko",
-    initials: (`${data.firstName[0] ?? ""}${data.lastName[0] ?? ""}`).toUpperCase() || "–",
     dateRange: enekrologDateRange(data.birthDate, data.deathDate),
     obituaryText: data.obituaryText,
     ceremonyDateTime: enekrologCeremonyDateTime(data.ceremonyDate, data.ceremonyTime),

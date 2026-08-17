@@ -101,7 +101,6 @@ export default async function PublicObituaryPage({ params }: Props) {
   const cover = parseEnekrologCover(obit.location)
   const data: EnekrologData = {
     fullName: `${obit.first_name} ${obit.last_name}`,
-    initials: `${obit.first_name?.[0] ?? ""}${obit.last_name?.[0] ?? ""}`,
     dateRange: enekrologDateRange(obit.birth_date, obit.death_date),
     obituaryText: obit.obituary_text ?? "",
     ceremonyDateTime: parseEnekrologCeremonyDateTime(obit.location),

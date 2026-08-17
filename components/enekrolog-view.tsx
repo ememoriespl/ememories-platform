@@ -10,7 +10,6 @@ export interface EnekrologAddress {
 
 export interface EnekrologData {
   fullName: string
-  initials: string
   dateRange: string
   obituaryText: string
   ceremonyDateTime: string
@@ -144,21 +143,24 @@ export function EnekrologView({ data, className }: { data: EnekrologData; classN
               </div>
             )}
 
-            <div className="flex flex-col items-center px-8 pb-6 text-center">
-              <div className={data.coverPhoto ? "-mt-[100px]" : "mt-8"}>
-                {data.photo ? (
+            {/* With no portrait the name simply moves up — no initials stand-in. The top
+                padding then has to come from this block, since it normally rides on the
+                portrait's own margin. */}
+            <div
+              className={`flex flex-col items-center px-8 pb-6 text-center ${
+                data.photo ? "" : "pt-5"
+              }`}
+            >
+              {data.photo && (
+                <div className={data.coverPhoto ? "-mt-[100px]" : "mt-8"}>
                   <img
                     src={data.photo}
                     alt={data.fullName}
                     className="h-28 w-28 rounded-full object-cover ring-4 ring-card"
                     style={data.photoBw ? { filter: "grayscale(100%)" } : undefined}
                   />
-                ) : (
-                  <div className="flex h-28 w-28 items-center justify-center rounded-full bg-muted text-2xl font-semibold ring-4 ring-card">
-                    {data.initials}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
               <h1 className="mt-3 text-2xl font-semibold tracking-tight">{data.fullName}</h1>
               {data.dateRange && <p className="mt-1 text-sm text-muted-foreground">{data.dateRange}</p>}
             </div>
