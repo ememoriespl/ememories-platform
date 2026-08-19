@@ -101,11 +101,13 @@ interface TablePaginationProps {
 export function TablePagination({ total, start, end, page, totalPages, onPage, children }: TablePaginationProps) {
   return (
     <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
-      <span className="shrink-0">
+      {/* The two ends share the leftover space equally, so a note between them lands on the
+          row's centre line rather than in the middle of the gap. */}
+      <span className="min-w-0 flex-1">
         {total === 0 ? "Brak wyników" : `${start + 1}–${end} z ${total}`}
       </span>
-      {children && <div className="min-w-0 flex-1 px-4 text-center">{children}</div>}
-      <div className="flex shrink-0 items-center gap-1">
+      {children && <div className="shrink-0 px-4 text-center">{children}</div>}
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-1">
         <Button
           variant="outline"
           size="sm"
