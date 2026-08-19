@@ -316,6 +316,14 @@ export default function FhDashboardPage() {
             <TablePagination {...pagination} onPage={setPage} />
             </CardContent>
           </Card>
+
+          {/* Contact line under the obituaries table */}
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Masz pytania lub sugestie? Napisz do nas{" "}
+            <a href="mailto:info@ememories.pl" className="font-medium text-primary hover:underline">
+              info@ememories.pl
+            </a>
+          </p>
         </div>
       </div>
     </>
