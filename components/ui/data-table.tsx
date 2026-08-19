@@ -100,7 +100,13 @@ interface TablePaginationProps {
 
 export function TablePagination({ total, start, end, page, totalPages, onPage, children }: TablePaginationProps) {
   return (
-    <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+    // Marked as the card's footer so the card drops its bottom padding: the row then sits
+    // flush with the card's edge and its own symmetric padding centres the content between
+    // the separator above and that edge below.
+    <div
+      data-slot="card-footer"
+      className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground"
+    >
       {/* The two ends share the leftover space equally, so a note between them lands on the
           row's centre line rather than in the middle of the gap. */}
       <span className="min-w-0 flex-1">
