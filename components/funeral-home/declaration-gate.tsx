@@ -21,13 +21,23 @@ export function DeclarationGate({ children }: { children: React.ReactNode }) {
   const [checked, setChecked] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // A failing check must not pass silently: without a loud error a broken endpoint would look
+  // exactly like "already accepted", and obituaries would be written with nothing on record.
+  // It still fails open — an outage should not lock a funeral home out of its own work — but
+  // it says so, because accepting would fail too until the cause is fixed.
   useEffect(() => {
     fetch("/api/declaration")
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || `Błąd ${r.status}`)
+        return r.json()
+      })
       .then((d) => {
         if (d?.required && !d.accepted) setOpen(true)
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error("Nie udało się sprawdzić oświadczenia:", err)
+        toast.error("Nie udało się sprawdzić statusu oświadczenia. Odśwież stronę lub zgłoś nam problem.")
+      })
   }, [])
 
   async function accept() {

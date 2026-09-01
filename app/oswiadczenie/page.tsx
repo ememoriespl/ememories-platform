@@ -1,4 +1,6 @@
 import type { Metadata } from "next"
+import Link from "next/link"
+import { LogoLight } from "@/components/logo"
 import { DeclarationText } from "@/components/declaration-text"
 import { DECLARATION_TITLE, DECLARATION_VERSION } from "@/lib/declaration"
 
@@ -11,7 +13,10 @@ export const metadata: Metadata = {
 export default function DeclarationPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">{DECLARATION_TITLE}</h1>
+      <Link href="/" aria-label="eMemories" className="inline-block">
+        <LogoLight style={{ height: 32, width: "auto" }} />
+      </Link>
+      <h1 className="mt-10 text-2xl font-semibold tracking-tight">{DECLARATION_TITLE}</h1>
       <p className="mt-2 text-xs text-muted-foreground">Wersja dokumentu: {DECLARATION_VERSION}</p>
       <div className="mt-8">
         <DeclarationText />
