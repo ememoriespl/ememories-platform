@@ -59,7 +59,7 @@ export function DeclarationGate({ children }: { children: React.ReactNode }) {
       {children}
       {/* Deliberately not dismissible: leaving the editor is the only way past it. */}
       <Dialog open={open}>
-        <DialogContent showCloseButton={false} className="sm:max-w-2xl">
+        <DialogContent showCloseButton={false} className="p-8 sm:max-w-2xl">
           <DialogHeader>
             <LogoLight style={{ height: 32, width: "auto" }} className="mb-4 self-start" />
             <DialogTitle>{DECLARATION_TITLE}</DialogTitle>
