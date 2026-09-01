@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { LogoLight } from "@/components/logo"
 import { DeclarationText } from "@/components/declaration-text"
 import { DECLARATION_TITLE, DECLARATION_VERSION } from "@/lib/declaration"
 
@@ -60,6 +61,7 @@ export function DeclarationGate({ children }: { children: React.ReactNode }) {
       <Dialog open={open}>
         <DialogContent showCloseButton={false} className="sm:max-w-2xl">
           <DialogHeader>
+            <LogoLight style={{ height: 24, width: "auto" }} className="mb-1 self-start" />
             <DialogTitle>{DECLARATION_TITLE}</DialogTitle>
           </DialogHeader>
 
