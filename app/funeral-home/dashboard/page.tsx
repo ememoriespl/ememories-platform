@@ -318,6 +318,10 @@ export default function FhDashboardPage() {
               <a href="mailto:info@ememories.pl" className="font-medium text-primary hover:underline">
                 info@ememories.pl
               </a>
+              {" · "}
+              <Link href="/oswiadczenie" className="font-medium text-primary hover:underline">
+                Oświadczenie o materiałach
+              </Link>
             </TablePagination>
             </CardContent>
           </Card>

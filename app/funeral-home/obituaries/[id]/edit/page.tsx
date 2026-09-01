@@ -6,6 +6,7 @@ import { ObituaryForm, type ObituaryRaw } from "@/components/funeral-home/obitua
 import { Badge } from "@/components/ui/badge"
 import { effectiveStatusFromRow, STATUS_META } from "@/lib/obituary-status"
 import { toast } from "sonner"
+import { DeclarationGate } from "@/components/funeral-home/declaration-gate"
 
 export default function EditObituaryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -51,7 +52,7 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
   const statusMeta = raw ? STATUS_META[effectiveStatusFromRow(raw)] : null
 
   return (
-    <>
+    <DeclarationGate>
       <Topbar
         title="Edycja nekrologu"
         subtitle={subtitle}
@@ -72,6 +73,6 @@ export default function EditObituaryPage({ params }: { params: Promise<{ id: str
       ) : (
         <div className="p-6 text-sm text-muted-foreground">Ładowanie…</div>
       )}
-    </>
+    </DeclarationGate>
   )
 }

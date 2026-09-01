@@ -5,6 +5,7 @@ import { Topbar } from "@/components/layout/topbar"
 import { ObituaryForm } from "@/components/funeral-home/obituary-form"
 import { Badge } from "@/components/ui/badge"
 import { STATUS_META } from "@/lib/obituary-status"
+import { DeclarationGate } from "@/components/funeral-home/declaration-gate"
 
 export default function NewObituaryPage() {
   const [fhAddress, setFhAddress] = useState("")
@@ -37,13 +38,13 @@ export default function NewObituaryPage() {
   }, [])
 
   return (
-    <>
+    <DeclarationGate>
       <Topbar
         title="Nowy nekrolog"
         subtitle="Wypełnij dane i opublikuj"
         badge={<Badge variant={STATUS_META.draft.variant}>{STATUS_META.draft.label}</Badge>}
       />
       <ObituaryForm mode="new" fhAddress={fhAddress} fhName={fhName} fhPhone={fhPhone} isAdmin={isAdmin} creditsRemaining={creditsRemaining} />
-    </>
+    </DeclarationGate>
   )
 }
