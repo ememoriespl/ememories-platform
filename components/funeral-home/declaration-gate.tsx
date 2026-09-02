@@ -12,9 +12,10 @@ import { DeclarationText } from "@/components/declaration-text"
 import { DECLARATION_TITLE, DECLARATION_VERSION } from "@/lib/declaration"
 
 /**
- * Blocks the obituary editor until the funeral home has accepted the current version of the
- * declaration. Administrators are not the declaring party, so the API reports nothing required
- * of them and the editor opens straight away.
+ * Blocks the whole panel until the funeral home has accepted the current version of the
+ * declaration — it is a condition of using the platform, so it is asked on the way in rather
+ * than at the first obituary. Administrators are not the declaring party, so the API reports
+ * nothing required of them and the panel opens straight away.
  */
 export function DeclarationGate({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -40,6 +41,11 @@ export function DeclarationGate({ children }: { children: React.ReactNode }) {
         toast.error("Nie udało się sprawdzić statusu oświadczenia. Odśwież stronę lub zgłoś nam problem.")
       })
   }, [])
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" })
+    router.push("/login")
+  }
 
   async function accept() {
     setSaving(true)
@@ -89,8 +95,10 @@ export function DeclarationGate({ children }: { children: React.ReactNode }) {
           </label>
 
           <DialogFooter>
-            <Button color="tertiary" onClick={() => router.push("/funeral-home/dashboard")}>
-              Wróć do nekrologów
+            {/* There is nowhere to go back to — the declaration guards the whole panel — so
+                the only way past it, other than accepting, is out. */}
+            <Button color="tertiary" onClick={logout}>
+              Wyloguj się
             </Button>
             <Button onClick={accept} disabled={!checked || saving}>
               {saving ? "Zapisywanie…" : "Akceptuję"}

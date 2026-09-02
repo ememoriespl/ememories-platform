@@ -3,6 +3,7 @@ import { FhSidebar } from "@/components/layout/fh-sidebar"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner"
 import { SupportProvider } from "@/components/support/support-context"
+import { DeclarationGate } from "@/components/funeral-home/declaration-gate"
 import { getSession } from "@/lib/session"
 import { createServerClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
@@ -33,6 +34,9 @@ export default async function FuneralHomeLayout({ children }: { children: React.
 
   return (
     <SupportProvider>
+      {/* Asked once, on the way in — not at the first obituary, which is too late to be a
+          condition of using the platform. */}
+      <DeclarationGate>
       <div className="flex h-screen overflow-hidden pl-[72px]">
         {isAdmin ? <AdminSidebar /> : <FhSidebar />}
         <div className="flex flex-1 flex-col overflow-hidden">
@@ -42,6 +46,7 @@ export default async function FuneralHomeLayout({ children }: { children: React.
           </main>
         </div>
       </div>
+      </DeclarationGate>
     </SupportProvider>
   )
 }
