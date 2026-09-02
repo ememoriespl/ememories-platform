@@ -1,14 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
-  FileText,
   Settings,
   BookOpen,
   Ticket,
+  LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LogoLight, LogoBirdLight } from "@/components/logo"
@@ -23,6 +23,12 @@ const navItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" })
+    router.push("/login")
+  }
 
   return (
     <aside className="group fixed inset-y-0 left-0 z-30 flex h-screen w-[72px] flex-col overflow-hidden border-r bg-white transition-[width] duration-200 ease-in-out hover:w-60">
@@ -63,6 +69,18 @@ export function AdminSidebar() {
         </ul>
       </nav>
 
+      <div className="shrink-0 px-3 pb-4">
+          <button
+            type="button"
+            onClick={logout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[1rem] font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            <span className="opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+              Wyloguj się
+            </span>
+          </button>
+      </div>
     </aside>
   )
 }

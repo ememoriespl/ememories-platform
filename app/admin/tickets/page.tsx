@@ -17,7 +17,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { StatusFilter, usePersistedFilter, matchesFilter } from "@/components/status-filter"
-import { TICKET_KIND_ICONS } from "@/components/support/ticket-kind-icon"
 import {
   TICKET_KIND_META,
   TICKET_STATUSES,
@@ -149,13 +148,11 @@ export default function AdminTicketsPage() {
                             <p className="font-mono text-xs text-muted-foreground">{t.reference}</p>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-2">
-                              {(() => {
-                                const Icon = TICKET_KIND_ICONS[t.kind as TicketKind]
-                                return Icon ? <Icon className="h-4 w-4 shrink-0 text-muted-foreground" /> : null
-                              })()}
+                            {/* Outline rather than a colour of its own: the status pill beside it
+                                carries the colour, and two coloured pills per row compete. */}
+                            <Badge variant="outline">
                               {TICKET_KIND_META[t.kind as TicketKind]?.label ?? t.kind}
-                            </span>
+                            </Badge>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">{t.funeral_homes?.name ?? "—"}</td>
                           <td className="px-4 py-3">
@@ -211,12 +208,10 @@ export default function AdminTicketsPage() {
             <div className="flex-1 space-y-6 overflow-y-auto p-6">
               <dl className="grid grid-cols-[7rem_1fr] gap-y-2 text-sm">
                 <dt className="text-muted-foreground">Rodzaj</dt>
-                <dd className="inline-flex items-center gap-2">
-                  {(() => {
-                    const Icon = TICKET_KIND_ICONS[openTicket.kind as TicketKind]
-                    return Icon ? <Icon className="h-4 w-4 shrink-0 text-muted-foreground" /> : null
-                  })()}
-                  {TICKET_KIND_META[openTicket.kind as TicketKind]?.label ?? openTicket.kind}
+                <dd>
+                  <Badge variant="outline">
+                    {TICKET_KIND_META[openTicket.kind as TicketKind]?.label ?? openTicket.kind}
+                  </Badge>
                 </dd>
 
                 <dt className="text-muted-foreground">Klient</dt>

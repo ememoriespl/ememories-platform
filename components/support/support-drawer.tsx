@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Select,
   SelectContent,
@@ -16,7 +17,6 @@ import {
   SelectTrigger,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { TICKET_KIND_ICONS } from "@/components/support/ticket-kind-icon"
 import {
   TICKET_KINDS,
   TICKET_KIND_META,
@@ -28,6 +28,7 @@ import {
 } from "@/lib/tickets"
 
 const DRAFT_KEY = "support-draft"
+const SENT_KEY = "support-sent"
 const MAX_UPLOAD_MB = 4
 
 /** Wording that changes with the kind — the fields themselves stay the same two. */
@@ -59,6 +60,18 @@ interface Draft {
   title?: string
   description?: string
   email?: string
+}
+
+/** The last receipt, kept so closing the drawer — or reloading — does not lose the reference
+ *  number. Cleared only when the reporter starts a new report. */
+function readSent(): Ticket | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem(SENT_KEY)
+    return raw ? (JSON.parse(raw) as Ticket) : null
+  } catch {
+    return null
+  }
 }
 
 /** An unsent draft: a network failure or a mis-click must not cost what the reporter typed. */
@@ -109,8 +122,9 @@ export function SupportDrawer({
   const [uploading, setUploading] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [sending, setSending] = useState(false)
-  const [sent, setSent] = useState<Ticket | null>(null)
+  const [sent, setSent] = useState<Ticket | null>(readSent)
   const [history, setHistory] = useState<Ticket[]>([])
+  const [tab, setTab] = useState("new")
 
   useEffect(() => {
     if (sent) return
@@ -181,8 +195,9 @@ export function SupportDrawer({
       setHistory((prev) => [ticket, ...prev])
       try {
         localStorage.removeItem(DRAFT_KEY)
+        localStorage.setItem(SENT_KEY, JSON.stringify(ticket))
       } catch {
-        // ignore
+        // ignore storage failures (private mode, quota)
       }
     } catch (err) {
       toast.error(`Nie udało się wysłać zgłoszenia: ${err instanceof Error ? err.message : "nieznany błąd"}`)
@@ -199,6 +214,11 @@ export function SupportDrawer({
     setTitle("")
     setDescription("")
     setFiles([])
+    try {
+      localStorage.removeItem(SENT_KEY)
+    } catch {
+      // ignore storage failures (private mode, quota)
+    }
   }
 
   const fields = kind ? FIELDS[kind] : null
@@ -211,7 +231,15 @@ export function SupportDrawer({
           <SheetTitle>Zgłoszenie</SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <Tabs value={tab} onValueChange={(v) => setTab(v ?? "new")} className="flex min-h-0 flex-1 flex-col gap-0">
+          <div className="border-b px-6 pt-4">
+            <TabsList>
+              <TabsTrigger value="new">Nowe zgłoszenie</TabsTrigger>
+              <TabsTrigger value="mine">Moje zgłoszenia</TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="new" className="min-h-0 flex-1 overflow-y-auto p-6">
           {sent ? (
             <div className="space-y-6">
               <div className="rounded-xl border bg-muted/30 p-4">
@@ -253,29 +281,17 @@ export function SupportDrawer({
                 <Select value={kind} onValueChange={(v) => setKind((v as TicketKind) ?? null)}>
                   <SelectTrigger id="ticket-kind" className="w-full">
                     {kind ? (
-                      <span className="flex items-center gap-2">
-                        {(() => {
-                          const Icon = TICKET_KIND_ICONS[kind]
-                          return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        })()}
-                        {TICKET_KIND_META[kind].label}
-                      </span>
+                      <span>{TICKET_KIND_META[kind].label}</span>
                     ) : (
                       <span className="text-muted-foreground">Wybierz…</span>
                     )}
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger={false}>
-                    {TICKET_KINDS.map((k) => {
-                      const Icon = TICKET_KIND_ICONS[k]
-                      return (
-                        <SelectItem key={k} value={k}>
-                          <span className="flex items-center gap-2">
-                            <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            {TICKET_KIND_META[k].label}
-                          </span>
-                        </SelectItem>
-                      )
-                    })}
+                    {TICKET_KINDS.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {TICKET_KIND_META[k].label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {kind && <p className="text-xs text-muted-foreground">{TICKET_KIND_META[kind].hint}</p>}
@@ -381,28 +397,35 @@ export function SupportDrawer({
                 </div>
               )}
 
-              {history.length > 0 && (
-                <div className="space-y-2 border-t pt-6">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Twoje zgłoszenia
-                  </p>
-                  <ul className="space-y-1">
-                    {history.slice(0, 5).map((t) => (
-                      <li key={t.id} className="flex items-center justify-between gap-3 text-sm">
-                        <span className="min-w-0 truncate">{t.title}</span>
-                        <Badge variant={TICKET_STATUS_META[t.status as TicketStatus]?.variant ?? "gray"}>
-                          {TICKET_STATUS_META[t.status as TicketStatus]?.label ?? t.status}
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
           )}
-        </div>
+          </TabsContent>
 
-        {!sent && (
+          <TabsContent value="mine" className="min-h-0 flex-1 overflow-y-auto p-6">
+            {history.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nie masz jeszcze żadnych zgłoszeń.</p>
+            ) : (
+              <ul className="divide-y">
+                {history.map((t) => (
+                  <li key={t.id} className="flex items-start justify-between gap-3 py-3 first:pt-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{t.title}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{t.reference}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {new Date(t.created_at).toLocaleDateString("pl-PL")}
+                      </p>
+                    </div>
+                    <Badge variant={TICKET_STATUS_META[t.status as TicketStatus]?.variant ?? "gray"}>
+                      {TICKET_STATUS_META[t.status as TicketStatus]?.label ?? t.status}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {tab === "new" && !sent && (
           <div className="border-t p-6">
             <Button className="w-full" disabled={!canSend} onClick={send}>
               {sending ? "Wysyłanie…" : "Wyślij zgłoszenie"}

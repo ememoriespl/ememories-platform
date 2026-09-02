@@ -1,18 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { MoreHorizontal, LogOut, Settings, LifeBuoy } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { useSupport } from "@/components/support/support-context"
 
 interface TopbarProps {
   title: string
@@ -37,18 +26,11 @@ function getInitials(email: string, name?: string): string {
 }
 
 export function Topbar({ title, subtitle, badge }: TopbarProps) {
-  const router = useRouter()
-  const support = useSupport()
   const [me, setMe] = useState<MeData | null>(null)
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then(setMe).catch(() => {})
   }, [])
-
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" })
-    router.push("/login")
-  }
 
   const displayName = me?.funeralHome?.name ?? me?.email ?? "…"
   const initials = me ? getInitials(me.email, me.funeralHome?.name) : "…"
@@ -65,46 +47,15 @@ export function Topbar({ title, subtitle, badge }: TopbarProps) {
         )}
       </div>
 
+      {/* Just who is signed in — settings, contact and logout all live in the sidebar. */}
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="hidden md:flex flex-col items-start gap-0.5">
-              <span className="text-[13px] font-medium leading-none">{displayName}</span>
-              <span className="text-[12px] text-muted-foreground leading-none">{me?.email ?? "…"}</span>
-            </div>
-            <div className="flex h-7 w-7 items-center justify-center rounded-md border hover:bg-muted transition-colors">
-              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel className="font-normal">
-              <p className="font-medium text-sm truncate">{displayName}</p>
-              <p className="text-xs text-muted-foreground truncate">{me?.email}</p>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push(me?.role === "admin" ? "/admin/settings" : "/funeral-home/settings")}>
-              <Settings className="mr-2 h-4 w-4" />
-              Ustawienia
-            </DropdownMenuItem>
-            {/* Only where support is mounted — the admin panel has its own tickets table. */}
-            {support && (
-              <DropdownMenuItem onClick={support.open}>
-                <LifeBuoy className="mr-2 h-4 w-4" />
-                Kontakt
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Wyloguj się
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Avatar className="h-8 w-8">
+          <AvatarFallback className="bg-primary/10 text-xs text-primary">{initials}</AvatarFallback>
+        </Avatar>
+        <div className="hidden flex-col items-start gap-0.5 md:flex">
+          <span className="text-[13px] leading-none font-medium">{displayName}</span>
+          <span className="text-[12px] leading-none text-muted-foreground">{me?.email ?? "…"}</span>
+        </div>
       </div>
     </header>
   )
