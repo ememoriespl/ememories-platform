@@ -31,35 +31,22 @@ const DRAFT_KEY = "support-draft"
 const SENT_KEY = "support-sent"
 const MAX_UPLOAD_MB = 4
 
-/** Wording that changes with the kind — the fields themselves stay the same two. */
-const FIELDS: Record<TicketKind, { titleLabel: string; titlePlaceholder: string; bodyLabel: string; bodyPlaceholder: string }> = {
-  bug: {
-    titleLabel: "Krótki opis problemu",
-    titlePlaceholder: "np. Eksport do PDF zwraca pusty plik",
-    bodyLabel: "Co się stało i czego się spodziewałeś?",
-    bodyPlaceholder:
-      "Kliknąłem „Pobierz .pdf”, dostałem pusty plik. Spodziewałem się nekrologu na jednej stronie.",
-  },
-  idea: {
-    titleLabel: "Czego dotyczy",
-    titlePlaceholder: "np. Szablony treści nekrologu",
-    bodyLabel: "Jaki problem to rozwiąże?",
-    bodyPlaceholder:
-      "Za każdym razem wpisujemy podobną treść od zera. Zajmuje to kilka minut przy każdym nekrologu.",
-  },
-  question: {
-    titleLabel: "Czego dotyczy pytanie",
-    titlePlaceholder: "np. Kod QR na wydruku",
-    bodyLabel: "Twoje pytanie",
-    bodyPlaceholder: "Czy kod QR działa, zanim opublikuję nekrolog?",
-  },
+/** Only the prompt changes with the kind; the field is the same single description. */
+const BODY_PLACEHOLDER: Record<TicketKind, string> = {
+  bug: "Kliknąłem „Pobierz .pdf”, dostałem pusty plik. Spodziewałem się nekrologu na jednej stronie.",
+  idea: "Za każdym razem wpisujemy podobną treść od zera. Zajmuje to kilka minut przy każdym nekrologu.",
+  question: "Czy kod QR działa, zanim opublikuję nekrolog?",
+}
+
+/** The list needs a headline and the reporter should not have to write one twice. */
+function deriveTitle(description: string): string {
+  const firstLine = description.trim().split("\n")[0].trim()
+  return firstLine.length > 80 ? `${firstLine.slice(0, 79).trimEnd()}…` : firstLine
 }
 
 interface Draft {
   kind?: TicketKind
-  title?: string
   description?: string
-  email?: string
 }
 
 /** The last receipt, kept so closing the drawer — or reloading — does not lose the reference
@@ -81,9 +68,7 @@ function readDraft(): Draft {
     const d = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}")
     return {
       kind: TICKET_KINDS.includes(d?.kind) ? d.kind : undefined,
-      title: typeof d?.title === "string" ? d.title : undefined,
       description: typeof d?.description === "string" ? d.description : undefined,
-      email: typeof d?.email === "string" ? d.email : undefined,
     }
   } catch {
     return {}
@@ -115,9 +100,8 @@ export function SupportDrawer({
 }) {
   const [draft] = useState(readDraft)
   const [kind, setKind] = useState<TicketKind | null>(draft.kind ?? null)
-  const [title, setTitle] = useState(draft.title ?? "")
   const [description, setDescription] = useState(draft.description ?? "")
-  const [email, setEmail] = useState(draft.email ?? "")
+  const [email, setEmail] = useState("")
   const [files, setFiles] = useState<{ name: string; url: string }[]>([])
   const [uploading, setUploading] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -129,11 +113,11 @@ export function SupportDrawer({
   useEffect(() => {
     if (sent) return
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ kind, title, description, email }))
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ kind, description }))
     } catch {
       // ignore storage failures (private mode, quota)
     }
-  }, [kind, title, description, email, sent])
+  }, [kind, description, sent])
 
   // The reporter's own tickets, so "czy dostaliście?" is answered by the drawer itself.
   useEffect(() => {
@@ -182,9 +166,9 @@ export function SupportDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kind,
-          title,
+          title: deriveTitle(description),
           description,
-          email,
+          // No email field: it is not editable, so the server uses the signed-in address.
           attachments: files.map((f) => f.url),
           context: collectContext(consoleErrors),
         }),
@@ -211,7 +195,6 @@ export function SupportDrawer({
   function reset() {
     setSent(null)
     setKind(null)
-    setTitle("")
     setDescription("")
     setFiles([])
     try {
@@ -221,8 +204,7 @@ export function SupportDrawer({
     }
   }
 
-  const fields = kind ? FIELDS[kind] : null
-  const canSend = !!kind && title.trim().length > 0 && description.trim().length > 0 && !sending && !uploading
+  const canSend = !!kind && description.trim().length > 0 && !sending && !uploading
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -232,7 +214,7 @@ export function SupportDrawer({
         </SheetHeader>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v ?? "new")} className="flex min-h-0 flex-1 flex-col gap-0">
-          <div className="border-b px-6 pt-4">
+          <div className="px-6 pt-4">
             <TabsList>
               <TabsTrigger value="new">Nowe zgłoszenie</TabsTrigger>
               <TabsTrigger value="mine">Moje zgłoszenia</TabsTrigger>
@@ -275,9 +257,20 @@ export function SupportDrawer({
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Step 1 — the one classification the reporter makes */}
+              {/* Address first: it is where the answer goes, and it is not the reporter's to change. */}
               <div className="space-y-1.5">
-                <Label htmlFor="ticket-kind">Czego dotyczy zgłoszenie?</Label>
+                <Label htmlFor="ticket-email">Adres e-mail</Label>
+                <Input
+                  id="ticket-email"
+                  value={email}
+                  readOnly
+                  className="bg-muted/40 text-muted-foreground"
+                />
+                <p className="text-xs text-muted-foreground">Odpowiedź wyślemy na ten adres.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="ticket-kind">Temat</Label>
                 <Select value={kind} onValueChange={(v) => setKind((v as TicketKind) ?? null)}>
                   <SelectTrigger id="ticket-kind" className="w-full">
                     {kind ? (
@@ -297,106 +290,82 @@ export function SupportDrawer({
                 {kind && <p className="text-xs text-muted-foreground">{TICKET_KIND_META[kind].hint}</p>}
               </div>
 
-              {/* Step 2 — revealed only once the kind is known */}
-              {fields && (
-                <div className="space-y-4">
+              {/* The prompt depends on the subject, so these wait until it is chosen. */}
+              {kind && (
+                <>
                   <div className="space-y-1.5">
-                    <Label htmlFor="ticket-title">{fields.titleLabel}</Label>
-                    <Input
-                      id="ticket-title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={fields.titlePlaceholder}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ticket-body">{fields.bodyLabel}</Label>
+                    <Label htmlFor="ticket-body">Opis</Label>
                     <Textarea
                       id="ticket-body"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder={fields.bodyPlaceholder}
-                      rows={5}
+                      placeholder={BODY_PLACEHOLDER[kind]}
+                      rows={6}
                     />
                   </div>
-
-                  {kind === "bug" && (
-                    <div className="space-y-1.5">
-                      <Label>Zrzut ekranu lub nagranie</Label>
-                      <label
-                        onDragOver={(e) => {
-                          e.preventDefault()
-                          setDragging(true)
-                        }}
-                        onDragLeave={() => setDragging(false)}
-                        onDrop={(e) => {
-                          e.preventDefault()
-                          setDragging(false)
-                          uploadFiles(e.dataTransfer.files)
-                        }}
-                        className={cn(
-                          "relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors",
-                          dragging ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
-                        )}
-                      >
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*,video/*"
-                          className="sr-only"
-                          onChange={(e) => {
-                            if (e.target.files) uploadFiles(e.target.files)
-                            e.target.value = ""
-                          }}
-                        />
-                        {uploading ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        ) : (
-                          <Paperclip className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <span className="text-sm">Przeciągnij pliki lub kliknij, aby wybrać</span>
-                        <span className="text-xs text-muted-foreground">
-                          Obrazy i nagrania · do {MAX_UPLOAD_MB} MB każdy
-                        </span>
-                      </label>
-
-                      {files.length > 0 && (
-                        <ul className="space-y-1">
-                          {files.map((f) => (
-                            <li
-                              key={f.url}
-                              className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
-                            >
-                              <span className="truncate">{f.name}</span>
-                              <button
-                                type="button"
-                                aria-label={`Usuń ${f.name}`}
-                                onClick={() => setFiles((prev) => prev.filter((x) => x.url !== f.url))}
-                                className="shrink-0 text-muted-foreground hover:text-foreground"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="ticket-email">Adres e-mail</Label>
-                    <Input
-                      id="ticket-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">Odpowiedź wyślemy na ten adres.</p>
-                  </div>
-                </div>
-              )}
+                    <Label>Załącznik</Label>
+                    <label
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setDragging(true)
+                      }}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        setDragging(false)
+                        uploadFiles(e.dataTransfer.files)
+                      }}
+                      className={cn(
+                        "relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors",
+                        dragging ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
+                      )}
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        className="sr-only"
+                        onChange={(e) => {
+                          if (e.target.files) uploadFiles(e.target.files)
+                          e.target.value = ""
+                        }}
+                      />
+                      {uploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Paperclip className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <span className="text-sm">Przeciągnij pliki lub kliknij, aby wybrać</span>
+                      <span className="text-xs text-muted-foreground">
+                        Obrazy i nagrania · do {MAX_UPLOAD_MB} MB każdy
+                      </span>
+                    </label>
 
+                    {files.length > 0 && (
+                      <ul className="space-y-1">
+                        {files.map((f) => (
+                          <li
+                            key={f.url}
+                            className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
+                          >
+                            <span className="truncate">{f.name}</span>
+                            <button
+                              type="button"
+                              aria-label={`Usuń ${f.name}`}
+                              onClick={() => setFiles((prev) => prev.filter((x) => x.url !== f.url))}
+                              className="shrink-0 text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
           </TabsContent>
