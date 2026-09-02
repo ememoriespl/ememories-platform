@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { ChevronDown } from "lucide-react"
 import {
   DropdownMenu,
@@ -41,6 +41,9 @@ export function usePersistedFilter<T extends string>(storageKey: string, allowed
   return [value, setValue] as const
 }
 
+/** A store that never changes: only its server and client snapshots differ. */
+const subscribeNothing = () => () => {}
+
 /** True when the row's status passes the given filter. */
 export function matchesFilter<T extends string>(filter: T[], status: T) {
   return filter.length === 0 || filter.includes(status)
@@ -75,6 +78,11 @@ export function StatusFilter<T extends string>({
     onChanged?.()
   }
 
+  // The stored selection is only readable in the browser. Rendering it on the very first
+  // client pass would disagree with the server's markup, so the label waits one render —
+  // long enough to hydrate against matching text, short enough to be invisible.
+  const hydrated = useSyncExternalStore(subscribeNothing, () => true, () => false)
+
   const label =
     value.length === 0
       ? allLabel
@@ -85,7 +93,7 @@ export function StatusFilter<T extends string>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="inline-flex h-9 w-40 items-center justify-between rounded-lg border bg-background px-3 text-sm outline-none transition-colors hover:bg-muted/50">
-        <span className="truncate">{label}</span>
+        <span className="truncate">{hydrated ? label : allLabel}</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-44">

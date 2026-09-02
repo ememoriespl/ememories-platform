@@ -191,14 +191,14 @@ export function SupportDrawer({
     }
   }
 
-  /** Reset before closing, so the next visit starts on a clean form rather than a receipt. */
-  function closeAndReset() {
+  /** Clearing is its own step, so closing never costs what is on screen — reopening shows
+   *  whatever was left behind, whether a receipt or a half-written report. */
+  function reset() {
     setSent(null)
     setKind(null)
     setTitle("")
     setDescription("")
     setFiles([])
-    onOpenChange(false)
   }
 
   const fields = kind ? FIELDS[kind] : null
@@ -232,9 +232,18 @@ export function SupportDrawer({
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">{sent.body}</p>
               </div>
 
-              <Button color="secondary" onClick={closeAndReset}>
-                Zamknij
-              </Button>
+              <div className="flex items-center gap-4">
+                <Button color="secondary" onClick={() => onOpenChange(false)}>
+                  Zamknij
+                </Button>
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Napisz kolejne
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">

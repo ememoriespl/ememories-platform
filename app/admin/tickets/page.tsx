@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Search, MoreHorizontal, Paperclip } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { StatusFilter, usePersistedFilter, matchesFilter } from "@/components/status-filter"
 import { TICKET_KIND_ICONS } from "@/components/support/ticket-kind-icon"
@@ -36,7 +38,7 @@ export default function AdminTicketsPage() {
     "admin-tickets-status-filter",
     TICKET_STATUSES
   )
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [openTicket, setOpenTicket] = useState<Ticket | null>(null)
   const { sort, toggleSort, sortData, paginate, setPage } = useTableState()
 
   useEffect(() => {
@@ -83,33 +85,34 @@ export default function AdminTicketsPage() {
     <>
       <Topbar title="Zgłoszenia" subtitle="Zgłoszenia od zakładów pogrzebowych" />
 
-      <div className="p-6">
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-64 flex-1">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(1)
-                }}
-                placeholder="Szukaj…"
-                className="pl-9"
-              />
-            </div>
-            <StatusFilter
-              options={STATUS_OPTIONS}
-              value={statusFilter}
-              setValue={setStatusFilter}
-              onChanged={() => setPage(1)}
+      <div className="p-6 space-y-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-48 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              className="pl-8 h-9"
+              placeholder="Szukaj..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             />
           </div>
+          <StatusFilter
+            options={STATUS_OPTIONS}
+            value={statusFilter}
+            setValue={setStatusFilter}
+            onChanged={() => setPage(1)}
+          />
+        </div>
 
+        <div>
           <Card>
-            <CardHeader className="flex-row items-center gap-3">
-              <CardTitle>Zgłoszenia</CardTitle>
-              <Badge variant="outline">{filtered.length} rekordów</Badge>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2.5">
+                <CardTitle className="text-base">Zgłoszenia</CardTitle>
+                <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  {filtered.length} rekordów
+                </span>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -135,50 +138,15 @@ export default function AdminTicketsPage() {
                       ))
                     ) : (
                       pagination.items.map((t) => (
-                        <tr key={t.id} className="align-top transition-colors hover:bg-muted/30">
+                        <tr key={t.id} className="transition-colors hover:bg-muted/30">
                           <td className="px-4 py-3">
                             <button
-                              onClick={() => setExpanded((prev) => (prev === t.id ? null : t.id))}
+                              onClick={() => setOpenTicket(t)}
                               className="text-left font-medium hover:underline"
                             >
                               {t.title}
                             </button>
                             <p className="font-mono text-xs text-muted-foreground">{t.reference}</p>
-                            {expanded === t.id && (
-                              <div className="mt-2 max-w-xl space-y-2 rounded-lg border bg-muted/20 p-3">
-                                <p className="whitespace-pre-wrap text-sm">{t.body}</p>
-                                <p className="text-xs text-muted-foreground">{t.email}</p>
-                                {t.attachments && t.attachments.length > 0 && (
-                                  <ul className="space-y-1">
-                                    {t.attachments.map((url) => (
-                                      <li key={url}>
-                                        <a
-                                          href={url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-                                        >
-                                          <Paperclip className="h-3 w-3" />
-                                          Załącznik
-                                        </a>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                                {t.context && (
-                                  <dl className="space-y-0.5 border-t pt-2 text-xs text-muted-foreground">
-                                    {Object.entries(t.context).map(([k, v]) => (
-                                      <div key={k} className="flex gap-2">
-                                        <dt className="w-24 shrink-0">{k}</dt>
-                                        <dd className="min-w-0 break-words">
-                                          {Array.isArray(v) ? (v.length ? v.join(" · ") : "brak") : String(v)}
-                                        </dd>
-                                      </div>
-                                    ))}
-                                  </dl>
-                                )}
-                              </div>
-                            )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="inline-flex items-center gap-2">
@@ -230,6 +198,115 @@ export default function AdminTicketsPage() {
           </Card>
         </div>
       </div>
+
+      {/* The whole ticket, in the same right-hand drawer the reporter wrote it in. */}
+      <Sheet open={!!openTicket} onOpenChange={(o) => !o && setOpenTicket(null)}>
+        <SheetContent side="right" className="w-full gap-0 p-0 data-[side=right]:sm:max-w-lg">
+          <SheetHeader className="border-b p-6">
+            <SheetTitle>{openTicket?.title}</SheetTitle>
+            <p className="font-mono text-xs text-muted-foreground">{openTicket?.reference}</p>
+          </SheetHeader>
+
+          {openTicket && (
+            <div className="flex-1 space-y-6 overflow-y-auto p-6">
+              <dl className="grid grid-cols-[7rem_1fr] gap-y-2 text-sm">
+                <dt className="text-muted-foreground">Rodzaj</dt>
+                <dd className="inline-flex items-center gap-2">
+                  {(() => {
+                    const Icon = TICKET_KIND_ICONS[openTicket.kind as TicketKind]
+                    return Icon ? <Icon className="h-4 w-4 shrink-0 text-muted-foreground" /> : null
+                  })()}
+                  {TICKET_KIND_META[openTicket.kind as TicketKind]?.label ?? openTicket.kind}
+                </dd>
+
+                <dt className="text-muted-foreground">Klient</dt>
+                <dd>{openTicket.funeral_homes?.name ?? "—"}</dd>
+
+                <dt className="text-muted-foreground">E-mail</dt>
+                <dd className="min-w-0 break-words">
+                  <a href={`mailto:${openTicket.email}`} className="text-primary hover:underline">
+                    {openTicket.email}
+                  </a>
+                </dd>
+
+                <dt className="text-muted-foreground">Zgłoszono</dt>
+                <dd>{new Date(openTicket.created_at).toLocaleString("pl-PL")}</dd>
+
+                <dt className="text-muted-foreground">Status</dt>
+                <dd>
+                  <Select
+                    value={openTicket.status}
+                    onValueChange={(v) => {
+                      const next = v as TicketStatus
+                      setOpenTicket({ ...openTicket, status: next })
+                      setStatus(openTicket.id, next)
+                    }}
+                  >
+                    <SelectTrigger className="!h-8 w-44">
+                      <span>{TICKET_STATUS_META[openTicket.status]?.label ?? openTicket.status}</span>
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false}>
+                      {TICKET_STATUSES.map((st) => (
+                        <SelectItem key={st} value={st}>
+                          {TICKET_STATUS_META[st].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </dd>
+              </dl>
+
+              <div className="space-y-2 border-t pt-6">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Treść
+                </p>
+                <p className="whitespace-pre-wrap text-sm">{openTicket.body}</p>
+              </div>
+
+              {openTicket.attachments && openTicket.attachments.length > 0 && (
+                <div className="space-y-2 border-t pt-6">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Załączniki
+                  </p>
+                  <ul className="space-y-1">
+                    {openTicket.attachments.map((url, i) => (
+                      <li key={url}>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          Załącznik {i + 1}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {openTicket.context && (
+                <div className="space-y-2 border-t pt-6">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Dane techniczne
+                  </p>
+                  <dl className="space-y-1 text-xs text-muted-foreground">
+                    {Object.entries(openTicket.context).map(([k, v]) => (
+                      <div key={k} className="flex gap-2">
+                        <dt className="w-24 shrink-0">{k}</dt>
+                        <dd className="min-w-0 break-words">
+                          {Array.isArray(v) ? (v.length ? v.join(" · ") : "brak") : String(v)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   )
 }

@@ -66,7 +66,7 @@ export function FhSidebar() {
           >
             <LifeBuoy className="h-5 w-5 shrink-0" />
             <span className="opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-              Zgłoś problem
+              Kontakt
             </span>
           </button>
         </div>

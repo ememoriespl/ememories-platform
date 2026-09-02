@@ -95,7 +95,7 @@ export function Topbar({ title, subtitle, badge }: TopbarProps) {
             {support && (
               <DropdownMenuItem onClick={support.open}>
                 <LifeBuoy className="mr-2 h-4 w-4" />
-                Zgłoś problem
+                Kontakt
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
