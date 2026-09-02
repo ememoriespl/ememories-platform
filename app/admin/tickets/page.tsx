@@ -14,6 +14,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Search, MoreHorizontal, Paperclip } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { StatusFilter, usePersistedFilter, matchesFilter } from "@/components/status-filter"
@@ -21,6 +32,7 @@ import {
   TICKET_KIND_META,
   TICKET_STATUSES,
   TICKET_STATUS_META,
+  statusNeedsNote,
   type Ticket,
   type TicketKind,
   type TicketStatus,
@@ -38,6 +50,10 @@ export default function AdminTicketsPage() {
     TICKET_STATUSES
   )
   const [openTicket, setOpenTicket] = useState<Ticket | null>(null)
+  // Resolving or closing owes the reporter a reason, so it goes through this prompt.
+  const [pendingNote, setPendingNote] = useState<{ id: string; status: TicketStatus } | null>(null)
+  const [note, setNote] = useState("")
+  const [savingNote, setSavingNote] = useState(false)
   const { sort, toggleSort, sortData, paginate, setPage } = useTableState()
 
   useEffect(() => {
@@ -48,20 +64,44 @@ export default function AdminTicketsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  async function setStatus(id: string, status: TicketStatus) {
+  function requestStatus(id: string, status: TicketStatus) {
+    if (statusNeedsNote(status)) {
+      setNote("")
+      setPendingNote({ id, status })
+      return
+    }
+    void applyStatus(id, status)
+  }
+
+  async function applyStatus(id: string, status: TicketStatus, noteText?: string) {
     const previous = tickets
-    setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)))
+    setTickets((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, status, resolution_note: noteText ?? t.resolution_note } : t))
+    )
+    setOpenTicket((prev) =>
+      prev && prev.id === id ? { ...prev, status, resolution_note: noteText ?? prev.resolution_note } : prev
+    )
     try {
       const res = await fetch(`/api/tickets/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, note: noteText }),
       })
-      if (!res.ok) throw new Error(`Błąd ${res.status}`)
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || `Błąd ${res.status}`)
+      return true
     } catch (err) {
       setTickets(previous)
       toast.error(`Nie udało się zmienić statusu: ${err instanceof Error ? err.message : "nieznany błąd"}`)
+      return false
     }
+  }
+
+  async function confirmNote() {
+    if (!pendingNote || !note.trim()) return
+    setSavingNote(true)
+    const ok = await applyStatus(pendingNote.id, pendingNote.status, note.trim())
+    setSavingNote(false)
+    if (ok) setPendingNote(null)
   }
 
   const filtered = tickets.filter((t) => {
@@ -170,7 +210,7 @@ export default function AdminTicketsPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 {TICKET_STATUSES.map((s) => (
-                                  <DropdownMenuItem key={s} onClick={() => setStatus(t.id, s)}>
+                                  <DropdownMenuItem key={s} onClick={() => requestStatus(t.id, s)}>
                                     {TICKET_STATUS_META[s].label}
                                   </DropdownMenuItem>
                                 ))}
@@ -232,9 +272,7 @@ export default function AdminTicketsPage() {
                   <Select
                     value={openTicket.status}
                     onValueChange={(v) => {
-                      const next = v as TicketStatus
-                      setOpenTicket({ ...openTicket, status: next })
-                      setStatus(openTicket.id, next)
+                      requestStatus(openTicket.id, v as TicketStatus)
                     }}
                   >
                     <SelectTrigger className="!h-8 w-44">
@@ -257,6 +295,15 @@ export default function AdminTicketsPage() {
                 </p>
                 <p className="whitespace-pre-wrap text-sm">{openTicket.body}</p>
               </div>
+
+              {openTicket.resolution_note && (
+                <div className="space-y-2 border-t pt-6">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Notatka dla zgłaszającego
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm">{openTicket.resolution_note}</p>
+                </div>
+              )}
 
               {openTicket.attachments && openTicket.attachments.length > 0 && (
                 <div className="space-y-2 border-t pt-6">
@@ -302,6 +349,39 @@ export default function AdminTicketsPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={!!pendingNote} onOpenChange={(o) => !o && setPendingNote(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {pendingNote?.status === "closed" ? "Zamknij zgłoszenie" : "Oznacz jako rozwiązane"}
+            </DialogTitle>
+            <DialogDescription>
+              Notatka trafi do zgłaszającego — zobaczy ją przy swoim zgłoszeniu.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="ticket-note">Notatka</Label>
+            <Textarea
+              id="ticket-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={5}
+              placeholder="Co zostało zrobione albo dlaczego zamykamy zgłoszenie."
+            />
+          </div>
+
+          <DialogFooter>
+            <Button color="tertiary" onClick={() => setPendingNote(null)}>
+              Anuluj
+            </Button>
+            <Button onClick={confirmNote} disabled={!note.trim() || savingNote}>
+              {savingNote ? "Zapisywanie…" : "Zapisz"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

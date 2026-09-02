@@ -109,6 +109,7 @@ export function SupportDrawer({
   const [sent, setSent] = useState<Ticket | null>(readSent)
   const [history, setHistory] = useState<Ticket[]>([])
   const [tab, setTab] = useState("new")
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   useEffect(() => {
     if (sent) return
@@ -266,7 +267,6 @@ export function SupportDrawer({
                   readOnly
                   className="bg-muted/40 text-muted-foreground"
                 />
-                <p className="text-xs text-muted-foreground">Odpowiedź wyślemy na ten adres.</p>
               </div>
 
               <div className="space-y-1.5">
@@ -376,17 +376,41 @@ export function SupportDrawer({
             ) : (
               <ul className="divide-y">
                 {history.map((t) => (
-                  <li key={t.id} className="flex items-start justify-between gap-3 py-3 first:pt-0">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">{t.title}</p>
-                      <p className="font-mono text-xs text-muted-foreground">{t.reference}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {new Date(t.created_at).toLocaleDateString("pl-PL")}
-                      </p>
+                  <li key={t.id} className="py-3 first:pt-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{t.title}</p>
+                        <p className="font-mono text-xs text-muted-foreground">{t.reference}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {new Date(t.created_at).toLocaleDateString("pl-PL")}
+                        </p>
+                      </div>
+                      <Badge variant={TICKET_STATUS_META[t.status as TicketStatus]?.variant ?? "gray"}>
+                        {TICKET_STATUS_META[t.status as TicketStatus]?.label ?? t.status}
+                      </Badge>
                     </div>
-                    <Badge variant={TICKET_STATUS_META[t.status as TicketStatus]?.variant ?? "gray"}>
-                      {TICKET_STATUS_META[t.status as TicketStatus]?.label ?? t.status}
-                    </Badge>
+
+                    <button
+                      type="button"
+                      onClick={() => setExpanded((prev) => (prev === t.id ? null : t.id))}
+                      className="mt-1 text-sm text-primary underline-offset-4 hover:underline"
+                    >
+                      {expanded === t.id ? "Ukryj" : "Szczegóły"}
+                    </button>
+
+                    {expanded === t.id && (
+                      <div className="mt-2 space-y-3 rounded-xl border bg-muted/20 p-3">
+                        <p className="whitespace-pre-wrap text-sm">{t.body}</p>
+                        {t.resolution_note && (
+                          <div className="space-y-1 border-t pt-3">
+                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                              Odpowiedź
+                            </p>
+                            <p className="whitespace-pre-wrap text-sm">{t.resolution_note}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

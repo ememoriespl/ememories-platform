@@ -21,6 +21,7 @@ import { useTableState, SortHead, TablePagination } from "@/components/ui/data-t
 import { BookOpen, Eye as PhEye, PencilSimpleLine } from "@phosphor-icons/react"
 import { ObituaryStatus } from "@/lib/types"
 import { STATUS_META, effectiveStatusFromRow } from "@/lib/obituary-status"
+import { useSupport } from "@/components/support/support-context"
 import {
   ObituaryStatusFilter,
   matchesStatusFilter,
@@ -52,6 +53,7 @@ interface DbObituary {
 
 export default function FhDashboardPage() {
   const router = useRouter()
+  const support = useSupport()
   const [fh, setFh] = useState<FhData | null>(null)
   const [obituaries, setObituaries] = useState<DbObituary[]>([])
   const [loading, setLoading] = useState(true)
@@ -314,10 +316,14 @@ export default function FhDashboardPage() {
                 </table>
               </div>
             <TablePagination {...pagination} onPage={setPage}>
-              Masz pytania lub sugestie? Napisz do nas{" "}
-              <a href="mailto:info@ememories.pl" className="font-medium text-primary hover:underline">
-                info@ememories.pl
-              </a>
+              Masz pytania lub sugestie?{" "}
+              <button
+                type="button"
+                onClick={support?.open}
+                className="font-medium text-primary hover:underline"
+              >
+                Napisz do nas
+              </button>
               {" · "}
               <Link href="/oswiadczenie" className="font-medium text-primary hover:underline">
                 Oświadczenie o materiałach

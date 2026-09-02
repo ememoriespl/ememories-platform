@@ -17,6 +17,13 @@ export const TICKET_KIND_META: Record<TicketKind, { label: string; hint: string 
 
 export const TICKET_STATUSES: TicketStatus[] = ["new", "in_progress", "resolved", "closed"]
 
+/** Ending a ticket owes the reporter an explanation, so these two statuses require a note. */
+export const TICKET_STATUSES_NEEDING_NOTE: TicketStatus[] = ["resolved", "closed"]
+
+export function statusNeedsNote(status: TicketStatus) {
+  return TICKET_STATUSES_NEEDING_NOTE.includes(status)
+}
+
 export const TICKET_STATUS_META: Record<
   TicketStatus,
   { label: string; variant: "blue" | "warning" | "success" | "gray" }
@@ -49,6 +56,8 @@ export interface Ticket {
   status: TicketStatus
   attachments: string[] | null
   context: TicketContext | null
+  /** What the administrator wrote when resolving or closing it. */
+  resolution_note: string | null
   created_at: string
   funeral_homes?: { name: string } | null
 }
