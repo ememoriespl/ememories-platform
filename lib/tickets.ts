@@ -9,10 +9,10 @@ export type TicketStatus = "new" | "in_progress" | "resolved" | "closed"
 
 export const TICKET_KINDS: TicketKind[] = ["bug", "idea", "question"]
 
-export const TICKET_KIND_META: Record<TicketKind, { label: string; emoji: string; hint: string }> = {
-  bug: { label: "Coś nie działa", emoji: "🐞", hint: "Błąd, coś zachowuje się inaczej niż powinno" },
-  idea: { label: "Mam pomysł", emoji: "💡", hint: "Propozycja zmiany lub nowej funkcji" },
-  question: { label: "Pytanie / inne", emoji: "❓", hint: "Nie wiem, jak coś zrobić" },
+export const TICKET_KIND_META: Record<TicketKind, { label: string; hint: string }> = {
+  bug: { label: "Coś nie działa", hint: "Błąd, coś zachowuje się inaczej niż powinno" },
+  idea: { label: "Mam pomysł", hint: "Propozycja zmiany lub nowej funkcji" },
+  question: { label: "Pytanie / inne", hint: "Nie wiem, jak coś zrobić" },
 }
 
 export const TICKET_STATUSES: TicketStatus[] = ["new", "in_progress", "resolved", "closed"]

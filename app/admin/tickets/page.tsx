@@ -15,6 +15,7 @@ import {
 import { Search, MoreHorizontal, Paperclip } from "lucide-react"
 import { useTableState, SortHead, TablePagination } from "@/components/ui/data-table"
 import { StatusFilter, usePersistedFilter, matchesFilter } from "@/components/status-filter"
+import { TICKET_KIND_ICONS } from "@/components/support/ticket-kind-icon"
 import {
   TICKET_KIND_META,
   TICKET_STATUSES,
@@ -180,8 +181,13 @@ export default function AdminTicketsPage() {
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            {TICKET_KIND_META[t.kind as TicketKind]?.emoji}{" "}
-                            {TICKET_KIND_META[t.kind as TicketKind]?.label ?? t.kind}
+                            <span className="inline-flex items-center gap-2">
+                              {(() => {
+                                const Icon = TICKET_KIND_ICONS[t.kind as TicketKind]
+                                return Icon ? <Icon className="h-4 w-4 shrink-0 text-muted-foreground" /> : null
+                              })()}
+                              {TICKET_KIND_META[t.kind as TicketKind]?.label ?? t.kind}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">{t.funeral_homes?.name ?? "—"}</td>
                           <td className="px-4 py-3">

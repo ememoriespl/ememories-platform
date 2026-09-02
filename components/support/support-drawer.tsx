@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ChevronDown, Loader2, Paperclip, X } from "lucide-react"
+import { Loader2, Paperclip, X } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { TICKET_KIND_ICONS } from "@/components/support/ticket-kind-icon"
 import {
   TICKET_KINDS,
   TICKET_KIND_META,
@@ -70,6 +77,8 @@ function readDraft(): Draft {
   }
 }
 
+/** Gathered at send time and attached to the ticket. Not shown to the reporter — it is noise
+ * for them and useful only to whoever picks the ticket up. */
 function collectContext(consoleErrors: string[]): TicketContext {
   return {
     url: window.location.href,
@@ -101,7 +110,6 @@ export function SupportDrawer({
   const [dragging, setDragging] = useState(false)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState<Ticket | null>(null)
-  const [showContext, setShowContext] = useState(false)
   const [history, setHistory] = useState<Ticket[]>([])
 
   useEffect(() => {
@@ -183,12 +191,14 @@ export function SupportDrawer({
     }
   }
 
-  function startAnother() {
+  /** Reset before closing, so the next visit starts on a clean form rather than a receipt. */
+  function closeAndReset() {
     setSent(null)
     setKind(null)
     setTitle("")
     setDescription("")
     setFiles([])
+    onOpenChange(false)
   }
 
   const fields = kind ? FIELDS[kind] : null
@@ -222,37 +232,44 @@ export function SupportDrawer({
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">{sent.body}</p>
               </div>
 
-              <Button color="secondary" onClick={startAnother}>
-                Zgłoś coś jeszcze
+              <Button color="secondary" onClick={closeAndReset}>
+                Zamknij
               </Button>
             </div>
           ) : (
             <div className="space-y-6">
               {/* Step 1 — the one classification the reporter makes */}
-              <div className="space-y-2">
-                <Label>Czego dotyczy zgłoszenie?</Label>
-                <div className="grid gap-2">
-                  {TICKET_KINDS.map((k) => {
-                    const meta = TICKET_KIND_META[k]
-                    return (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => setKind(k)}
-                        className={cn(
-                          "flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors",
-                          kind === k ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-                        )}
-                      >
-                        <span className="text-lg leading-none">{meta.emoji}</span>
-                        <span className="min-w-0">
-                          <span className="block text-sm font-medium">{meta.label}</span>
-                          <span className="block text-xs text-muted-foreground">{meta.hint}</span>
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ticket-kind">Czego dotyczy zgłoszenie?</Label>
+                <Select value={kind} onValueChange={(v) => setKind((v as TicketKind) ?? null)}>
+                  <SelectTrigger id="ticket-kind" className="w-full">
+                    {kind ? (
+                      <span className="flex items-center gap-2">
+                        {(() => {
+                          const Icon = TICKET_KIND_ICONS[kind]
+                          return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        })()}
+                        {TICKET_KIND_META[kind].label}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Wybierz…</span>
+                    )}
+                  </SelectTrigger>
+                  <SelectContent alignItemWithTrigger={false}>
+                    {TICKET_KINDS.map((k) => {
+                      const Icon = TICKET_KIND_ICONS[k]
+                      return (
+                        <SelectItem key={k} value={k}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            {TICKET_KIND_META[k].label}
+                          </span>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+                {kind && <p className="text-xs text-muted-foreground">{TICKET_KIND_META[kind].hint}</p>}
               </div>
 
               {/* Step 2 — revealed only once the kind is known */}
@@ -351,32 +368,6 @@ export function SupportDrawer({
                       onChange={(e) => setEmail(e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground">Odpowiedź wyślemy na ten adres.</p>
-                  </div>
-
-                  {/* Nothing here is asked of the reporter — it is shown so they know what goes with it. */}
-                  <div className="rounded-xl border">
-                    <button
-                      type="button"
-                      onClick={() => setShowContext((v) => !v)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left text-sm"
-                    >
-                      <span className="text-muted-foreground">Dołączamy dane techniczne</span>
-                      <ChevronDown
-                        className={cn("h-4 w-4 text-muted-foreground transition-transform", showContext && "rotate-180")}
-                      />
-                    </button>
-                    {showContext && (
-                      <dl className="space-y-1 border-t px-4 py-3 text-xs text-muted-foreground">
-                        {Object.entries(collectContext(consoleErrors)).map(([k, v]) => (
-                          <div key={k} className="flex gap-2">
-                            <dt className="w-24 shrink-0">{k}</dt>
-                            <dd className="min-w-0 break-words">
-                              {Array.isArray(v) ? (v.length ? v.join(" · ") : "brak") : String(v)}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    )}
                   </div>
                 </div>
               )}
