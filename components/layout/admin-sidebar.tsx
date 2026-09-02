@@ -8,6 +8,7 @@ import {
   FileText,
   Settings,
   BookOpen,
+  Ticket,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LogoLight, LogoBirdLight } from "@/components/logo"
@@ -16,6 +17,7 @@ const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/clients", label: "Klienci", icon: Users },
   { href: "/admin/obituaries", label: "Nekrologi", icon: BookOpen },
+  { href: "/admin/tickets", label: "Zgłoszenia", icon: Ticket },
   { href: "/admin/settings", label: "Ustawienia", icon: Settings },
 ]
 

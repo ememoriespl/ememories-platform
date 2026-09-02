@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { MoreHorizontal, LogOut, Settings } from "lucide-react"
+import { MoreHorizontal, LogOut, Settings, LifeBuoy } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useSupport } from "@/components/support/support-context"
 
 interface TopbarProps {
   title: string
@@ -37,6 +38,7 @@ function getInitials(email: string, name?: string): string {
 
 export function Topbar({ title, subtitle, badge }: TopbarProps) {
   const router = useRouter()
+  const support = useSupport()
   const [me, setMe] = useState<MeData | null>(null)
 
   useEffect(() => {
@@ -89,6 +91,13 @@ export function Topbar({ title, subtitle, badge }: TopbarProps) {
               <Settings className="mr-2 h-4 w-4" />
               Ustawienia
             </DropdownMenuItem>
+            {/* Only where support is mounted — the admin panel has its own tickets table. */}
+            {support && (
+              <DropdownMenuItem onClick={support.open}>
+                <LifeBuoy className="mr-2 h-4 w-4" />
+                Zgłoś problem
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
