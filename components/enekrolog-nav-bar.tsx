@@ -12,6 +12,9 @@ const DRAWER_MS = 300
 /** How long after its start time a ceremony is treated as still under way. */
 const CEREMONY_MS = 2 * 60 * 60 * 1000
 
+/** The one place still worth directions once the ceremony is behind us. */
+const CEMETERY_KEY = "cemetery"
+
 /** Directions link — opens the phone's navigation app (Google/Apple Maps) with the address. */
 export function navigationUrl(address: string) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
@@ -90,7 +93,12 @@ export function EnekrologNavBar({
     }, DRAWER_MS)
   }
 
-  if (!ceremonyIso && addresses.length === 0) return null
+  // Once the ceremony is over the church and the funeral home are no longer anywhere to go;
+  // the grave is. `remaining === null` means no date, so nothing is filtered.
+  const finished = remaining !== null && remaining <= -CEREMONY_MS
+  const destinations = finished ? addresses.filter((a) => a.key === CEMETERY_KEY) : addresses
+
+  if (!ceremonyIso && destinations.length === 0) return null
 
   return (
     <>
@@ -128,7 +136,7 @@ export function EnekrologNavBar({
             <span />
           )}
 
-          {addresses.length > 0 && (
+          {destinations.length > 0 && (
             <Button className="shrink-0 gap-1.5" onClick={openDrawer}>
               <Navigation className="h-4 w-4" />
               Nawiguj do…
@@ -168,7 +176,7 @@ export function EnekrologNavBar({
               </button>
             </div>
             <div className="mx-auto w-full max-w-xl space-y-2 p-4 pb-6">
-              {addresses.map((a) => (
+              {destinations.map((a) => (
                 <a
                   key={a.key}
                   href={navigationUrl(a.address)}
