@@ -67,12 +67,12 @@ export function enekrologDateRange(birth: string | null | undefined, death: stri
     .join(" — ")
 }
 
-/** "30 lipca 2026, godz. 12:00" — the ceremony date (+ optional time). */
+/** "30 lipca 2026 r., godz. 12:00" — the ceremony date (+ optional time). */
 export function enekrologCeremonyDateTime(date: string | null | undefined, time: string | null | undefined): string {
   if (!date) return ""
   const d = new Date(date)
   if (Number.isNaN(d.getTime())) return ""
-  const day = d.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })
+  const day = `${d.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })} r.`
   return time ? `${day}, godz. ${time}` : day
 }
 

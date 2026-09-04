@@ -387,7 +387,9 @@ export function ObituaryPreview({
   const name = hasName ? `${data.firstName} ${data.lastName}`.trim() : "Imię Nazwisko"
   const birthFmt = data.birthDate ? safeFormat(data.birthDate, "d MMMM yyyy") : null
   const deathFmt = data.deathDate ? safeFormat(data.deathDate, "d MMMM yyyy") : null
-  const ceremonyDateFmt = data.ceremonyDate ? safeFormat(data.ceremonyDate, "d MMMM yyyy") : null
+  // "r." after the year, the way a Polish obituary writes a date. Quoted so date-fns treats it
+  // as a literal rather than format tokens.
+  const ceremonyDateFmt = data.ceremonyDate ? safeFormat(data.ceremonyDate, "d MMMM yyyy 'r.'") : null
   const dateLine = birthFmt && deathFmt ? `${birthFmt} — ${deathFmt}` : birthFmt ? `ur. ${birthFmt}` : deathFmt ? `zm. ${deathFmt}` : "—"
 
   const cardWidth = availableWidth ?? Math.round(A4_W * scale)
