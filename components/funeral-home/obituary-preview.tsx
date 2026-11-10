@@ -530,9 +530,25 @@ export function ObituaryPreview({
     template.qrEnabled && ceremonyQrImageUrl ? (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         {renderQrImage(ceremonyQrImageUrl, ceremonyQrSize)}
-        <p style={{ fontSize: 7, color: "#999", marginTop: 4, width: ceremonyQrSize, textAlign: "center", lineHeight: 1.3 }}>
-          Wejdź na www.ememories.pl
-        </p>
+        {/* SVG text with textLength so the caption always spans exactly the QR's width, whatever the QR size */}
+        <svg
+          width={ceremonyQrSize}
+          height={Math.ceil(ceremonyQrSize * 0.1)}
+          viewBox={`0 0 ${ceremonyQrSize} ${Math.ceil(ceremonyQrSize * 0.1)}`}
+          style={{ display: "block", marginTop: 4 }}
+          aria-label="Wejdź na www.ememories.pl"
+        >
+          <text
+            x={0}
+            y={ceremonyQrSize * 0.07}
+            fontSize={ceremonyQrSize * 0.07}
+            fill="#999"
+            textLength={ceremonyQrSize}
+            lengthAdjust="spacing"
+          >
+            Wejdź na www.ememories.pl
+          </text>
+        </svg>
       </div>
     ) : null
 
