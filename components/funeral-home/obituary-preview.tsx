@@ -530,7 +530,9 @@ export function ObituaryPreview({
     template.qrEnabled && ceremonyQrImageUrl ? (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         {renderQrImage(ceremonyQrImageUrl, ceremonyQrSize)}
-        <p style={{ fontSize: 7, color: "#999", marginTop: 4 }}>www.ememories.pl</p>
+        <p style={{ fontSize: 7, color: "#999", marginTop: 4, width: ceremonyQrSize, textAlign: "center", lineHeight: 1.3 }}>
+          Wejdź na www.ememories.pl
+        </p>
       </div>
     ) : null
 
